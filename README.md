@@ -1,6 +1,6 @@
 # Apexiums_super_store
 
-React + Node.js admin panel for Apexiums ecommerce store.
+React + Node.js + Express + MySQL admin panel for Apexiums ecommerce store.
 
 ## Setup
 
@@ -29,6 +29,8 @@ npm run dev
 
 Frontend URL: `http://localhost:5173`
 
+The React frontend calls backend APIs through Vite proxy, for example `/api/banners`.
+
 Backend only:
 
 ```bash
@@ -53,3 +55,9 @@ Production URL: `http://localhost:5000`
 Backend health check: `http://localhost:5000/api/health`
 
 Database check: `http://localhost:5000/api/db-check`
+
+## Admin Modules
+
+Dashboard, Banners, Adds, Categories, Stock, Orders, Returns, Staff, Customers, Product Listing, Expense, Whole Sellers, Revenue, and Notifications are included with reusable tables, filters, stats, modals, pagination, loading states, empty states, status badges, and toast notifications.
+
+The backend auto-creates the MySQL database/tables on startup when the configured MySQL user has permission.
