@@ -143,7 +143,17 @@ const panels = {
 function App() {
   const [active, setActive] = React.useState('Dashboard');
   const [open, setOpen] = React.useState(false);
+  const [apiStatus, setApiStatus] = React.useState('Checking API...');
   const activePanel = panels[active];
+
+  React.useEffect(() => {
+    fetch('/api/health')
+      .then((response) => response.json())
+      .then((data) => {
+        setApiStatus(data.ok ? `API connected: ${data.database}` : 'API not ready');
+      })
+      .catch(() => setApiStatus('API offline'));
+  }, []);
 
   return (
     <div className="app-shell">
@@ -180,6 +190,12 @@ function App() {
           <strong>Monthly Target</strong>
           <span>Rs 2.8M / Rs 4M</span>
           <div className="progress"><i /></div>
+        </div>
+
+        <div className="sidebar-card api-card">
+          <BadgeDollarSign size={20} />
+          <strong>Backend</strong>
+          <span>{apiStatus}</span>
         </div>
       </aside>
 

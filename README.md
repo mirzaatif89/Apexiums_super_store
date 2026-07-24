@@ -21,11 +21,13 @@ PORT=5000
 
 ## Run
 
-Frontend only:
+Full app with one command:
 
 ```bash
 npm run dev
 ```
+
+Frontend URL: `http://localhost:5173`
 
 Backend only:
 
@@ -33,13 +35,20 @@ Backend only:
 npm run server
 ```
 
-Frontend + backend together:
+Frontend only:
 
 ```bash
-npm run dev:all
+npm run client
 ```
 
-Frontend URL: `http://localhost:5173`
+Production style run:
+
+```bash
+npm run build
+npm start
+```
+
+Production URL: `http://localhost:5000`
 
 Backend health check: `http://localhost:5000/api/health`
 

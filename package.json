@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
+    "client": "vite --host 0.0.0.0",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "node server.js",
     "start": "node server.js",
-    "dev:all": "concurrently \"npm run server\" \"npm run dev\"",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0"
   },
