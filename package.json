@@ -17,11 +17,16 @@
     "cors": "latest",
     "dotenv": "latest",
     "express": "latest",
+    "lucide-react": "latest",
     "mysql2": "latest",
-    "vite": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "lucide-react": "latest"
+    "vite": "latest"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "autoprefixer": "^10.5.4",
+    "postcss": "^8.5.25",
+    "tailwindcss": "^4.3.3"
+  }
 }
