@@ -1,6 +1,6 @@
 import React from 'react';
 import AdminDashboard from './components/AdminDashboard';
-import LoginScreen from './components/LoginScreen';
+import StorefrontHome from './components/StorefrontHome';
 import UserDashboard from './components/UserDashboard';
 import { storeLogoSrc, storeName } from './data/storeData';
 
@@ -40,13 +40,14 @@ export default function App() {
   }
 
   React.useEffect(() => {
-    if (!session) return undefined;
-    document.title = `${session.role === 'SuperAdmin' ? 'Admin' : 'User'} Dashboard | ${storeName}`;
+    document.title = session
+      ? `${session.role === 'SuperAdmin' ? 'Admin' : 'User'} Dashboard | ${storeName}`
+      : `${storeName} | Online Marketplace`;
     return undefined;
   }, [session]);
 
   if (!session) {
-    return <LoginScreen logoSrc={storeLogoSrc} storeName={storeName} onLogin={handleLogin} />;
+    return <StorefrontHome onLogin={handleLogin} />;
   }
 
   if (session.role === 'SuperAdmin') {

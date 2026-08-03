@@ -1,29 +1,27 @@
 import React from 'react';
-import { LockKeyhole, ShieldCheck, ShoppingBag, UserRound, X } from 'lucide-react';
-import { customerAccounts } from '../data/storeData';
-
-const adminDefaults = {
-  username: 'superadmin',
-  password: 'Admin@12345'
-};
+import { LockKeyhole, LogIn, UserRound, X } from 'lucide-react';
 
 export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc }) {
   const [mode, setMode] = React.useState('admin');
-  const [adminForm, setAdminForm] = React.useState(adminDefaults);
-  const [userForm, setUserForm] = React.useState({ email: 'customer@demo.com', password: '123456' });
-  const [error, setError] = React.useState('');
+  const [username, setUsername] = React.useState('superadmin');
+  const [password, setPassword] = React.useState('');
   const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
 
   React.useEffect(() => {
     if (!open) {
       setError('');
       setLoading(false);
+      return;
     }
-  }, [open]);
+    if (mode === 'admin') setUsername('superadmin');
+    if (mode === 'user') setUsername('');
+    setPassword('');
+  }, [mode, open]);
 
   if (!open) return null;
 
-  async function submitAdmin(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     setLoading(true);
     setError('');
@@ -31,29 +29,16 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc 
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(adminForm)
+        body: JSON.stringify({ username, password })
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Admin login failed');
-      onLogin({ ...data.user, role: 'Admin', loginType: 'admin' });
-      onClose();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function submitCustomer(event) {
-    event.preventDefault();
-    setLoading(true);
-    setError('');
-    try {
-      const account = customerAccounts.find(
-        (item) => item.email.toLowerCase() === userForm.email.toLowerCase() && item.password === userForm.password
-      );
-      if (!account) throw new Error('Customer credentials invalid');
-      onLogin({ name: account.name, email: account.email, role: account.role, loginType: 'customer' });
+      if (!response.ok) throw new Error(data.message || 'Login failed');
+      onLogin({
+        ...data.user,
+        role: data.user?.role || data.role,
+        businessId: data.user?.role === 'SuperAdmin' ? null : data.businessId || data.user?.businessId || data.user?.id,
+        loginType: data.user?.role === 'SuperAdmin' ? 'admin' : 'user'
+      });
       onClose();
     } catch (err) {
       setError(err.message);
@@ -66,7 +51,7 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc 
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/55 p-4">
       <button type="button" className="absolute inset-0 h-full w-full" aria-label="Close login overlay" onClick={onClose} />
       <section className="relative z-10 w-full max-w-4xl overflow-hidden rounded-[2rem] bg-white shadow-2xl">
-        <div className="grid lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="grid lg:grid-cols-[0.95fr_1.05fr]">
           <div className="bg-slate-950 p-6 text-white sm:p-8">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -87,23 +72,23 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc 
             </div>
 
             <p className="mt-6 max-w-md text-sm leading-7 text-slate-300">
-              Admin aur customer dono ke liye separate login flow. Admin panel me store manage karo aur customer portal me shopping continue karo.
+              Login karo aur apne role ke mutabiq dashboard open karo. Superadmin ko full admin panel milega, assigned user ko apna business dashboard milega.
             </p>
 
             <div className="mt-8 grid gap-3">
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                 <div className="flex items-center gap-3">
-                  <ShieldCheck className="text-teal-300" size={18} />
-                  <strong className="text-sm">Admin Portal</strong>
+                  <LockKeyhole className="text-teal-300" size={18} />
+                  <strong className="text-sm">Admin Access</strong>
                 </div>
-                <p className="mt-2 text-sm text-slate-300">Store products, orders, and dashboard access.</p>
+                <p className="mt-2 text-sm text-slate-300">Products, orders, users, banners, revenue aur sab modules.</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                 <div className="flex items-center gap-3">
-                  <ShoppingBag className="text-teal-300" size={18} />
-                  <strong className="text-sm">Customer Portal</strong>
+                  <UserRound className="text-teal-300" size={18} />
+                  <strong className="text-sm">User Access</strong>
                 </div>
-                <p className="mt-2 text-sm text-slate-300">Browse products, save favorites, and order quickly.</p>
+                <p className="mt-2 text-sm text-slate-300">Assigned business account ka separate dashboard.</p>
               </div>
             </div>
           </div>
@@ -122,90 +107,63 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc 
               </button>
               <button
                 type="button"
-                onClick={() => setMode('customer')}
+                onClick={() => setMode('user')}
                 className={`inline-flex min-h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold transition ${
-                  mode === 'customer' ? 'bg-teal-600 text-white' : 'text-slate-600'
+                  mode === 'user' ? 'bg-teal-600 text-white' : 'text-slate-600'
                 }`}
               >
                 <UserRound size={16} />
-                Customer Login
+                User Login
               </button>
             </div>
 
             <div className="mt-6">
-              <h3 className="text-2xl font-black text-slate-950">
-                {mode === 'admin' ? 'Admin access' : 'Customer access'}
-              </h3>
+              <h3 className="text-2xl font-black text-slate-950">{mode === 'admin' ? 'Admin access' : 'User access'}</h3>
               <p className="mt-1 text-sm text-slate-500">
                 {mode === 'admin'
-                  ? 'Use your admin username and password.'
-                  : 'Use your customer email and password.'}
+                  ? 'Superadmin credentials enter karein.'
+                  : 'Assigned business username aur password enter karein.'}
               </p>
             </div>
 
-            <form className="mt-6 grid gap-4" onSubmit={mode === 'admin' ? submitAdmin : submitCustomer}>
-              {mode === 'admin' ? (
-                <>
-                  <label className="grid gap-2">
-                    <span className="text-sm font-semibold text-slate-700">Username</span>
-                    <input
-                      value={adminForm.username}
-                      onChange={(event) => setAdminForm((current) => ({ ...current, username: event.target.value }))}
-                      className="min-h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-                    />
-                  </label>
-                  <label className="grid gap-2">
-                    <span className="text-sm font-semibold text-slate-700">Password</span>
-                    <input
-                      type="password"
-                      value={adminForm.password}
-                      onChange={(event) => setAdminForm((current) => ({ ...current, password: event.target.value }))}
-                      className="min-h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-                    />
-                  </label>
-                </>
-              ) : (
-                <>
-                  <label className="grid gap-2">
-                    <span className="text-sm font-semibold text-slate-700">Email</span>
-                    <input
-                      type="email"
-                      value={userForm.email}
-                      onChange={(event) => setUserForm((current) => ({ ...current, email: event.target.value }))}
-                      className="min-h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-                    />
-                  </label>
-                  <label className="grid gap-2">
-                    <span className="text-sm font-semibold text-slate-700">Password</span>
-                    <input
-                      type="password"
-                      value={userForm.password}
-                      onChange={(event) => setUserForm((current) => ({ ...current, password: event.target.value }))}
-                      className="min-h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-                    />
-                  </label>
-                </>
-              )}
+            <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
+              <label className="grid gap-2">
+                <span className="text-sm font-semibold text-slate-700">Username</span>
+                <input
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                  className="min-h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                  placeholder="Enter username"
+                />
+              </label>
+
+              <label className="grid gap-2">
+                <span className="text-sm font-semibold text-slate-700">Password</span>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  className="min-h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                  placeholder="Enter password"
+                />
+              </label>
 
               {error ? <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p> : null}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-teal-600 px-4 text-sm font-bold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-70"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-teal-600 px-4 text-sm font-bold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-70"
               >
+                <LogIn size={16} />
                 {loading ? 'Signing in...' : 'Login'}
               </button>
 
-              {mode === 'customer' ? (
-                <p className="text-xs leading-6 text-slate-500">
-                  Demo customer: <span className="font-semibold">customer@demo.com</span> / <span className="font-semibold">123456</span>
-                </p>
-              ) : (
-                <p className="text-xs leading-6 text-slate-500">
-                  Demo admin: <span className="font-semibold">superadmin</span> / <span className="font-semibold">Admin@12345</span>
-                </p>
-              )}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                <p className="font-semibold text-slate-950">Default superadmin</p>
+                <p className="mt-1 leading-6">Username: <span className="font-semibold">superadmin</span></p>
+                <p className="leading-6">Password: <span className="font-semibold">Admin@12345</span></p>
+              </div>
             </form>
           </div>
         </div>
