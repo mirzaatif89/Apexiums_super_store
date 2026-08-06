@@ -1,0 +1,8 @@
+{
+  "name": "Apexiums Super Store",
+  "description": "E-commerce marketplace and admin dashboard built with React, Vite, and Express.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

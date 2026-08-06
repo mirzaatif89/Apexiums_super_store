@@ -6,11 +6,12 @@ import crypto from 'crypto';
 import mysql from 'mysql2/promise';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createServer as createViteServer } from 'vite';
 
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = Number(process.env.PORT) || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const distPath = path.join(__dirname, 'dist');
@@ -46,6 +47,217 @@ const businessScopedTables = new Set([
 
 app.use(cors());
 app.use(express.json({ limit: '25mb' }));
+
+class MockPool {
+  constructor() {
+    this.tables = new Map();
+    this.autoIncrement = new Map();
+  }
+
+  getTable(name) {
+    if (!this.tables.has(name)) {
+      this.tables.set(name, []);
+      this.autoIncrement.set(name, 1);
+    }
+    return this.tables.get(name);
+  }
+
+  async query(sql, params = []) {
+    const queryStr = String(sql || '').trim();
+    const upper = queryStr.toUpperCase();
+
+    if (upper.startsWith('SHOW COLUMNS FROM')) {
+      return [[]];
+    }
+
+    if (upper.startsWith('ALTER TABLE')) {
+      return [{ affectedRows: 0 }];
+    }
+
+    if (upper.startsWith('CREATE DATABASE') || upper.startsWith('CREATE TABLE')) {
+      const match = queryStr.match(/CREATE TABLE (?:IF NOT EXISTS )?`?([a-zA-Z0-9_]+)`?/i);
+      if (match && match[1]) {
+        this.getTable(match[1]);
+      }
+      return [{ affectedRows: 0 }];
+    }
+
+    if (upper.includes('SELECT DATABASE()')) {
+      return [[{ database_name: dbName, server_time: new Date().toISOString() }]];
+    }
+
+    if (upper.startsWith('INSERT INTO')) {
+      const match = queryStr.match(/INSERT INTO `?([a-zA-Z0-9_]+)`?\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/i);
+      if (match) {
+        const tableName = match[1];
+        const cols = match[2].split(',').map(c => c.trim().replace(/`/g, ''));
+        const rows = this.getTable(tableName);
+        const nextId = this.autoIncrement.get(tableName) || 1;
+
+        const newRow = { id: nextId, created_at: new Date().toISOString() };
+        cols.forEach((col, idx) => {
+          newRow[col] = params[idx] !== undefined ? params[idx] : null;
+        });
+
+        if (newRow.id && typeof newRow.id === 'number' && newRow.id >= nextId) {
+          this.autoIncrement.set(tableName, newRow.id + 1);
+        } else {
+          newRow.id = nextId;
+          this.autoIncrement.set(tableName, nextId + 1);
+        }
+
+        rows.push(newRow);
+        return [{ insertId: newRow.id, affectedRows: 1 }];
+      }
+    }
+
+    if (upper.startsWith('UPDATE')) {
+      const match = queryStr.match(/UPDATE `?([a-zA-Z0-9_]+)`?\s+SET\s+(.+?)(?:\s+WHERE\s+(.+))?$/i);
+      if (match) {
+        const tableName = match[1];
+        const setClause = match[2];
+        const whereClause = match[3] || '';
+        const rows = this.getTable(tableName);
+
+        const setAssignments = setClause.split(',').map(s => {
+          const parts = s.split('=');
+          return parts[0].trim().replace(/`/g, '');
+        });
+
+        const setParamCount = setAssignments.length;
+        const setParams = params.slice(0, setParamCount);
+        const whereParams = params.slice(setParamCount);
+
+        let updatedCount = 0;
+        rows.forEach(row => {
+          let matches = true;
+          if (whereClause) {
+            if (whereClause.includes('id = ?')) {
+              matches = matches && row.id == whereParams[0];
+            }
+            if (whereClause.includes('alert_key = ?')) {
+              matches = matches && row.alert_key == whereParams[whereParams.length - 1];
+            }
+          }
+          if (matches) {
+            setAssignments.forEach((col, idx) => {
+              if (col !== 'id') {
+                row[col] = setParams[idx];
+              }
+            });
+            updatedCount++;
+          }
+        });
+        return [{ affectedRows: updatedCount }];
+      }
+    }
+
+    if (upper.startsWith('DELETE FROM')) {
+      const match = queryStr.match(/DELETE FROM `?([a-zA-Z0-9_]+)`?(?:\s+WHERE\s+(.+))?$/i);
+      if (match) {
+        const tableName = match[1];
+        let rows = this.getTable(tableName);
+        const initialLength = rows.length;
+
+        if (params.length > 0) {
+          const targetId = params[0];
+          rows = rows.filter(r => r.id != targetId);
+          this.tables.set(tableName, rows);
+        } else {
+          this.tables.set(tableName, []);
+        }
+        return [{ affectedRows: initialLength - rows.length }];
+      }
+    }
+
+    if (upper.startsWith('SELECT')) {
+      const fromMatch = queryStr.match(/FROM `?([a-zA-Z0-9_]+)`?/i);
+      if (fromMatch) {
+        const tableName = fromMatch[1];
+        let rows = [...this.getTable(tableName)];
+
+        if (upper.includes('WHERE')) {
+          let paramIdx = 0;
+          if (queryStr.includes('id = ?')) {
+            const targetId = params[paramIdx++];
+            rows = rows.filter(r => r.id == targetId);
+          }
+          if (queryStr.includes('username = ?')) {
+            const targetUsername = params[paramIdx++];
+            rows = rows.filter(r => r.username === targetUsername);
+          }
+          if (queryStr.includes('alert_key = ?')) {
+            const targetAlertKey = params[paramIdx++];
+            rows = rows.filter(r => r.alert_key === targetAlertKey);
+          }
+          if (queryStr.includes('product_id = ?')) {
+            const targetProdId = params[paramIdx++];
+            rows = rows.filter(r => r.product_id == targetProdId);
+          }
+          if (queryStr.includes('customer_id = ?')) {
+            const targetCustId = params[paramIdx++];
+            rows = rows.filter(r => r.customer_id == targetCustId);
+          }
+          if (queryStr.includes('business_id = ?')) {
+            const targetBusId = params[paramIdx++];
+            rows = rows.filter(r => r.business_id == targetBusId || !r.business_id);
+          }
+        }
+
+        if (upper.includes('COUNT(') || upper.includes('SUM(') || upper.includes('AVG(')) {
+          const total = rows.length;
+          const revenue = rows.reduce((acc, r) => acc + Number(r.total_amount || 0), 0);
+          const active = rows.filter(r => r.status === 'Live' || r.status === 'Active').length;
+          const pending = rows.filter(r => r.order_status === 'Pending').length;
+          const low = rows.filter(r => Number(r.quantity) <= Number(r.reorder_level) && Number(r.quantity) > 0).length;
+          const out_of_stock = rows.filter(r => Number(r.quantity) <= 0).length;
+          const unread = rows.filter(r => !r.is_read).length;
+
+          return [[{
+            total,
+            count: total,
+            revenue,
+            active,
+            pending,
+            low,
+            out_of_stock,
+            unread,
+            total_revenue: revenue,
+            total_expense: rows.reduce((acc, r) => acc + Number(r.amount || 0), 0),
+            avg_order_value: total ? revenue / total : 0
+          }]];
+        }
+
+        rows = rows.map(r => ({
+          ...r,
+          status: r.status || (r.quantity !== undefined
+            ? (r.quantity <= 0 ? 'Out' : r.quantity <= (r.reorder_level || 10) ? 'Low' : 'In Stock')
+            : 'Active')
+        }));
+
+        if (upper.includes('ORDER BY')) {
+          if (upper.includes('CREATED_AT DESC') || upper.includes('ID DESC') || upper.includes('UPDATED_AT DESC')) {
+            rows.sort((a, b) => (b.id || 0) - (a.id || 0));
+          } else if (upper.includes('CREATED_AT ASC') || upper.includes('ID ASC')) {
+            rows.sort((a, b) => (a.id || 0) - (b.id || 0));
+          }
+        }
+
+        if (upper.includes('LIMIT')) {
+          const limit = params[params.length - 2] || params[params.length - 1] || 50;
+          const offset = upper.includes('OFFSET') ? params[params.length - 1] : 0;
+          if (typeof limit === 'number') {
+            rows = rows.slice(offset, offset + limit);
+          }
+        }
+
+        return [rows];
+      }
+    }
+
+    return [[]];
+  }
+}
 
 const schemas = [
   `CREATE TABLE IF NOT EXISTS banners (
@@ -281,7 +493,33 @@ const schemas = [
   )`
 ];
 
-const seeds = {};
+const seeds = {
+  categories: [
+    { name: 'Electronics', image_url: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=400&q=80', description: 'Smartphones, gadgets & devices', status: 'Active' },
+    { name: 'Fashion', image_url: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=400&q=80', description: 'Apparel & Accessories', status: 'Active' },
+    { name: 'Home & Living', image_url: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=400&q=80', description: 'Furniture & Decor', status: 'Active' },
+    { name: 'Health & Beauty', image_url: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=400&q=80', description: 'Skincare & Wellness', status: 'Active' }
+  ],
+  products: [
+    { name: 'Bluetooth Earbuds Pro Max', category: 'Electronics', actual_price: 5499, discounted_price: 3499, stock_qty: 45, status: 'Live', image_url: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=900&q=80', description: 'High quality wireless noise cancelling earbuds' },
+    { name: 'Minimal Smart Watch', category: 'Electronics', actual_price: 8999, discounted_price: 5999, stock_qty: 20, status: 'Live', image_url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=900&q=80', description: 'Sleek smartwatch with heart rate monitoring' },
+    { name: 'Cotton Oversized Tee', category: 'Fashion', actual_price: 2199, discounted_price: 1499, stock_qty: 60, status: 'Live', image_url: 'https://images.unsplash.com/photo-1523398002811-999ca8dec234?auto=format&fit=crop&w=900&q=80', description: 'Breathable 100% premium cotton t-shirt' },
+    { name: 'PS5 Game Controller', category: 'Gaming', actual_price: 16999, discounted_price: 13999, stock_qty: 15, status: 'Live', image_url: 'https://images.unsplash.com/photo-1617093727343-374698b1b08d?auto=format&fit=crop&w=900&q=80', description: 'DualSense Wireless Controller' }
+  ],
+  stock: [
+    { product_name: 'Bluetooth Earbuds Pro Max', sku: 'EAR-001', category: 'Electronics', quantity: 45, reorder_level: 10, warehouse: 'Main Warehouse' },
+    { product_name: 'Minimal Smart Watch', sku: 'WAT-002', category: 'Electronics', quantity: 5, reorder_level: 10, warehouse: 'Main Warehouse' },
+    { product_name: 'Cotton Oversized Tee', sku: 'TEE-003', category: 'Fashion', quantity: 60, reorder_level: 15, warehouse: 'Main Warehouse' },
+    { product_name: 'PS5 Game Controller', sku: 'GAM-004', category: 'Gaming', quantity: 2, reorder_level: 5, warehouse: 'Main Warehouse' }
+  ],
+  coupons: [
+    { code: 'WELCOME10', title: 'Welcome Discount', description: '10% off for new customers', discount_type: 'Percentage', discount_value: 10, min_order_amount: 1000, status: 'Active' },
+    { code: 'SUMMER20', title: 'Summer Flash Deal', description: '20% off on all items', discount_type: 'Percentage', discount_value: 20, min_order_amount: 2000, status: 'Active' }
+  ],
+  banners: [
+    { title: 'Big Summer Electronics Sale', image_url: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1400&q=80', link: '/category/electronics', position: 'Top', status: 'Active' }
+  ]
+};
 
 const resources = {
   banners: ['image_url', 'title', 'link', 'position', 'status', 'start_date', 'end_date', 'click_count'],
@@ -330,7 +568,7 @@ function businessScope(table, req, alias = '') {
 
 async function ensureColumn(table, columnName, columnDefinition, afterInsertUpdate = null) {
   const [rows] = await pool.query(`SHOW COLUMNS FROM ${backtick(table)} LIKE ?`, [columnName]);
-  if (rows.length) return;
+  if (rows && rows.length) return;
   await pool.query(`ALTER TABLE ${backtick(table)} ADD COLUMN ${backtick(columnName)} ${columnDefinition}`);
   if (afterInsertUpdate) await pool.query(afterInsertUpdate);
 }
@@ -370,7 +608,7 @@ async function syncLowStockAlerts(businessId = null) {
     params
   );
 
-  for (const row of rows) {
+  for (const row of rows || []) {
     const alertKey = `stock-${row.business_id || DEFAULT_BUSINESS_ID}-${row.id}`;
     const title = `Low stock: ${row.product_name}`;
     const message = `${row.product_name} (${row.sku || 'SKU'}) is at ${row.quantity} units. Reorder level is ${row.reorder_level}.`;
@@ -390,12 +628,19 @@ async function syncLowStockAlerts(businessId = null) {
 }
 
 async function initializeDatabase() {
-  const server = await mysql.createConnection(dbConfig);
-  await server.query(`CREATE DATABASE IF NOT EXISTS ${backtick(dbName)} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
-  await server.end();
+  try {
+    const server = await mysql.createConnection({ ...dbConfig, connectTimeout: 1500 });
+    await server.query(`CREATE DATABASE IF NOT EXISTS ${backtick(dbName)} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+    await server.end();
 
-  pool = mysql.createPool({ ...dbConfig, database: dbName, waitForConnections: true, connectionLimit: 10 });
-  for (const schema of schemas) await pool.query(schema);
+    pool = mysql.createPool({ ...dbConfig, database: dbName, waitForConnections: true, connectionLimit: 10 });
+    for (const schema of schemas) await pool.query(schema);
+    console.log('[AI Studio] Connected to MySQL database successfully.');
+  } catch (err) {
+    console.warn('[AI Studio] MySQL connection failed or not available. Switching to in-memory database pool.');
+    pool = new MockPool();
+    for (const schema of schemas) await pool.query(schema);
+  }
 
   const businessTables = ['banners', 'promotions', 'coupons', 'categories', 'products', 'product_variants', 'stock', 'stock_history', 'orders', 'order_items', 'returns', 'staff', 'customers', 'expenses', 'wholesellers', 'notifications'];
   for (const table of businessTables) {
@@ -457,7 +702,7 @@ async function listRows(table, req, res) {
   const page = Math.max(Number(req.query.page || 1), 1);
   const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 100);
   const offset = (page - 1) * limit;
-  const searchable = resources[table].filter((field) => !field.includes('date') && !field.includes('count') && !field.includes('amount') && !field.includes('value') && !field.includes('limit'));
+  const searchable = (resources[table] || []).filter((field) => !field.includes('date') && !field.includes('count') && !field.includes('amount') && !field.includes('value') && !field.includes('limit'));
   const clauses = [];
   const params = [];
   const scope = businessScope(table, req);
@@ -702,13 +947,13 @@ app.get('/api/dashboard/summary', async (req, res) => {
       scopeStock.params
     );
     res.json({
-      products: products[0],
-      orders: orders[0],
-      stock: stock[0],
-      coupons: coupons[0],
-      notifications: notifications[0],
-      businesses: businessAccounts[0],
-      lowStockItems
+      products: products[0] || {},
+      orders: orders[0] || {},
+      stock: stock[0] || {},
+      coupons: coupons[0] || {},
+      notifications: notifications[0] || {},
+      businesses: businessAccounts[0] || {},
+      lowStockItems: lowStockItems || []
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -863,11 +1108,11 @@ app.get('/api/revenue/summary', async (req, res) => {
     const [expenseSummaryRows] = await pool.query(`SELECT COALESCE(SUM(amount), 0) AS total_expense FROM expenses ${expenseWhere}`, expenseScope.params);
     const [payments] = await pool.query(`SELECT payment_method, SUM(total_amount) AS amount FROM orders ${orderWhere} GROUP BY payment_method`, orderScope.params);
     res.json({
-      totalRevenue: Number(ordersSummaryRows[0].total_revenue),
-      netProfit: Number(ordersSummaryRows[0].total_revenue) - Number(expenseSummaryRows[0].total_expense),
-      avgOrderValue: Number(ordersSummaryRows[0].avg_order_value),
+      totalRevenue: Number(ordersSummaryRows[0]?.total_revenue || 0),
+      netProfit: Number(ordersSummaryRows[0]?.total_revenue || 0) - Number(expenseSummaryRows[0]?.total_expense || 0),
+      avgOrderValue: Number(ordersSummaryRows[0]?.avg_order_value || 0),
       growth: 12,
-      payments
+      payments: payments || []
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -879,7 +1124,7 @@ app.get('/api/revenue/chart', async (req, res) => {
     const orderScope = businessScope('orders', req);
     const where = orderScope.clause ? `WHERE ${orderScope.clause} AND order_status != 'Cancelled'` : "WHERE order_status != 'Cancelled'";
     const [rows] = await pool.query(`SELECT DATE(created_at) AS date, SUM(total_amount) AS revenue FROM orders ${where} GROUP BY DATE(created_at) ORDER BY date ASC LIMIT 30`, orderScope.params);
-    res.json({ rows });
+    res.json({ rows: rows || [] });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -927,20 +1172,28 @@ app.put('/api/notifications/mark-all-read', async (req, res) => {
   }
 });
 
-if (existsSync(distPath)) {
-  app.use(express.static(distPath));
-  app.get(/.*/, (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'));
+// Vite dev middleware or static serving for production
+if (process.env.NODE_ENV !== 'production') {
+  const vite = await createViteServer({
+    server: { middlewareMode: true },
+    appType: 'spa'
   });
+  app.use(vite.middlewares);
+} else {
+  if (existsSync(distPath)) {
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  }
 }
 
 initializeDatabase()
   .then(() => {
-    app.listen(port, () => {
-      console.log(`API server running on http://localhost:${port}`);
+    app.listen(port, '0.0.0.0', () => {
+      console.log(`Server running on http://0.0.0.0:${port}`);
     });
   })
   .catch((error) => {
-    console.error('Database initialization failed:', error.message);
-    process.exit(1);
+    console.error('Server initialization failed:', error);
   });
