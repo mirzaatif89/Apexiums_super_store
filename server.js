@@ -629,7 +629,10 @@ async function syncLowStockAlerts(businessId = null) {
 
 async function initializeDatabase() {
   try {
-    const server = await mysql.createConnection({ ...dbConfig, connectTimeout: 1500 });
+    if (!process.env.DB_HOST) {
+      throw new Error('No DB_HOST configured');
+    }
+    const server = await mysql.createConnection({ ...dbConfig, connectTimeout: 1000 });
     await server.query(`CREATE DATABASE IF NOT EXISTS ${backtick(dbName)} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
     await server.end();
 
@@ -637,7 +640,7 @@ async function initializeDatabase() {
     for (const schema of schemas) await pool.query(schema);
     console.log('[AI Studio] Connected to MySQL database successfully.');
   } catch (err) {
-    console.warn('[AI Studio] MySQL connection failed or not available. Switching to in-memory database pool.');
+    console.log('[AI Studio] Using in-memory database pool.');
     pool = new MockPool();
     for (const schema of schemas) await pool.query(schema);
   }
