@@ -9,14 +9,8 @@ import Footer from './Footer';
 import BottomNav from './BottomNav';
 import LoginModal from './LoginModal';
 import {
-  categories,
   footerSections,
-  flashSaleProducts,
-  heroSlides,
-  mainNav,
   paymentMethods,
-  productSections,
-  promoBanners,
   storeLogoSrc,
   storeName,
   topLinks
@@ -26,16 +20,72 @@ function filterProducts(list, query) {
   const needle = query.trim().toLowerCase();
   if (!needle) return list;
   return list.filter((product) =>
-    [product.title, product.category, product.badge].some((field) => field.toLowerCase().includes(needle))
+    [product.title, product.category, product.badge].some((field) => String(field || '').toLowerCase().includes(needle))
   );
+}
+
+function normalizeProduct(product) {
+  const originalPrice = Number(product.actual_price || product.base_price || 0);
+  const discountedPrice = Number(product.discounted_price || 0);
+  const price = discountedPrice > 0 ? discountedPrice : originalPrice;
+  const discount = originalPrice > price && originalPrice > 0
+    ? `${Math.round(((originalPrice - price) / originalPrice) * 100)}% OFF`
+    : product.status;
+  return {
+    id: product.id,
+    title: product.name,
+    price,
+    originalPrice,
+    badge: discount,
+    image: product.image_url,
+    category: product.category || 'Uncategorized'
+  };
 }
 
 export default function StorefrontHome({ onLogin }) {
   const [searchQuery, setSearchQuery] = React.useState('');
-  const [cartCount] = React.useState(4);
+  const [cartCount] = React.useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [loginOpen, setLoginOpen] = React.useState(false);
   const [authUser, setAuthUser] = React.useState(null);
+  const [catalog, setCatalog] = React.useState({ banners: [], promotions: [], categories: [], products: [] });
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState('');
+
+  React.useEffect(() => {
+    let cancelled = false;
+    async function loadStorefront() {
+      setLoading(true);
+      setError('');
+      try {
+        const responses = await Promise.all([
+          fetch('/api/banners?limit=50'),
+          fetch('/api/promotions?limit=50'),
+          fetch('/api/categories?limit=100'),
+          fetch('/api/products?limit=100')
+        ]);
+        const payloads = await Promise.all(responses.map((response) => response.json()));
+        const failed = responses.findIndex((response) => !response.ok);
+        if (failed >= 0) throw new Error(payloads[failed]?.message || 'Unable to load storefront');
+        if (!cancelled) {
+          setCatalog({
+            banners: payloads[0].rows || [],
+            promotions: payloads[1].rows || [],
+            categories: payloads[2].rows || [],
+            products: payloads[3].rows || []
+          });
+        }
+      } catch (loadError) {
+        if (!cancelled) setError(loadError.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    loadStorefront();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   React.useEffect(() => {
     document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
@@ -44,11 +94,36 @@ export default function StorefrontHome({ onLogin }) {
     };
   }, [mobileMenuOpen]);
 
-  const filteredFlashSale = filterProducts(flashSaleProducts, searchQuery);
-  const filteredSections = productSections.map((section) => ({
-    ...section,
-    products: filterProducts(section.products, searchQuery)
-  }));
+  const products = catalog.products.filter((product) => product.status === 'Live').map(normalizeProduct);
+  const filteredProducts = filterProducts(products, searchQuery);
+  const filteredFlashSale = filteredProducts.filter((product) => product.originalPrice > product.price);
+  const filteredSections = [{
+    title: searchQuery ? 'Search Results' : 'Products',
+    description: searchQuery ? `Results for “${searchQuery}”` : 'Browse the latest available products',
+    products: filteredProducts
+  }];
+  const categories = catalog.categories
+    .filter((category) => category.status === 'Active')
+    .map((category) => ({ id: category.id, label: category.name, image: category.image_url }));
+  const mainNav = categories.map((category) => ({ label: category.label, items: [] }));
+  const heroSlides = catalog.banners
+    .filter((banner) => banner.status === 'Active' && banner.image_url)
+    .map((banner) => ({
+      id: banner.id,
+      title: banner.title,
+      description: banner.position || 'Featured marketplace offer',
+      image: banner.image_url,
+      cta: 'Explore Now',
+      accent: banner.position || 'Featured'
+    }));
+  const promoBanners = catalog.promotions
+    .filter((promotion) => promotion.status === 'Active' && promotion.show_on_website !== 'No' && promotion.image_url)
+    .map((promotion) => ({
+      id: promotion.id,
+      title: promotion.name,
+      subtitle: promotion.valid_till ? `Valid until ${String(promotion.valid_till).slice(0, 10)}` : 'Current offer',
+      image: promotion.image_url
+    }));
 
   function handleLogin(user) {
     setAuthUser(user);
@@ -138,10 +213,19 @@ export default function StorefrontHome({ onLogin }) {
 
       <main className="pb-20 lg:pb-0">
         <CategoryNav navItems={mainNav} />
+        {error ? (
+          <div className="mx-auto mt-4 max-w-7xl rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>
+        ) : null}
+        {loading ? (
+          <div className="mx-auto grid min-h-[360px] max-w-7xl place-items-center px-4 text-sm font-semibold text-slate-500">Loading marketplace…</div>
+        ) : (
+          <>
         <HeroBanner slides={heroSlides} promoBanners={promoBanners} />
-        <FlashSale products={filteredFlashSale} />
+        {filteredFlashSale.length ? <FlashSale products={filteredFlashSale} /> : null}
         <CategoryGrid categories={categories} />
         <ProductGrid sections={filteredSections} />
+          </>
+        )}
         <Footer sections={footerSections} paymentMethods={paymentMethods} storeName={storeName} logoSrc={storeLogoSrc} />
       </main>
 

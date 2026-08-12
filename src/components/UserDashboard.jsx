@@ -65,6 +65,10 @@ export default function UserDashboard({ session, storeName, logoSrc, onLogout })
         orderRes.json(),
         notificationRes.json()
       ]);
+      const responses = [summaryRes, businessRes, productRes, orderRes, notificationRes];
+      const payloads = [summaryData, businessData, productData, orderData, notificationData];
+      const failed = responses.findIndex((response) => !response.ok);
+      if (failed >= 0) throw new Error(payloads[failed]?.message || 'Unable to load dashboard');
 
       setSummary(summaryData);
       setBusinesses(businessData.rows || []);
@@ -199,6 +203,7 @@ export default function UserDashboard({ session, storeName, logoSrc, onLogout })
                   </div>
                 </div>
               ))}
+              {!loading && !orders.length ? <p className="rounded-2xl bg-slate-50 p-5 text-center text-sm text-slate-500">No orders yet.</p> : null}
             </div>
           </article>
 
@@ -215,9 +220,9 @@ export default function UserDashboard({ session, storeName, logoSrc, onLogout })
                 <div key={product?.id || index} className="flex items-center gap-3 rounded-2xl bg-slate-50 p-3">
                   {loading ? (
                     <div className="h-14 w-14 rounded-2xl bg-slate-100" />
-                  ) : (
+                  ) : product.image_url ? (
                     <img src={product.image_url} alt={product.name} className="h-14 w-14 rounded-2xl object-cover" />
-                  )}
+                  ) : <div className="grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-slate-400"><Package size={20} /></div>}
                   <div className="min-w-0 flex-1">
                     <h3 className="truncate font-semibold text-slate-950">{loading ? 'Loading product...' : product.name}</h3>
                     <p className="text-sm text-slate-500">{loading ? '' : product.category}</p>
@@ -225,6 +230,7 @@ export default function UserDashboard({ session, storeName, logoSrc, onLogout })
                   {!loading ? <strong className="text-slate-950">{money(product.actual_price || product.discounted_price)}</strong> : null}
                 </div>
               ))}
+              {!loading && !products.length ? <p className="rounded-2xl bg-slate-50 p-5 text-center text-sm text-slate-500">No products yet.</p> : null}
             </div>
           </article>
 
@@ -243,6 +249,7 @@ export default function UserDashboard({ session, storeName, logoSrc, onLogout })
                   <p className="mt-1 text-sm text-slate-500">{loading ? '' : note.message}</p>
                 </div>
               ))}
+              {!loading && !notifications.length ? <p className="rounded-2xl bg-slate-50 p-5 text-center text-sm text-slate-500">No notifications.</p> : null}
             </div>
           </article>
         </section>

@@ -1,4 +1,7 @@
+import { Package } from 'lucide-react';
+
 export default function CategoryGrid({ categories }) {
+  if (!categories.length) return null;
   return (
     <section className="mx-auto max-w-7xl px-3 py-4 sm:px-4 lg:px-6">
       <div className="flex items-end justify-between gap-4">
@@ -10,7 +13,7 @@ export default function CategoryGrid({ categories }) {
 
       <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
         {categories.map((category) => {
-          const Icon = category.icon;
+          const Icon = category.icon || Package;
           return (
             <button
               key={category.label}
@@ -18,12 +21,12 @@ export default function CategoryGrid({ categories }) {
               className="group flex min-h-28 flex-col items-center justify-center gap-3 rounded-3xl border border-slate-200 bg-white p-3 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-900/10"
             >
               <span className="flex aspect-square w-14 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-teal-50 to-cyan-50 ring-1 ring-teal-100">
-                <img
+                {category.image ? <img
                   src={category.image}
                   alt={category.label}
                   loading="lazy"
                   className="h-full w-full object-cover"
-                />
+                /> : <Icon size={22} className="text-teal-600" />}
               </span>
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-600">
                 <Icon size={18} />

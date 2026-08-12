@@ -3,7 +3,7 @@ import { LockKeyhole, LogIn, UserRound } from 'lucide-react';
 
 export default function LoginScreen({ logoSrc, storeName, onLogin }) {
   const [mode, setMode] = React.useState('admin');
-  const [username, setUsername] = React.useState('superadmin');
+  const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
@@ -34,11 +34,7 @@ export default function LoginScreen({ logoSrc, storeName, onLogin }) {
   }
 
   React.useEffect(() => {
-    if (mode === 'admin') {
-      setUsername('superadmin');
-    } else {
-      setUsername('manager');
-    }
+    setUsername('');
     setPassword('');
   }, [mode]);
 
@@ -147,13 +143,7 @@ export default function LoginScreen({ logoSrc, storeName, onLogin }) {
                 {loading ? 'Signing in...' : 'Login'}
               </button>
 
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                <p className="font-semibold text-slate-950">Tip</p>
-                <p className="mt-1 leading-6">
-                  Admin user backend me `superadmin` se login karein.
-                  Business user ko admin dashboard se create/assign kiya ja sakta hai.
-                </p>
-              </div>
+              <p className="text-center text-xs text-slate-500">Use the credentials assigned to your account.</p>
             </form>
           </div>
         </section>

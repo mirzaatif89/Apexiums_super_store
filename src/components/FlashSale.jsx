@@ -1,27 +1,6 @@
-import React from 'react';
-import { ChevronRight, Clock3, Star } from 'lucide-react';
-
-const pad = (value) => String(value).padStart(2, '0');
+import { ChevronRight } from 'lucide-react';
 
 export default function FlashSale({ products }) {
-  const [remaining, setRemaining] = React.useState({ h: 4, m: 59, s: 59 });
-
-  React.useEffect(() => {
-    const timer = window.setInterval(() => {
-      setRemaining((current) => {
-        let total = current.h * 3600 + current.m * 60 + current.s - 1;
-        if (total < 0) total = 4 * 3600 + 59 * 60 + 59;
-        return {
-          h: Math.floor(total / 3600),
-          m: Math.floor((total % 3600) / 60),
-          s: total % 60
-        };
-      });
-    }, 1000);
-
-    return () => window.clearInterval(timer);
-  }, []);
-
   return (
     <section className="mx-auto max-w-7xl px-3 py-2 sm:px-4 lg:px-6">
       <div className="flex items-center justify-between gap-4">
@@ -29,12 +8,7 @@ export default function FlashSale({ products }) {
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-teal-600">Flash Sale</p>
           <h2 className="mt-1 text-xl font-black text-slate-950">Limited time deals</h2>
         </div>
-        <div className="flex items-center gap-2 rounded-full bg-slate-950 px-3 py-2 text-xs font-bold text-white">
-          <Clock3 size={14} />
-          <span>
-            {pad(remaining.h)}:{pad(remaining.m)}:{pad(remaining.s)}
-          </span>
-        </div>
+        <span className="rounded-full bg-slate-950 px-3 py-2 text-xs font-bold text-white">Active offers</span>
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3">
@@ -62,18 +36,14 @@ export default function FlashSale({ products }) {
               </span>
             </div>
             <div className="grid gap-2 p-4">
-              <div className="flex items-center gap-1 text-xs font-semibold text-amber-500">
-                <Star size={14} fill="currentColor" />
-                <span>{product.rating}</span>
-              </div>
               <h3 className="line-clamp-2 min-h-10 text-sm font-semibold leading-5 text-slate-900">
                 {product.title}
               </h3>
               <div className="flex items-center gap-2">
                 <span className="text-base font-black text-slate-950">Rs {product.price.toLocaleString('en-PK')}</span>
-                <span className="text-xs text-slate-400 line-through">
+                {product.originalPrice > product.price ? <span className="text-xs text-slate-400 line-through">
                   Rs {product.originalPrice.toLocaleString('en-PK')}
-                </span>
+                </span> : null}
               </div>
             </div>
           </article>

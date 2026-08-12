@@ -8,10 +8,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 const app = express();
-const port = Number(process.env.PORT) || 3000;
+const port = process.env.PORT || 5000;
+const host = process.env.HOST || '0.0.0.0';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const distPath = path.join(__dirname, 'dist');
@@ -31,6 +32,14 @@ const businessScopedTables = new Set([
   'categories',
   'coupons',
   'expenses',
+  'investors',
+  'permissions',
+  'software_fees',
+  'staff_salaries',
+  'delivery_expenses',
+  'chats',
+  'seller_applications',
+  'investor_applications',
   'notifications',
   'orders',
   'order_items',
@@ -345,10 +354,13 @@ const schemas = [
     business_id INT DEFAULT 1,
     product_id INT,
     product_name VARCHAR(180),
+    total_items INT DEFAULT 0,
+    stock_belong_to VARCHAR(180),
     sku VARCHAR(80),
     category VARCHAR(120),
     quantity INT DEFAULT 0,
     reorder_level INT DEFAULT 10,
+    description TEXT,
     warehouse VARCHAR(120),
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
   )`,
@@ -444,11 +456,17 @@ const schemas = [
   `CREATE TABLE IF NOT EXISTS wholesellers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     business_id INT DEFAULT 1,
+    name VARCHAR(180),
     business_name VARCHAR(180) NOT NULL,
     contact_person VARCHAR(160),
     phone VARCHAR(60),
     email VARCHAR(180),
     address TEXT,
+    description TEXT,
+    seller_image VARCHAR(500),
+    stock_seller_sell VARCHAR(180),
+    username VARCHAR(120),
+    password VARCHAR(255),
     products_supplied TEXT,
     total_purchases DECIMAL(12,2) DEFAULT 0,
     payment_due DECIMAL(12,2) DEFAULT 0,
@@ -475,11 +493,113 @@ const schemas = [
     is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`,
+  `CREATE TABLE IF NOT EXISTS investors (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    business_id INT DEFAULT 1,
+    name VARCHAR(160) NOT NULL,
+    email VARCHAR(180),
+    phone VARCHAR(60),
+    address TEXT,
+    username VARCHAR(120),
+    password VARCHAR(255),
+    investment_amount DECIMAL(12,2) DEFAULT 0,
+    investment_date DATE,
+    agreement_url VARCHAR(500),
+    status VARCHAR(40) DEFAULT 'Active',
+    description TEXT,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE TABLE IF NOT EXISTS permissions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    business_id INT DEFAULT 1,
+    role VARCHAR(40) DEFAULT 'Staff',
+    staff_id INT NOT NULL,
+    module VARCHAR(80) NOT NULL,
+    can_view VARCHAR(10) DEFAULT 'Yes',
+    can_create VARCHAR(10) DEFAULT 'No',
+    can_edit VARCHAR(10) DEFAULT 'No',
+    can_delete VARCHAR(10) DEFAULT 'No',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE TABLE IF NOT EXISTS software_fees (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    business_id INT DEFAULT 1,
+    service_name VARCHAR(180) NOT NULL,
+    provider VARCHAR(160),
+    amount DECIMAL(12,2) DEFAULT 0,
+    billing_cycle VARCHAR(40) DEFAULT 'Monthly',
+    due_date DATE,
+    payment_status VARCHAR(40) DEFAULT 'Pending',
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE TABLE IF NOT EXISTS staff_salaries (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    business_id INT DEFAULT 1,
+    staff_id INT,
+    staff_name VARCHAR(160) NOT NULL,
+    salary_month VARCHAR(20),
+    base_salary DECIMAL(12,2) DEFAULT 0,
+    bonus DECIMAL(12,2) DEFAULT 0,
+    deductions DECIMAL(12,2) DEFAULT 0,
+    payment_status VARCHAR(40) DEFAULT 'Pending',
+    paid_date DATE,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE TABLE IF NOT EXISTS delivery_expenses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    business_id INT DEFAULT 1,
+    order_id INT,
+    courier VARCHAR(160) NOT NULL,
+    tracking_number VARCHAR(120),
+    amount DECIMAL(12,2) DEFAULT 0,
+    expense_date DATE,
+    payment_status VARCHAR(40) DEFAULT 'Pending',
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE TABLE IF NOT EXISTS chats (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    business_id INT DEFAULT 1,
+    sender_name VARCHAR(160) NOT NULL,
+    sender_type VARCHAR(60) DEFAULT 'Customer',
+    subject VARCHAR(180),
+    message TEXT NOT NULL,
+    reply_message TEXT,
+    status VARCHAR(40) DEFAULT 'Open',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE TABLE IF NOT EXISTS seller_applications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    business_id INT DEFAULT 1,
+    applicant_name VARCHAR(160) NOT NULL,
+    business_name VARCHAR(180),
+    email VARCHAR(180),
+    phone VARCHAR(60),
+    category VARCHAR(120),
+    message TEXT,
+    status VARCHAR(40) DEFAULT 'Pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE TABLE IF NOT EXISTS investor_applications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    business_id INT DEFAULT 1,
+    applicant_name VARCHAR(160) NOT NULL,
+    email VARCHAR(180),
+    phone VARCHAR(60),
+    proposed_amount DECIMAL(12,2) DEFAULT 0,
+    message TEXT,
+    status VARCHAR(40) DEFAULT 'Pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
   `CREATE TABLE IF NOT EXISTS business_accounts (
     id INT AUTO_INCREMENT PRIMARY KEY,
     business_name VARCHAR(180) NOT NULL,
     username VARCHAR(120) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
+    plain_password VARCHAR(255),
     owner_name VARCHAR(160),
     cnic VARCHAR(60),
     address TEXT,
@@ -492,48 +612,28 @@ const schemas = [
     last_login DATETIME
   )`
 ];
-
-const seeds = {
-  categories: [
-    { name: 'Electronics', image_url: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=400&q=80', description: 'Smartphones, gadgets & devices', status: 'Active' },
-    { name: 'Fashion', image_url: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=400&q=80', description: 'Apparel & Accessories', status: 'Active' },
-    { name: 'Home & Living', image_url: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=400&q=80', description: 'Furniture & Decor', status: 'Active' },
-    { name: 'Health & Beauty', image_url: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=400&q=80', description: 'Skincare & Wellness', status: 'Active' }
-  ],
-  products: [
-    { name: 'Bluetooth Earbuds Pro Max', category: 'Electronics', actual_price: 5499, discounted_price: 3499, stock_qty: 45, status: 'Live', image_url: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=900&q=80', description: 'High quality wireless noise cancelling earbuds' },
-    { name: 'Minimal Smart Watch', category: 'Electronics', actual_price: 8999, discounted_price: 5999, stock_qty: 20, status: 'Live', image_url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=900&q=80', description: 'Sleek smartwatch with heart rate monitoring' },
-    { name: 'Cotton Oversized Tee', category: 'Fashion', actual_price: 2199, discounted_price: 1499, stock_qty: 60, status: 'Live', image_url: 'https://images.unsplash.com/photo-1523398002811-999ca8dec234?auto=format&fit=crop&w=900&q=80', description: 'Breathable 100% premium cotton t-shirt' },
-    { name: 'PS5 Game Controller', category: 'Gaming', actual_price: 16999, discounted_price: 13999, stock_qty: 15, status: 'Live', image_url: 'https://images.unsplash.com/photo-1617093727343-374698b1b08d?auto=format&fit=crop&w=900&q=80', description: 'DualSense Wireless Controller' }
-  ],
-  stock: [
-    { product_name: 'Bluetooth Earbuds Pro Max', sku: 'EAR-001', category: 'Electronics', quantity: 45, reorder_level: 10, warehouse: 'Main Warehouse' },
-    { product_name: 'Minimal Smart Watch', sku: 'WAT-002', category: 'Electronics', quantity: 5, reorder_level: 10, warehouse: 'Main Warehouse' },
-    { product_name: 'Cotton Oversized Tee', sku: 'TEE-003', category: 'Fashion', quantity: 60, reorder_level: 15, warehouse: 'Main Warehouse' },
-    { product_name: 'PS5 Game Controller', sku: 'GAM-004', category: 'Gaming', quantity: 2, reorder_level: 5, warehouse: 'Main Warehouse' }
-  ],
-  coupons: [
-    { code: 'WELCOME10', title: 'Welcome Discount', description: '10% off for new customers', discount_type: 'Percentage', discount_value: 10, min_order_amount: 1000, status: 'Active' },
-    { code: 'SUMMER20', title: 'Summer Flash Deal', description: '20% off on all items', discount_type: 'Percentage', discount_value: 20, min_order_amount: 2000, status: 'Active' }
-  ],
-  banners: [
-    { title: 'Big Summer Electronics Sale', image_url: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1400&q=80', link: '/category/electronics', position: 'Top', status: 'Active' }
-  ]
-};
-
 const resources = {
   banners: ['image_url', 'title', 'link', 'position', 'status', 'start_date', 'end_date', 'click_count'],
   promotions: ['name', 'image_url', 'valid_from', 'valid_till', 'show_on_website', 'status', 'created_at'],
   categories: ['name', 'parent_id', 'image_url', 'description', 'status'],
   products: ['image_url', 'product_images', 'name', 'description', 'product_detail', 'category', 'actual_price', 'base_price', 'discounted_price', 'sku', 'stock_qty', 'slug', 'meta_title', 'meta_desc', 'status'],
+  stock: ['product_id', 'product_name', 'total_items', 'stock_belong_to', 'sku', 'category', 'quantity', 'reorder_level', 'description', 'warehouse'],
   orders: ['customer_id', 'customer_name', 'items_count', 'total_amount', 'payment_method', 'payment_status', 'order_status', 'shipping_address', 'created_at'],
   returns: ['order_id', 'product_id', 'customer_id', 'customer', 'product', 'reason', 'status', 'refund_amount', 'refund_method', 'created_at'],
   expenses: ['title', 'category', 'amount', 'payment_method', 'date', 'receipt_url', 'added_by', 'notes'],
-  wholesellers: ['business_name', 'contact_person', 'phone', 'email', 'address', 'products_supplied', 'total_purchases', 'payment_due', 'status'],
+  wholesellers: ['name', 'business_name', 'contact_person', 'phone', 'email', 'address', 'description', 'seller_image', 'stock_seller_sell', 'username', 'password', 'products_supplied', 'total_purchases', 'payment_due', 'status'],
   staff: ['photo_url', 'name', 'email', 'phone', 'role', 'password_hash', 'status', 'last_login'],
   customers: ['avatar_url', 'name', 'email', 'phone', 'total_orders', 'total_spent', 'status', 'created_at'],
   notifications: ['type', 'title', 'message', 'is_read', 'created_at'],
-  coupons: ['code', 'title', 'description', 'discount_type', 'discount_value', 'min_order_amount', 'use_for', 'usage_limit', 'used_count', 'valid_from', 'valid_till', 'status']
+  coupons: ['code', 'title', 'description', 'discount_type', 'discount_value', 'min_order_amount', 'use_for', 'usage_limit', 'used_count', 'valid_from', 'valid_till', 'status'],
+  investors: ['name', 'email', 'phone', 'address', 'username', 'password', 'investment_amount', 'investment_date', 'agreement_url', 'status', 'description', 'notes', 'created_at'],
+  permissions: ['role', 'staff_id', 'module', 'can_view', 'can_create', 'can_edit', 'can_delete', 'created_at'],
+  software_fees: ['service_name', 'provider', 'amount', 'billing_cycle', 'due_date', 'payment_status', 'notes', 'created_at'],
+  staff_salaries: ['staff_id', 'staff_name', 'salary_month', 'base_salary', 'bonus', 'deductions', 'payment_status', 'paid_date', 'notes', 'created_at'],
+  delivery_expenses: ['order_id', 'courier', 'tracking_number', 'amount', 'expense_date', 'payment_status', 'notes', 'created_at'],
+  chats: ['sender_name', 'sender_type', 'subject', 'message', 'reply_message', 'status', 'created_at'],
+  seller_applications: ['applicant_name', 'business_name', 'email', 'phone', 'category', 'message', 'status', 'created_at'],
+  investor_applications: ['applicant_name', 'email', 'phone', 'proposed_amount', 'message', 'status', 'created_at']
 };
 
 function backtick(identifier) {
@@ -573,9 +673,10 @@ async function ensureColumn(table, columnName, columnDefinition, afterInsertUpda
   if (afterInsertUpdate) await pool.query(afterInsertUpdate);
 }
 
-async function seedAuthData() {
+async function ensureAdminAccount() {
   const adminUsername = String(process.env.ADMIN_USERNAME || 'superadmin').trim() || 'superadmin';
-  const adminPassword = String(process.env.ADMIN_PASSWORD || 'Admin@12345');
+  const adminPassword = String(process.env.ADMIN_PASSWORD || '');
+  if (!adminPassword) throw new Error('ADMIN_PASSWORD must be configured in .env');
   const passwordHash = hashPassword(adminPassword);
   const [[existing]] = await pool.query('SELECT id FROM business_accounts WHERE id = 1 LIMIT 1');
   if (existing) {
@@ -645,7 +746,7 @@ async function initializeDatabase() {
     for (const schema of schemas) await pool.query(schema);
   }
 
-  const businessTables = ['banners', 'promotions', 'coupons', 'categories', 'products', 'product_variants', 'stock', 'stock_history', 'orders', 'order_items', 'returns', 'staff', 'customers', 'expenses', 'wholesellers', 'notifications'];
+  const businessTables = ['banners', 'promotions', 'coupons', 'categories', 'products', 'product_variants', 'stock', 'stock_history', 'orders', 'order_items', 'returns', 'staff', 'customers', 'expenses', 'wholesellers', 'notifications', 'investors', 'permissions', 'software_fees', 'staff_salaries', 'delivery_expenses', 'chats', 'seller_applications', 'investor_applications'];
   for (const table of businessTables) {
     await ensureColumn(table, 'business_id', 'INT DEFAULT 1');
     await pool.query(`UPDATE ${backtick(table)} SET business_id = ${DEFAULT_BUSINESS_ID} WHERE business_id IS NULL`);
@@ -659,29 +760,33 @@ async function initializeDatabase() {
   await ensureColumn('products', 'product_images', 'LONGTEXT');
   await ensureColumn('products', 'product_detail', 'TEXT');
   await ensureColumn('products', 'actual_price', 'DECIMAL(12,2) DEFAULT 0');
+  await ensureColumn('stock', 'total_items', 'INT DEFAULT 0');
+  await ensureColumn('stock', 'stock_belong_to', 'VARCHAR(180)');
+  await ensureColumn('stock', 'description', 'TEXT');
+  await ensureColumn('wholesellers', 'name', 'VARCHAR(180)');
+  await ensureColumn('wholesellers', 'description', 'TEXT');
+  await ensureColumn('wholesellers', 'seller_image', 'VARCHAR(500)');
+  await ensureColumn('wholesellers', 'stock_seller_sell', 'VARCHAR(180)');
+  await ensureColumn('wholesellers', 'username', 'VARCHAR(120)');
+  await ensureColumn('wholesellers', 'password', 'VARCHAR(255)');
+  await ensureColumn('investors', 'address', 'TEXT');
+  await ensureColumn('investors', 'username', 'VARCHAR(120)');
+  await ensureColumn('investors', 'password', 'VARCHAR(255)');
+  await ensureColumn('investors', 'description', 'TEXT');
+  await ensureColumn('permissions', 'role', "VARCHAR(40) DEFAULT 'Staff'");
+  await ensureColumn('permissions', 'can_create', "VARCHAR(10) DEFAULT 'No'");
+  await ensureColumn('permissions', 'can_delete', "VARCHAR(10) DEFAULT 'No'");
+  await ensureColumn('chats', 'reply_message', 'TEXT');
   await ensureColumn('business_accounts', 'cnic', 'VARCHAR(60)');
   await ensureColumn('business_accounts', 'address', 'TEXT');
   await ensureColumn('business_accounts', 'agreement_image', 'VARCHAR(500)');
+  await ensureColumn('business_accounts', 'plain_password', 'VARCHAR(255)');
   await ensureColumn('notifications', 'entity_type', 'VARCHAR(80) NULL');
   await ensureColumn('notifications', 'entity_id', 'INT NULL');
   await ensureColumn('notifications', 'alert_key', 'VARCHAR(180) NULL');
   await ensureColumn('notifications', 'severity', "VARCHAR(30) DEFAULT 'Info'");
 
-  for (const [table, rows] of Object.entries(seeds)) {
-    const [[{ count }]] = await pool.query(`SELECT COUNT(*) AS count FROM ${backtick(table)}`);
-    if (count) continue;
-
-    for (const row of rows) {
-      const columns = Object.keys(row);
-      const placeholders = columns.map(() => '?').join(', ');
-      await pool.query(
-        `INSERT INTO ${backtick(table)} (${columns.map(backtick).join(', ')}) VALUES (${placeholders})`,
-        columns.map((column) => row[column])
-      );
-    }
-  }
-
-  await seedAuthData();
+  await ensureAdminAccount();
   await syncLowStockAlerts(DEFAULT_BUSINESS_ID);
 }
 
@@ -698,12 +803,13 @@ function requireFields(payload, fields) {
   return missing.length ? `${missing.join(', ')} required` : null;
 }
 
-async function listRows(table, req, res) {
-  const search = String(req.query.search || '').trim();
-  const sort = resources[table]?.includes(req.query.sort) ? req.query.sort : 'id';
-  const order = String(req.query.order || 'DESC').toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
-  const page = Math.max(Number(req.query.page || 1), 1);
-  const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 100);
+async function listRows(table, req, res, queryOverride = null) {
+  const query = queryOverride || req.query;
+  const search = String(query.search || '').trim();
+  const sort = resources[table]?.includes(query.sort) ? query.sort : 'id';
+  const order = String(query.order || 'DESC').toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+  const page = Math.max(Number(query.page || 1), 1);
+  const limit = Math.min(Math.max(Number(query.limit || 10), 1), 100);
   const offset = (page - 1) * limit;
   const searchable = (resources[table] || []).filter((field) => !field.includes('date') && !field.includes('count') && !field.includes('amount') && !field.includes('value') && !field.includes('limit'));
   const clauses = [];
@@ -722,6 +828,7 @@ async function listRows(table, req, res) {
     `SELECT * FROM ${backtick(table)} ${where} ORDER BY ${backtick(sort)} ${order} LIMIT ? OFFSET ?`,
     [...params, limit, offset]
   );
+  if (table === 'staff') rows.forEach((row) => delete row.password_hash);
   const [[{ total }]] = await pool.query(`SELECT COUNT(*) AS total FROM ${backtick(table)} ${where}`, params);
   res.json({ rows, total, page, limit });
 }
@@ -742,6 +849,7 @@ function crudRoutes(resource, required = []) {
       const validation = requireFields(req.body, required);
       if (validation) return res.status(400).json({ message: validation });
       const data = cleanPayload(req.body, fields);
+      if (resource === 'staff' && data.password_hash) data.password_hash = hashPassword(data.password_hash);
       const { role, businessId } = getContext(req);
       if (businessScopedTables.has(resource) && !Object.prototype.hasOwnProperty.call(data, 'business_id')) {
         data.business_id = role === 'SuperAdmin' && businessId ? businessId : businessId || DEFAULT_BUSINESS_ID;
@@ -752,7 +860,43 @@ function crudRoutes(resource, required = []) {
         `INSERT INTO ${backtick(resource)} (${columns.map(backtick).join(', ')}) VALUES (${placeholders})`,
         columns.map((column) => data[column])
       );
-      res.status(201).json({ id: result.insertId, ...data });
+      if (resource === 'products') {
+        await pool.query(
+          'INSERT INTO stock (business_id, product_id, product_name, sku, category, quantity, reorder_level, warehouse) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          [data.business_id || DEFAULT_BUSINESS_ID, result.insertId, data.name, data.sku || null, data.category || null, Number(data.stock_qty || 0), 10, 'Main Warehouse']
+        );
+      }
+      if (resource === 'orders') {
+        await pool.query(
+          'INSERT INTO notifications (business_id, type, title, message, entity_type, entity_id, severity, is_read) VALUES (?, ?, ?, ?, ?, ?, ?, 0)',
+          [
+            data.business_id || DEFAULT_BUSINESS_ID,
+            'Order',
+            `New order #ORD-${result.insertId}`,
+            `${data.customer_name || 'Customer'} placed an order worth Rs ${Number(data.total_amount || 0).toLocaleString('en-PK')}.`,
+            'order',
+            result.insertId,
+            'Info'
+          ]
+        );
+      }
+      if (resource === 'returns') {
+        await pool.query(
+          'INSERT INTO notifications (business_id, type, title, message, entity_type, entity_id, severity, is_read) VALUES (?, ?, ?, ?, ?, ?, ?, 0)',
+          [
+            data.business_id || DEFAULT_BUSINESS_ID,
+            'Return',
+            `Return requested #RET-${result.insertId}`,
+            `${data.customer || 'Customer'} submitted a return request for ${data.product || 'an item'}.`,
+            'return',
+            result.insertId,
+            'Warning'
+          ]
+        );
+      }
+      const responseData = { id: result.insertId, ...data };
+      if (resource === 'staff') delete responseData.password_hash;
+      res.status(201).json(responseData);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -761,6 +905,7 @@ function crudRoutes(resource, required = []) {
   app.put(`/api/${resource}/:id`, async (req, res) => {
     try {
       const data = cleanPayload(req.body, fields);
+      if (resource === 'staff' && data.password_hash) data.password_hash = hashPassword(data.password_hash);
       const columns = Object.keys(data);
       if (!columns.length) return res.status(400).json({ message: 'No valid fields supplied' });
       const { businessId } = getContext(req);
@@ -774,7 +919,15 @@ function crudRoutes(resource, required = []) {
         `UPDATE ${backtick(resource)} SET ${columns.map((column) => `${backtick(column)} = ?`).join(', ')} WHERE id = ? ${where}`,
         [...columns.map((column) => data[column]), req.params.id, ...scope.params]
       );
-      res.json({ id: Number(req.params.id), ...data });
+      if (resource === 'products') {
+        await pool.query(
+          'UPDATE stock SET product_name = COALESCE(?, product_name), sku = COALESCE(?, sku), category = COALESCE(?, category) WHERE product_id = ? AND business_id = ?',
+          [data.name || null, data.sku || null, data.category || null, req.params.id, data.business_id || DEFAULT_BUSINESS_ID]
+        );
+      }
+      const responseData = { id: Number(req.params.id), ...data };
+      if (resource === 'staff') delete responseData.password_hash;
+      res.json(responseData);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -785,6 +938,10 @@ function crudRoutes(resource, required = []) {
       const scope = businessScope(resource, req);
       const where = scope.clause ? `AND ${scope.clause}` : '';
       await pool.query(`DELETE FROM ${backtick(resource)} WHERE id = ? ${where}`, [req.params.id, ...scope.params]);
+      if (resource === 'products') {
+        const { businessId } = getContext(req);
+        await pool.query('DELETE FROM stock WHERE product_id = ? AND business_id = ?', [req.params.id, businessId || DEFAULT_BUSINESS_ID]);
+      }
       res.json({ ok: true });
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -807,7 +964,7 @@ app.get('/api/db-check', async (req, res) => {
 
 function safeBusinessAccount(account) {
   if (!account) return null;
-  const { password_hash, ...safe } = account;
+  const { password_hash, plain_password, ...safe } = account;
   return safe;
 }
 
@@ -834,7 +991,7 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/business-accounts', async (req, res) => {
   try {
     const { role, businessId } = getContext(req);
-    const columns = 'id, business_name, username, owner_name, cnic, address, email, phone, agreement_image, role, status, created_at, last_login';
+    const columns = 'id, business_name, username, plain_password, owner_name, cnic, address, email, phone, agreement_image, role, status, created_at, last_login';
     const params = [];
     let where = '';
     if (role !== 'SuperAdmin' && businessId) {
@@ -859,11 +1016,12 @@ app.post('/api/business-accounts', async (req, res) => {
     if (existing.length) return res.status(409).json({ message: 'Username already exists' });
     const passwordHash = hashPassword(req.body.password);
     const [result] = await pool.query(
-      'INSERT INTO business_accounts (business_name, username, password_hash, owner_name, cnic, address, email, phone, agreement_image, role, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO business_accounts (business_name, username, password_hash, plain_password, owner_name, cnic, address, email, phone, agreement_image, role, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         req.body.business_name,
         username,
         passwordHash,
+        req.body.password || null,
         req.body.owner_name || null,
         req.body.cnic || null,
         req.body.address || null,
@@ -902,7 +1060,10 @@ app.put('/api/business-accounts/:id', async (req, res) => {
     ['business_name', 'owner_name', 'cnic', 'address', 'email', 'phone', 'agreement_image', 'role', 'status'].forEach((key) => {
       if (Object.prototype.hasOwnProperty.call(req.body, key)) data[key] = req.body[key] || null;
     });
-    if (req.body.password) data.password_hash = hashPassword(req.body.password);
+    if (req.body.password) {
+      data.password_hash = hashPassword(req.body.password);
+      data.plain_password = req.body.password;
+    }
     const columns = Object.keys(data);
     if (!columns.length) return res.status(400).json({ message: 'No valid fields supplied' });
     await pool.query(
@@ -968,10 +1129,19 @@ Object.entries({
   promotions: ['image_url'],
   categories: ['name'],
   products: ['name'],
+  stock: ['product_id', 'stock_belong_to', 'quantity'],
   expenses: ['title'],
   wholesellers: ['business_name'],
   staff: ['name'],
-  coupons: ['code']
+  coupons: ['code'],
+  investors: ['name'],
+  permissions: ['staff_id', 'module'],
+  software_fees: ['service_name'],
+  staff_salaries: ['staff_name', 'salary_month'],
+  delivery_expenses: ['courier'],
+  chats: ['sender_name', 'message'],
+  seller_applications: ['applicant_name'],
+  investor_applications: ['applicant_name']
 }).forEach(([resource, required]) => crudRoutes(resource, required));
 
 app.get('/api/stock', async (req, res) => {
@@ -1018,7 +1188,7 @@ app.get('/api/stock/history/:productId', async (req, res) => {
 
 app.get('/api/orders', async (req, res) => {
   try {
-    await listRows('orders', { ...req, query: { ...req.query, sort: req.query.sort || 'created_at' } }, res);
+    await listRows('orders', req, res, { ...req.query, sort: req.query.sort || 'created_at' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -1051,7 +1221,7 @@ app.put('/api/orders/:id/status', async (req, res) => {
 
 app.get('/api/returns', async (req, res) => {
   try {
-    await listRows('returns', { ...req, query: { ...req.query, sort: req.query.sort || 'created_at' } }, res);
+    await listRows('returns', req, res, { ...req.query, sort: req.query.sort || 'created_at' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -1070,7 +1240,7 @@ app.put('/api/returns/:id/status', async (req, res) => {
 
 app.get('/api/customers', async (req, res) => {
   try {
-    await listRows('customers', { ...req, query: { ...req.query, sort: req.query.sort || 'created_at' } }, res);
+    await listRows('customers', req, res, { ...req.query, sort: req.query.sort || 'created_at' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -1110,12 +1280,23 @@ app.get('/api/revenue/summary', async (req, res) => {
     const [ordersSummaryRows] = await pool.query(`SELECT COALESCE(SUM(total_amount), 0) AS total_revenue, COALESCE(AVG(total_amount), 0) AS avg_order_value FROM orders ${orderWhere}`, orderScope.params);
     const [expenseSummaryRows] = await pool.query(`SELECT COALESCE(SUM(amount), 0) AS total_expense FROM expenses ${expenseWhere}`, expenseScope.params);
     const [payments] = await pool.query(`SELECT payment_method, SUM(total_amount) AS amount FROM orders ${orderWhere} GROUP BY payment_method`, orderScope.params);
+    const scopeClause = orderScope.clause ? `${orderScope.clause} AND ` : '';
+    const [monthlyRows] = await pool.query(
+      `SELECT
+        COALESCE(SUM(CASE WHEN created_at >= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01') THEN total_amount ELSE 0 END), 0) AS current_month,
+        COALESCE(SUM(CASE WHEN created_at >= DATE_FORMAT(CURRENT_DATE - INTERVAL 1 MONTH, '%Y-%m-01') AND created_at < DATE_FORMAT(CURRENT_DATE, '%Y-%m-01') THEN total_amount ELSE 0 END), 0) AS previous_month
+       FROM orders WHERE ${scopeClause}order_status != 'Cancelled'`,
+      orderScope.params
+    );
+    const currentMonth = Number(monthlyRows[0].current_month);
+    const previousMonth = Number(monthlyRows[0].previous_month);
+    const growth = previousMonth ? ((currentMonth - previousMonth) / previousMonth) * 100 : (currentMonth ? 100 : 0);
     res.json({
-      totalRevenue: Number(ordersSummaryRows[0]?.total_revenue || 0),
-      netProfit: Number(ordersSummaryRows[0]?.total_revenue || 0) - Number(expenseSummaryRows[0]?.total_expense || 0),
-      avgOrderValue: Number(ordersSummaryRows[0]?.avg_order_value || 0),
-      growth: 12,
-      payments: payments || []
+      totalRevenue: Number(ordersSummaryRows[0].total_revenue),
+      netProfit: Number(ordersSummaryRows[0].total_revenue) - Number(expenseSummaryRows[0].total_expense),
+      avgOrderValue: Number(ordersSummaryRows[0].avg_order_value),
+      growth: Number(growth.toFixed(1)),
+      payments
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -1136,7 +1317,7 @@ app.get('/api/revenue/chart', async (req, res) => {
 app.get('/api/notifications', async (req, res) => {
   try {
     await syncLowStockAlerts(getContext(req).businessId);
-    await listRows('notifications', { ...req, query: { ...req.query, sort: req.query.sort || 'created_at' } }, res);
+    await listRows('notifications', req, res, { ...req.query, sort: req.query.sort || 'created_at' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -1146,7 +1327,8 @@ app.put('/api/notifications/:id/read', async (req, res) => {
   try {
     const scope = businessScope('notifications', req);
     const where = scope.clause ? `AND ${scope.clause}` : '';
-    await pool.query(`UPDATE notifications SET is_read = ? WHERE id = ? ${where}`, [Boolean(req.body.is_read), req.params.id, ...scope.params]);
+    const isRead = req.body.is_read === true || req.body.is_read === 1 || String(req.body.is_read).toLowerCase() === 'yes';
+    await pool.query(`UPDATE notifications SET is_read = ? WHERE id = ? ${where}`, [isRead, req.params.id, ...scope.params]);
     res.json({ ok: true });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -1191,12 +1373,27 @@ if (process.env.NODE_ENV !== 'production') {
   }
 }
 
+let httpServer;
+
 initializeDatabase()
   .then(() => {
-    app.listen(port, '0.0.0.0', () => {
-      console.log(`Server running on http://0.0.0.0:${port}`);
+    httpServer = app.listen(port, host, () => {
+      console.log(`API server running on http://${host}:${port}`);
     });
   })
   .catch((error) => {
     console.error('Server initialization failed:', error);
   });
+
+function shutdown(signal) {
+  console.log(`${signal} received; shutting down gracefully.`);
+  if (!httpServer) return process.exit(0);
+  httpServer.close(async () => {
+    if (pool) await pool.end();
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 10000).unref();
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

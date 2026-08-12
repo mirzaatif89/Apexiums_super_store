@@ -3,7 +3,7 @@ import { LockKeyhole, LogIn, UserRound, X } from 'lucide-react';
 
 export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc }) {
   const [mode, setMode] = React.useState('admin');
-  const [username, setUsername] = React.useState('superadmin');
+  const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
@@ -14,8 +14,7 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc 
       setLoading(false);
       return;
     }
-    if (mode === 'admin') setUsername('superadmin');
-    if (mode === 'user') setUsername('');
+    setUsername('');
     setPassword('');
   }, [mode, open]);
 
@@ -159,11 +158,7 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc 
                 {loading ? 'Signing in...' : 'Login'}
               </button>
 
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                <p className="font-semibold text-slate-950">Default superadmin</p>
-                <p className="mt-1 leading-6">Username: <span className="font-semibold">superadmin</span></p>
-                <p className="leading-6">Password: <span className="font-semibold">Admin@12345</span></p>
-              </div>
+              <p className="text-center text-xs text-slate-500">Use the credentials assigned to your account.</p>
             </form>
           </div>
         </div>

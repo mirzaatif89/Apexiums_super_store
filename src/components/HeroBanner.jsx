@@ -6,6 +6,7 @@ export default function HeroBanner({ slides, promoBanners }) {
   const mobileTrackRef = React.useRef(null);
 
   React.useEffect(() => {
+    if (!slides.length) return undefined;
     const timer = window.setInterval(() => {
       setActiveIndex((current) => (current + 1) % slides.length);
     }, 4500);
@@ -19,8 +20,22 @@ export default function HeroBanner({ slides, promoBanners }) {
   }, [activeIndex]);
 
   const activeSlide = slides[activeIndex];
-  const nextPromo = promoBanners[activeIndex % promoBanners.length];
-  const secondPromo = promoBanners[(activeIndex + 1) % promoBanners.length];
+  if (!activeSlide) {
+    return (
+      <section className="mx-auto max-w-7xl px-3 py-4 sm:px-4 lg:px-6">
+        <div className="grid min-h-72 place-items-center rounded-[2rem] border border-dashed border-slate-300 bg-white p-8 text-center">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-teal-600">Apexiums Marketplace</p>
+            <h2 className="mt-2 text-3xl font-black text-slate-950">New offers are on the way</h2>
+            <p className="mt-3 text-sm text-slate-500">Active banners will appear here as soon as they are published.</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+  const promotionCards = promoBanners.length
+    ? [promoBanners[activeIndex % promoBanners.length], promoBanners[(activeIndex + 1) % promoBanners.length]].filter(Boolean)
+    : [];
 
   return (
     <section className="mx-auto max-w-7xl px-3 py-4 sm:px-4 lg:px-6">
@@ -62,7 +77,7 @@ export default function HeroBanner({ slides, promoBanners }) {
 
       <div className="hidden lg:block">
         <article className="w-full overflow-hidden rounded-[2rem] bg-slate-950 text-white shadow-xl shadow-slate-900/10">
-          <div className="grid h-full grid-cols-1 gap-0 md:grid-cols-[2fr_1fr]">
+          <div className={`grid h-full grid-cols-1 gap-0 ${promotionCards.length ? 'md:grid-cols-[2fr_1fr]' : ''}`}>
             <div className="relative min-h-[26rem] overflow-hidden">
               <img
                 src={activeSlide.image}
@@ -84,9 +99,9 @@ export default function HeroBanner({ slides, promoBanners }) {
               </div>
             </div>
 
-            <div className="grid gap-4 bg-slate-100 p-4">
-              {[nextPromo, secondPromo].map((promo) => (
-                <article key={promo.title} className="relative overflow-hidden rounded-[1.75rem] bg-white shadow-sm">
+            {promotionCards.length ? <div className="grid gap-4 bg-slate-100 p-4">
+              {promotionCards.map((promo, index) => (
+                <article key={`${promo.id || promo.title}-${index}`} className="relative overflow-hidden rounded-[1.75rem] bg-white shadow-sm">
                   <img
                     src={promo.image}
                     alt={promo.title}
@@ -100,7 +115,7 @@ export default function HeroBanner({ slides, promoBanners }) {
                   </div>
                 </article>
               ))}
-            </div>
+            </div> : null}
           </div>
         </article>
       </div>

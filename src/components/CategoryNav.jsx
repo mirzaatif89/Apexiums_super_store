@@ -1,4 +1,5 @@
 export default function CategoryNav({ navItems }) {
+  if (!navItems.length) return null;
   return (
     <section className="border-b border-slate-200 bg-white">
       <div className="mx-auto max-w-7xl px-3 py-3 sm:px-4 lg:px-6">

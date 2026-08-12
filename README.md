@@ -2,6 +2,16 @@
 
 React + Node.js + Express + MySQL admin panel for Apexiums ecommerce store.
 
+## Hostinger deployment
+
+- Runtime: Node.js 20.19 or newer
+- Build command: `npm run build`
+- Start command: `npm start`
+- Entry file (if requested): `app.js`
+- The application listens on Hostinger's `PORT` and binds to `0.0.0.0`.
+- Add all variables from `.env.example` in hPanel, using the real Hostinger MySQL host, database, user, password, and a strong admin password.
+- Do not set a custom `PORT` in hPanel unless Hostinger explicitly requires it; the platform-provided port takes precedence.
+
 ## Setup
 
 ```bash

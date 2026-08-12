@@ -1,15 +1,15 @@
-import { Plus, Star } from 'lucide-react';
+import { Package, Plus } from 'lucide-react';
 
 function ProductCard({ product }) {
   return (
     <article className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/10">
       <div className="relative overflow-hidden">
-        <img
+        {product.image ? <img
           src={product.image}
           alt={product.title}
           loading="lazy"
           className="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105"
-        />
+        /> : <div className="grid aspect-[4/3] w-full place-items-center bg-slate-100 text-slate-400"><Package size={32} /></div>}
         <span className="absolute left-3 top-3 rounded-full bg-teal-600 px-2.5 py-1 text-[11px] font-bold text-white">
           {product.badge}
         </span>
@@ -26,10 +26,6 @@ function ProductCard({ product }) {
       <div className="grid gap-2 p-4">
         <div className="flex items-center justify-between gap-2 text-xs font-semibold text-slate-500">
           <span>{product.category}</span>
-          <span className="inline-flex items-center gap-1 text-amber-500">
-            <Star size={14} fill="currentColor" />
-            {product.rating}
-          </span>
         </div>
 
         <h3 className="line-clamp-2 min-h-10 text-sm font-semibold leading-5 text-slate-900">
@@ -39,13 +35,11 @@ function ProductCard({ product }) {
         <div className="flex items-end justify-between gap-3">
           <div>
             <span className="block text-base font-black text-slate-950">Rs {product.price.toLocaleString('en-PK')}</span>
-            <span className="text-xs text-slate-400 line-through">
+            {product.originalPrice > product.price ? <span className="text-xs text-slate-400 line-through">
               Rs {product.originalPrice.toLocaleString('en-PK')}
-            </span>
+            </span> : null}
           </div>
-          <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-teal-700">
-            {product.sold}
-          </span>
+          <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-teal-700">{product.badge}</span>
         </div>
       </div>
     </article>
@@ -68,9 +62,9 @@ export default function ProductGrid({ sections }) {
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {section.products.map((product) => (
+            {section.products.length ? section.products.map((product) => (
               <ProductCard key={product.id} product={product} />
-            ))}
+            )) : <div className="col-span-full rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center text-sm font-semibold text-slate-500">No products are available yet.</div>}
           </div>
         </section>
       ))}

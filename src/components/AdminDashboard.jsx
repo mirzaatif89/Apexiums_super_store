@@ -5,6 +5,7 @@ import {
   Boxes,
   Building2,
   ChartNoAxesCombined,
+  ChevronDown,
   ClipboardList,
   DollarSign,
   Edit3,
@@ -15,12 +16,19 @@ import {
   Package,
   RefreshCcw,
   Search,
+  Printer,
+  MessageSquare,
+  Send,
+  CircleCheck,
+  CircleX,
   ShieldCheck,
   Store,
   Tag,
   TicketPercent,
   Trash2,
+  UserPlus,
   Users,
+  WalletCards,
   X
 } from 'lucide-react';
 
@@ -28,18 +36,17 @@ const money = (value) => `Rs ${Number(value || 0).toLocaleString('en-PK')}`;
 
 const sidebarSections = (isSuperAdmin) => [
   {
-    heading: 'Overview',
+    heading: null,
     items: [{ label: 'Dashboard', page: 'Dashboard', icon: LayoutDashboard }]
   },
   {
     heading: 'Catalog',
     items: [
       { label: 'Product Listing', page: 'Product Listing', icon: Package },
-      { label: 'Banners', page: 'Banners', icon: ImageIcon },
-      { label: 'Ads', page: 'Ads', icon: TicketPercent },
+      { label: 'Website Banner', page: 'Banners', icon: ImageIcon },
+      { label: 'App Banner', page: 'Ads', icon: TicketPercent },
       { label: 'Categories', page: 'Categories', icon: Tag },
-      { label: 'Stock', page: 'Stock', icon: Boxes },
-      { label: 'Coupons', page: 'Coupons', icon: TicketPercent }
+      { label: 'Stock', page: 'Stock', icon: Boxes }
     ]
   },
   {
@@ -47,28 +54,36 @@ const sidebarSections = (isSuperAdmin) => [
     items: [
       { label: 'Orders', page: 'Orders', icon: ClipboardList },
       { label: 'Returns', page: 'Returns', icon: RefreshCcw },
-      { label: 'Customers', page: 'Customers', icon: Users },
-      { label: 'Whole Sellers', page: 'Whole Sellers', icon: Store }
+      { label: 'Customers', page: 'Customers', icon: Users }
     ]
   },
   {
     heading: 'Marketplace',
-    items: isSuperAdmin ? [{ label: 'Businesses', page: 'Businesses', icon: Building2 }] : []
-  },
-  {
-    heading: 'Marketing',
-    items: [{ label: 'Notifications', page: 'Notifications', icon: Bell }]
+    items: [
+      ...(isSuperAdmin ? [{ label: 'Investors', page: 'Investors', icon: Building2 }] : []),
+      { label: 'Staff', page: 'Staff', icon: ShieldCheck },
+      { label: 'Sellers', page: 'Whole Sellers', icon: Store },
+      ...(isSuperAdmin ? [{ label: 'Permissions', page: 'Permissions', icon: ShieldCheck }] : [])
+    ]
   },
   {
     heading: 'Finance',
     items: [
       { label: 'Revenue', page: 'Revenue', icon: ChartNoAxesCombined },
-      { label: 'Expense', page: 'Expense', icon: DollarSign }
+      { label: 'Expense', page: 'Expense', icon: DollarSign },
+      { label: 'Software Fees', page: 'Software Fees', icon: WalletCards },
+      { label: 'Staff Salaries', page: 'Staff Salaries', icon: BadgeDollarSign },
+      { label: 'Delivery Expense', page: 'Delivery Expense', icon: RefreshCcw }
     ]
   },
   {
-    heading: 'Team',
-    items: [{ label: 'Staff', page: 'Staff', icon: ShieldCheck }]
+    heading: 'Notifications',
+    items: [
+      { label: 'Chats', page: 'Chats', icon: MessageSquare },
+      { label: 'Become a Seller', page: 'Become a Seller', icon: UserPlus },
+      { label: 'Become an Investor', page: 'Become an Investor', icon: Building2 },
+      { label: 'All Notifications', page: 'Notifications', icon: Bell }
+    ]
   }
 ];
 
@@ -93,6 +108,8 @@ const pageConfigs = {
       ['image_url', 'Main Image URL', 'url'],
       ['product_images', 'Gallery Image URLs', 'textarea'],
       ['category', 'Category', 'text'],
+      ['sku', 'SKU', 'text'],
+      ['stock_qty', 'Opening Stock', 'number'],
       ['actual_price', 'Actual Price', 'number'],
       ['discounted_price', 'Discounted Price', 'number'],
       ['status', 'Status', 'select', ['Live', 'Inactive']]
@@ -100,9 +117,9 @@ const pageConfigs = {
   },
   Banners: {
     api: '/api/banners',
-    title: 'Banners',
-    description: 'Manage banners for the home and category sections.',
-    addLabel: 'Add Banner',
+    title: 'Website Banner',
+    description: 'Manage homepage and website banners.',
+    addLabel: 'Add Website Banner',
     columns: [
       { key: 'image_url', label: 'Image', type: 'image' },
       { key: 'title', label: 'Title' },
@@ -119,9 +136,9 @@ const pageConfigs = {
   },
   Ads: {
     api: '/api/promotions',
-    title: 'Ads',
-    description: 'Manage ads, flash offers and promo creatives.',
-    addLabel: 'Add Ad',
+    title: 'App Banner',
+    description: 'Manage app banners and promo creatives.',
+    addLabel: 'Add App Banner',
     columns: [
       { key: 'image_url', label: 'Image', type: 'image' },
       { key: 'name', label: 'Name' },
@@ -157,24 +174,27 @@ const pageConfigs = {
   },
   Stock: {
     api: '/api/stock',
-    special: 'stock',
     title: 'Stock',
-    description: 'Adjust stock and view inventory health.',
-    addLabel: 'Adjust Stock',
+    description: 'Add stock items and manage inventory quickly.',
+    addLabel: 'Add Stock',
     columns: [
-      { key: 'product_name', label: 'Product' },
+      { key: 'product_id', label: 'Product ID' },
+      { key: 'total_items', label: 'Total Items' },
+      { key: 'stock_belong_to', label: 'Stock Belong to' },
       { key: 'sku', label: 'SKU' },
-      { key: 'quantity', label: 'Qty' },
-      { key: 'reorder_level', label: 'Reorder' },
-      { key: 'warehouse', label: 'Warehouse' },
+      { key: 'quantity', label: 'Quantity' },
+      { key: 'description', label: 'Description' },
       { key: 'status', label: 'Status', type: 'status' }
     ],
     fields: [
       ['product_id', 'Product ID', 'number'],
-      ['adjustment_type', 'Adjustment Type', 'select', ['Add', 'Remove']],
+      ['total_items', 'Total Items', 'number'],
+      ['stock_belong_to', 'Stock Belong to', 'text'],
       ['quantity', 'Quantity', 'number'],
-      ['reason', 'Reason', 'select', ['Purchase', 'Return', 'Damage', 'Correction']],
-      ['notes', 'Notes', 'textarea']
+      ['description', 'Description', 'textarea'],
+      ['sku', 'SKU', 'text'],
+      ['category', 'Category', 'text'],
+      ['warehouse', 'Warehouse', 'text']
     ]
   },
   Coupons: {
@@ -209,6 +229,9 @@ const pageConfigs = {
     title: 'Orders',
     description: 'View and manage customer orders.',
     readonly: true,
+    noCreate: true,
+    noDelete: true,
+    updateApi: (id) => `/api/orders/${id}/status`,
     columns: [
       { key: 'id', label: 'Order ID', prefix: '#ORD-' },
       { key: 'customer_name', label: 'Customer' },
@@ -216,26 +239,42 @@ const pageConfigs = {
       { key: 'total_amount', label: 'Amount', type: 'money' },
       { key: 'payment_status', label: 'Payment' },
       { key: 'order_status', label: 'Status', type: 'status' }
-    ]
+    ],
+    fields: [['order_status', 'Order Status', 'select', ['Pending', 'To Ship', 'Received']]]
   },
   Returns: {
     api: '/api/returns',
     title: 'Returns',
-    description: 'Review and manage return requests.',
-    readonly: true,
+    description: 'Review, add and manage return requests.',
+    noDelete: true,
+    updateApi: (id) => `/api/returns/${id}/status`,
     columns: [
       { key: 'id', label: 'Return ID', prefix: '#RET-' },
       { key: 'order_id', label: 'Order ID', prefix: '#ORD-' },
       { key: 'customer', label: 'Customer' },
       { key: 'product', label: 'Product' },
+      { key: 'refund_amount', label: 'Refund', type: 'money' },
       { key: 'status', label: 'Status', type: 'status' }
+    ],
+    fields: [
+      ['order_id', 'Order ID', 'number'],
+      ['product_id', 'Product ID', 'number'],
+      ['customer', 'Customer', 'text'],
+      ['product', 'Product', 'text'],
+      ['reason', 'Reason', 'textarea'],
+      ['refund_amount', 'Refund Amount', 'number'],
+      ['refund_method', 'Refund Method', 'select', ['Bank', 'Easypaisa', 'JazzCash', 'Cash']],
+      ['status', 'Return Status', 'select', ['Requested', 'Approved', 'Rejected', 'Refunded']]
     ]
   },
   Customers: {
     api: '/api/customers',
     title: 'Customers',
-    description: 'Customer profiles and order history.',
+    description: 'Customer profiles, orders and spend summary.',
     readonly: true,
+    noCreate: true,
+    noDelete: true,
+    updateApi: (id) => `/api/customers/${id}/status`,
     columns: [
       { key: 'name', label: 'Name' },
       { key: 'email', label: 'Email' },
@@ -243,28 +282,35 @@ const pageConfigs = {
       { key: 'total_orders', label: 'Orders' },
       { key: 'total_spent', label: 'Spent', type: 'money' },
       { key: 'status', label: 'Status', type: 'status' }
-    ]
+    ],
+    fields: [['status', 'Customer Status', 'select', ['Active', 'Inactive', 'Blocked']]]
   },
   'Whole Sellers': {
     api: '/api/wholesellers',
-    title: 'Whole Sellers',
-    description: 'Suppliers and purchase dues.',
-    addLabel: 'Add Wholesaler',
+    title: 'Sellers',
+    description: 'Manage sellers, login details and sold stock.',
+    addLabel: 'Add Seller',
     columns: [
-      { key: 'business_name', label: 'Business' },
+      { key: 'name', label: 'Name' },
       { key: 'contact_person', label: 'Contact' },
+      { key: 'address', label: 'Address' },
       { key: 'phone', label: 'Phone' },
-      { key: 'products_supplied', label: 'Products' },
+      { key: 'email', label: 'Email' },
+      { key: 'stock_seller_sell', label: 'Stock Seller Sell' },
       { key: 'payment_due', label: 'Due', type: 'money' },
       { key: 'status', label: 'Status', type: 'status' }
     ],
     fields: [
-      ['business_name', 'Business Name', 'text'],
-      ['contact_person', 'Contact Person', 'text'],
+      ['name', 'Name', 'text'],
+      ['contact_person', 'Contact', 'text'],
+      ['address', 'Address', 'textarea'],
       ['phone', 'Phone', 'text'],
       ['email', 'Email', 'email'],
-      ['address', 'Address', 'textarea'],
-      ['products_supplied', 'Products Supplied', 'text'],
+      ['description', 'Description', 'textarea'],
+      ['seller_image', 'Seller Image', 'url'],
+      ['stock_seller_sell', 'Which stock seller sell', 'text'],
+      ['username', 'Username', 'text'],
+      ['password', 'Password', 'password'],
       ['total_purchases', 'Total Purchases', 'number'],
       ['payment_due', 'Payment Due', 'number'],
       ['status', 'Status', 'select', ['Active', 'Inactive']]
@@ -272,12 +318,13 @@ const pageConfigs = {
   },
   Businesses: {
     api: '/api/business-accounts',
-    title: 'Businesses',
-    description: 'Create and manage business login accounts.',
-    addLabel: 'Add Business',
+    title: 'Accounts',
+    description: 'Create and manage login accounts for customers and sellers.',
+    addLabel: 'Add Account',
     columns: [
       { key: 'business_name', label: 'Business' },
       { key: 'username', label: 'Username' },
+      { key: 'plain_password', label: 'Password' },
       { key: 'owner_name', label: 'Owner' },
       { key: 'phone', label: 'Phone' },
       { key: 'role', label: 'Role' },
@@ -345,20 +392,208 @@ const pageConfigs = {
   Notifications: {
     api: '/api/notifications',
     title: 'Notifications',
-    description: 'System messages, orders and stock alerts.',
+    description: 'Order notifications, stock alerts and system messages.',
     readonly: true,
+    noCreate: true,
+    updateApi: (id) => `/api/notifications/${id}/read`,
     columns: [
       { key: 'title', label: 'Title' },
       { key: 'type', label: 'Type' },
       { key: 'severity', label: 'Severity' },
-      { key: 'is_read', label: 'Read' },
+      { key: 'is_read', label: 'Read', type: 'boolean' },
       { key: 'created_at', label: 'Date', type: 'date' }
-    ]
+    ],
+    fields: [['is_read', 'Read Status', 'select', ['Yes', 'No']]]
   },
   Revenue: {
     custom: true,
     title: 'Revenue',
     description: 'Revenue, profit and payment split.'
+  },
+  Investors: {
+    api: '/api/investors',
+    title: 'Investors',
+    description: 'Manage investor profiles, login credentials and investment status.',
+    addLabel: 'Add Investor',
+    columns: [
+      { key: 'name', label: 'Investor' },
+      { key: 'email', label: 'Email' },
+      { key: 'phone', label: 'Phone' },
+      { key: 'address', label: 'Address' },
+      { key: 'username', label: 'Username' },
+      { key: 'investment_amount', label: 'Investment', type: 'money' },
+      { key: 'investment_date', label: 'Date', type: 'date' },
+      { key: 'status', label: 'Status', type: 'status' }
+    ],
+    fields: [
+      ['name', 'Investor Name', 'text'],
+      ['email', 'Email', 'email'],
+      ['phone', 'Phone', 'text'],
+      ['address', 'Address', 'textarea'],
+      ['username', 'Username', 'text'],
+      ['password', 'Password', 'password'],
+      ['investment_amount', 'Investment Amount', 'number'],
+      ['investment_date', 'Investment Date', 'date'],
+      ['agreement_url', 'Agreement URL', 'url'],
+      ['description', 'Description', 'textarea'],
+      ['status', 'Status', 'select', ['Active', 'Pending', 'Inactive']],
+      ['notes', 'Notes', 'textarea']
+    ]
+  },
+  Permissions: {
+    api: '/api/permissions',
+    title: 'Permissions',
+    description: 'Control module-level access for Sellers, Staff and Investors.',
+    addLabel: 'Add Permission',
+    columns: [
+      { key: 'role', label: 'Role' },
+      { key: 'staff_id', label: 'ID', prefix: '#' },
+      { key: 'module', label: 'Module' },
+      { key: 'can_view', label: 'View', type: 'status' },
+      { key: 'can_create', label: 'Create', type: 'status' },
+      { key: 'can_edit', label: 'Edit', type: 'status' }
+    ],
+    fields: [
+      ['role', 'Role', 'select', ['Sellers', 'Staff', 'Investors']],
+      ['staff_id', 'Staff ID', 'number'],
+      ['module', 'Module', 'select', ['Catalog', 'Sales', 'Marketing', 'Marketplace', 'Finance', 'Notifications', 'Chats']],
+      ['can_view', 'Can View', 'select', ['Yes', 'No']],
+      ['can_create', 'Can Create', 'select', ['Yes', 'No']],
+      ['can_edit', 'Can Edit', 'select', ['Yes', 'No']]
+    ]
+  },
+  'Software Fees': {
+    api: '/api/software_fees',
+    title: 'Software Fees',
+    description: 'Track subscriptions, renewals and service payments.',
+    addLabel: 'Add Software Fee',
+    columns: [
+      { key: 'service_name', label: 'Service' },
+      { key: 'provider', label: 'Provider' },
+      { key: 'amount', label: 'Amount', type: 'money' },
+      { key: 'due_date', label: 'Due Date', type: 'date' },
+      { key: 'payment_status', label: 'Status', type: 'status' }
+    ],
+    fields: [
+      ['service_name', 'Service Name', 'text'],
+      ['provider', 'Provider', 'text'],
+      ['amount', 'Amount', 'number'],
+      ['billing_cycle', 'Billing Cycle', 'select', ['Monthly', 'Quarterly', 'Yearly', 'One Time']],
+      ['due_date', 'Due Date', 'date'],
+      ['payment_status', 'Payment Status', 'select', ['Pending', 'Paid', 'Overdue']],
+      ['notes', 'Notes', 'textarea']
+    ]
+  },
+  'Staff Salaries': {
+    api: '/api/staff_salaries',
+    title: 'Staff Salaries',
+    description: 'Maintain monthly payroll, bonuses and deductions.',
+    addLabel: 'Add Salary',
+    columns: [
+      { key: 'staff_name', label: 'Staff Member' },
+      { key: 'salary_month', label: 'Month' },
+      { key: 'base_salary', label: 'Base Salary', type: 'money' },
+      { key: 'bonus', label: 'Bonus', type: 'money' },
+      { key: 'payment_status', label: 'Status', type: 'status' }
+    ],
+    fields: [
+      ['staff_id', 'Staff ID', 'number'],
+      ['staff_name', 'Staff Name', 'text'],
+      ['salary_month', 'Salary Month (YYYY-MM)', 'text'],
+      ['base_salary', 'Base Salary', 'number'],
+      ['bonus', 'Bonus', 'number'],
+      ['deductions', 'Deductions', 'number'],
+      ['payment_status', 'Payment Status', 'select', ['Pending', 'Paid', 'Held']],
+      ['paid_date', 'Paid Date', 'date'],
+      ['notes', 'Notes', 'textarea']
+    ]
+  },
+  'Delivery Expense': {
+    api: '/api/delivery_expenses',
+    title: 'Delivery Expense',
+    description: 'Track courier costs against orders and shipments.',
+    addLabel: 'Add Delivery Expense',
+    columns: [
+      { key: 'order_id', label: 'Order', prefix: '#ORD-' },
+      { key: 'courier', label: 'Courier' },
+      { key: 'tracking_number', label: 'Tracking No.' },
+      { key: 'amount', label: 'Amount', type: 'money' },
+      { key: 'payment_status', label: 'Status', type: 'status' }
+    ],
+    fields: [
+      ['order_id', 'Order ID', 'number'],
+      ['courier', 'Courier', 'text'],
+      ['tracking_number', 'Tracking Number', 'text'],
+      ['amount', 'Amount', 'number'],
+      ['expense_date', 'Expense Date', 'date'],
+      ['payment_status', 'Payment Status', 'select', ['Pending', 'Paid']],
+      ['notes', 'Notes', 'textarea']
+    ]
+  },
+  Chats: {
+    api: '/api/chats',
+    title: 'Chats',
+    description: 'Manage customer conversations and admin replies.',
+    addLabel: 'New Chat',
+    columns: [
+      { key: 'sender_name', label: 'Sender' },
+      { key: 'sender_type', label: 'Type' },
+      { key: 'subject', label: 'Subject' },
+      { key: 'reply_message', label: 'Reply' },
+      { key: 'status', label: 'Status', type: 'status' },
+      { key: 'created_at', label: 'Received', type: 'date' }
+    ],
+    fields: [
+      ['sender_name', 'Sender Name', 'text'],
+      ['sender_type', 'Sender Type', 'select', ['Customer', 'Seller', 'Investor', 'Staff']],
+      ['subject', 'Subject', 'text'],
+      ['message', 'Message', 'textarea'],
+      ['reply_message', 'Reply Message', 'textarea'],
+      ['status', 'Status', 'select', ['Open', 'In Progress', 'Closed']]
+    ]
+  },
+  'Become a Seller': {
+    api: '/api/seller_applications',
+    title: 'Become a Seller',
+    description: 'Review and process seller onboarding applications.',
+    addLabel: 'Add Application',
+    columns: [
+      { key: 'applicant_name', label: 'Applicant' },
+      { key: 'business_name', label: 'Business' },
+      { key: 'phone', label: 'Phone' },
+      { key: 'category', label: 'Category' },
+      { key: 'status', label: 'Status', type: 'status' }
+    ],
+    fields: [
+      ['applicant_name', 'Applicant Name', 'text'],
+      ['business_name', 'Business Name', 'text'],
+      ['email', 'Email', 'email'],
+      ['phone', 'Phone', 'text'],
+      ['category', 'Business Category', 'text'],
+      ['message', 'Application Notes', 'textarea'],
+      ['status', 'Status', 'select', ['Pending', 'Approved', 'Rejected']]
+    ]
+  },
+  'Become an Investor': {
+    api: '/api/investor_applications',
+    title: 'Become an Investor',
+    description: 'Review and process investor applications.',
+    addLabel: 'Add Application',
+    columns: [
+      { key: 'applicant_name', label: 'Applicant' },
+      { key: 'phone', label: 'Phone' },
+      { key: 'proposed_amount', label: 'Proposed Amount', type: 'money' },
+      { key: 'status', label: 'Status', type: 'status' },
+      { key: 'created_at', label: 'Received', type: 'date' }
+    ],
+    fields: [
+      ['applicant_name', 'Applicant Name', 'text'],
+      ['email', 'Email', 'email'],
+      ['phone', 'Phone', 'text'],
+      ['proposed_amount', 'Proposed Amount', 'number'],
+      ['message', 'Application Notes', 'textarea'],
+      ['status', 'Status', 'select', ['Pending', 'Approved', 'Rejected']]
+    ]
   },
   Dashboard: {
     custom: true,
@@ -487,7 +722,7 @@ function RecordModal({ open, title, fields, initial, onClose, onSubmit, loading 
   );
 }
 
-function DataTable({ columns, rows, loading, onEdit, onDelete, readonly }) {
+function DataTable({ columns, rows, loading, onEdit, onDelete, readonly, noDelete, rowActions }) {
   return (
     <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm">
       <table className="min-w-full text-left text-sm">
@@ -496,7 +731,7 @@ function DataTable({ columns, rows, loading, onEdit, onDelete, readonly }) {
             {columns.map((column) => (
               <th key={column.key} className="px-4 py-3">{column.label}</th>
             ))}
-            {!readonly ? <th className="px-4 py-3">Actions</th> : null}
+            {!readonly || rowActions ? <th className="px-4 py-3">Actions</th> : null}
           </tr>
         </thead>
         <tbody>
@@ -508,7 +743,7 @@ function DataTable({ columns, rows, loading, onEdit, onDelete, readonly }) {
                   </td>
                 </tr>
               ))
-            : rows.map((row) => (
+            : rows.length ? rows.map((row) => (
                 <tr key={row.id} className="border-t border-slate-200">
                   {columns.map((column) => {
                     const value = row[column.key];
@@ -516,6 +751,7 @@ function DataTable({ columns, rows, loading, onEdit, onDelete, readonly }) {
                     if (column.type === 'money') display = money(value);
                     if (column.type === 'date') display = value ? String(value).slice(0, 10) : '-';
                     if (column.type === 'status') display = <Badge value={value} />;
+                    if (column.type === 'boolean') display = <Badge value={value === true || value === 1 || value === 'Yes' ? 'Yes' : 'No'} />;
                     if (column.type === 'image') {
                       display = value ? <img src={value} alt={row.name || row.title || column.key} className="h-12 w-12 rounded-2xl object-cover" /> : '-';
                     }
@@ -525,20 +761,28 @@ function DataTable({ columns, rows, loading, onEdit, onDelete, readonly }) {
                       </td>
                     );
                   })}
-                  {!readonly ? (
+                  {!readonly || rowActions ? (
                     <td className="px-4 py-3">
-                      <div className="flex gap-2">
-                        <button type="button" onClick={() => onEdit(row)} className="inline-flex min-h-9 items-center justify-center rounded-xl bg-teal-50 px-3 text-teal-700">
+                      <div className="flex flex-wrap gap-2">
+                        {!readonly ? <button type="button" onClick={() => onEdit(row)} className="inline-flex min-h-9 items-center justify-center rounded-xl bg-teal-50 px-3 text-teal-700">
                           <Edit3 size={16} />
-                        </button>
-                        <button type="button" onClick={() => onDelete(row)} className="inline-flex min-h-9 items-center justify-center rounded-xl bg-rose-50 px-3 text-rose-700">
+                        </button> : null}
+                        {rowActions ? rowActions(row) : null}
+                        {!readonly && !noDelete ? <button type="button" onClick={() => onDelete(row)} className="inline-flex min-h-9 items-center justify-center rounded-xl bg-rose-50 px-3 text-rose-700" aria-label="Delete record">
                           <Trash2 size={16} />
-                        </button>
+                        </button> : null}
                       </div>
                     </td>
                   ) : null}
                 </tr>
-              ))}
+              )) : (
+                <tr className="border-t border-slate-200">
+                  <td colSpan={columns.length + (readonly ? 0 : 1)} className="px-6 py-14 text-center">
+                    <p className="font-bold text-slate-700">No records found</p>
+                    <p className="mt-1 text-sm text-slate-500">Add the first record or adjust your search.</p>
+                  </td>
+                </tr>
+              )}
         </tbody>
       </table>
     </div>
@@ -567,6 +811,7 @@ export default function AdminDashboard({ session, storeName, logoSrc, onLogout }
   const sidebar = sidebarSections(isSuperAdmin);
   const [activePage, setActivePage] = React.useState('Dashboard');
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
+  const [openSections, setOpenSections] = React.useState({});
   const [rows, setRows] = React.useState([]);
   const [total, setTotal] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
@@ -576,6 +821,11 @@ export default function AdminDashboard({ session, storeName, logoSrc, onLogout }
   const [sort, setSort] = React.useState({ key: 'id', order: 'DESC' });
   const [summary, setSummary] = React.useState(null);
   const [chartRows, setChartRows] = React.useState([]);
+  const [dashboardDetails, setDashboardDetails] = React.useState({ products: [], orders: [], stock: [], notifications: [] });
+  const [businessRows, setBusinessRows] = React.useState([]);
+  const [selectedOrder, setSelectedOrder] = React.useState(null);
+  const [selectedReturnDraft, setSelectedReturnDraft] = React.useState(null);
+  const [customerView, setCustomerView] = React.useState('customers');
   const [modal, setModal] = React.useState(null);
   const [saving, setSaving] = React.useState(false);
 
@@ -593,6 +843,8 @@ export default function AdminDashboard({ session, storeName, logoSrc, onLogout }
     setSearch('');
     setSort({ key: 'id', order: 'DESC' });
     setModal(null);
+    setSelectedOrder(null);
+    setSelectedReturnDraft(null);
   }, [activePage]);
 
   const loadPage = React.useCallback(async () => {
@@ -623,8 +875,7 @@ export default function AdminDashboard({ session, storeName, logoSrc, onLogout }
           { label: 'Stock', value: summaryData?.stock?.total || 0 },
           { label: 'Unread', value: summaryData?.notifications?.unread || 0 }
         ]);
-        setModal({
-          title: 'Dashboard',
+        setDashboardDetails({
           products: productData.rows || [],
           orders: orderData.rows || [],
           stock: stockData.rows || [],
@@ -634,15 +885,27 @@ export default function AdminDashboard({ session, storeName, logoSrc, onLogout }
       }
 
       if (activePage === 'Revenue') {
-        const [summaryRes, chartRes] = await Promise.all([
-          apiFetch('/api/revenue/summary', session),
-          apiFetch('/api/revenue/chart', session)
-        ]);
-        const [summaryData, chartData] = await Promise.all([summaryRes.json(), chartRes.json()]);
+        const summaryRes = await apiFetch('/api/revenue/summary', session);
+        const summaryData = await summaryRes.json();
+        if (!summaryRes.ok) throw new Error(summaryData.message || 'Unable to load revenue');
         setSummary(summaryData);
-        setChartRows(chartData.rows || []);
+        setChartRows(summaryData.payments || []);
         setRows([]);
         setTotal(0);
+        return;
+      }
+
+      if (activePage === 'Customers') {
+        const [customersRes, accountsRes] = await Promise.all([
+          apiFetch('/api/customers?limit=50', session),
+          apiFetch('/api/business-accounts', session)
+        ]);
+        const [customerData, accountData] = await Promise.all([customersRes.json(), accountsRes.json()]);
+        if (!customersRes.ok) throw new Error(customerData.message || 'Unable to load customers');
+        if (!accountsRes.ok) throw new Error(accountData.message || 'Unable to load accounts');
+        setRows(customerData.rows || []);
+        setTotal(customerData.total || (customerData.rows || []).length);
+        setBusinessRows(accountData.rows || []);
         return;
       }
 
@@ -656,7 +919,13 @@ export default function AdminDashboard({ session, storeName, logoSrc, onLogout }
       const response = await apiFetch(`${config.api}?${params}`, session);
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Failed to load records');
-      setRows(data.rows || []);
+      const normalizedRows = activePage === 'Stock'
+        ? (data.rows || []).map((row) => ({
+            ...row,
+            status: row.status || (row.quantity <= 0 ? 'Out' : row.quantity <= (row.reorder_level || 0) ? 'Low' : 'In Stock')
+          }))
+        : data.rows || [];
+      setRows(normalizedRows);
       setTotal(data.total || (data.rows || []).length);
     } catch (err) {
       setError(err.message);
@@ -674,7 +943,14 @@ export default function AdminDashboard({ session, storeName, logoSrc, onLogout }
     setError('');
     try {
       if (activePage === 'Revenue' || activePage === 'Dashboard') return;
-      if (config.special === 'stock') {
+      if (config.updateApi && form.id) {
+        const response = await apiFetch(config.updateApi(form.id), session, {
+          method: 'PUT',
+          body: JSON.stringify(form)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Unable to update record');
+      } else if (config.special === 'stock') {
         const response = await apiFetch('/api/stock/adjust', session, {
           method: 'POST',
           body: JSON.stringify(form)
@@ -700,7 +976,7 @@ export default function AdminDashboard({ session, storeName, logoSrc, onLogout }
   }
 
   async function deleteRecord(row) {
-    if (!window.confirm(`Delete ${row.name || row.title || row.business_name || row.code}?`)) return;
+    if (!window.confirm(`Delete ${row.name || row.title || row.business_name || row.applicant_name || row.service_name || 'this record'}?`)) return;
     try {
       const response = await apiFetch(`${config.api}/${row.id}`, session, { method: 'DELETE' });
       const data = await response.json();
@@ -729,6 +1005,181 @@ export default function AdminDashboard({ session, storeName, logoSrc, onLogout }
       : [];
 
   const totalPages = Math.max(Math.ceil(total / 8), 1);
+  const accountColumns = [
+    { key: 'id', label: 'ID', prefix: '#' },
+    { key: 'business_name', label: 'Business' },
+    { key: 'username', label: 'Username' },
+    { key: 'plain_password', label: 'Password' },
+    { key: 'owner_name', label: 'Owner' },
+    { key: 'phone', label: 'Phone' },
+    { key: 'email', label: 'Email' },
+    { key: 'last_login', label: 'Last Login', type: 'date' },
+    { key: 'status', label: 'Status', type: 'status' }
+  ];
+
+  async function openOrderDetails(order) {
+    const response = await apiFetch(`/api/orders/${order.id}`, session);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Unable to load order details');
+    setSelectedOrder(data);
+  }
+
+  async function changeOrderStatus(order, order_status) {
+    const response = await apiFetch(`/api/orders/${order.id}/status`, session, {
+      method: 'PUT',
+      body: JSON.stringify({ order_status })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Unable to update order status');
+    await loadPage();
+  }
+
+  async function createReturnFromOrder(order) {
+    try {
+      const response = await apiFetch(`/api/orders/${order.id}`, session);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Unable to load order');
+      const firstItem = (data.items || [])[0] || {};
+      setSelectedReturnDraft({
+        order_id: data.id,
+        product_id: firstItem.product_id || '',
+        customer: data.customer_name || '',
+        product: firstItem.product_name || firstItem.name || '',
+        reason: '',
+        refund_amount: firstItem.price || data.total_amount || 0,
+        refund_method: 'Cash',
+        status: 'Requested'
+      });
+    } catch (error) {
+      setError(error.message);
+    }
+  }
+
+  async function submitReturnDraft(form) {
+    setSaving(true);
+    setError('');
+    try {
+      const response = await apiFetch('/api/returns', session, {
+        method: 'POST',
+        body: JSON.stringify(form)
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Unable to create return');
+      setSelectedReturnDraft(null);
+      await loadPage();
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function updateReturnStatus(row, status) {
+    const response = await apiFetch(`/api/returns/${row.id}/status`, session, {
+      method: 'PUT',
+      body: JSON.stringify({ status, refund_method: row.refund_method || 'Cash' })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Unable to update return');
+    await loadPage();
+  }
+
+  async function toggleNotificationRead(row, is_read) {
+    const response = await apiFetch(`/api/notifications/${row.id}/read`, session, {
+      method: 'PUT',
+      body: JSON.stringify({ is_read })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Unable to update notification');
+    await loadPage();
+  }
+
+  async function markAllNotifications() {
+    const response = await apiFetch('/api/notifications/mark-all-read', session, { method: 'PUT' });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Unable to mark notifications read');
+    await loadPage();
+  }
+
+  function printMissingContacts() {
+    const missing = rows.filter((row) => !String(row.email || '').trim() || !String(row.phone || '').trim());
+    const win = window.open('', '_blank', 'width=900,height=700');
+    if (!win) return;
+    win.document.write(`
+      <html><head><title>Missing Contacts</title>
+      <style>
+        body{font-family:Arial,sans-serif;padding:24px}
+        table{width:100%;border-collapse:collapse}
+        th,td{border:1px solid #ddd;padding:10px;text-align:left;font-size:14px}
+        th{background:#f4f7fb}
+      </style>
+      </head><body>
+      <h1>Customers with missing email or phone</h1>
+      <table>
+        <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Orders</th><th>Spend</th></tr></thead>
+        <tbody>
+          ${missing
+            .map((row) => `<tr><td>${row.name || '-'}</td><td>${row.email || '-'}</td><td>${row.phone || '-'}</td><td>${row.total_orders || 0}</td><td>${money(row.total_spent || 0)}</td></tr>`)
+            .join('')}
+        </tbody>
+      </table>
+      </body></html>
+    `);
+    win.document.close();
+    win.focus();
+    win.print();
+  }
+
+  const orderRowActions = (row) => (
+    <div className="flex flex-wrap gap-2">
+      <button type="button" onClick={() => openOrderDetails(row).catch((error) => setError(error.message))} className="inline-flex min-h-9 items-center rounded-xl bg-slate-100 px-3 text-sm font-semibold text-slate-700">
+        Details
+      </button>
+      <button type="button" onClick={() => changeOrderStatus(row, 'To Ship').catch((error) => setError(error.message))} className="inline-flex min-h-9 items-center gap-1 rounded-xl bg-amber-50 px-3 text-sm font-semibold text-amber-700">
+        <Send size={14} />
+        To Ship
+      </button>
+      <button type="button" onClick={() => changeOrderStatus(row, 'Received').catch((error) => setError(error.message))} className="inline-flex min-h-9 items-center gap-1 rounded-xl bg-emerald-50 px-3 text-sm font-semibold text-emerald-700">
+        <CircleCheck size={14} />
+        Received
+      </button>
+      <button type="button" onClick={() => changeOrderStatus(row, 'Pending').catch((error) => setError(error.message))} className="inline-flex min-h-9 items-center gap-1 rounded-xl bg-slate-100 px-3 text-sm font-semibold text-slate-700">
+        <CircleX size={14} />
+        Pending
+      </button>
+      <button type="button" onClick={() => createReturnFromOrder(row)} className="inline-flex min-h-9 items-center gap-1 rounded-xl bg-rose-50 px-3 text-sm font-semibold text-rose-700">
+        Return
+      </button>
+    </div>
+  );
+
+  const returnRowActions = (row) => (
+    <div className="flex flex-wrap gap-2">
+      <button type="button" onClick={() => updateReturnStatus(row, 'Requested').catch((error) => setError(error.message))} className="inline-flex min-h-9 items-center rounded-xl bg-slate-100 px-3 text-sm font-semibold text-slate-700">
+        Pending
+      </button>
+      <button type="button" onClick={() => updateReturnStatus(row, 'Approved').catch((error) => setError(error.message))} className="inline-flex min-h-9 items-center rounded-xl bg-emerald-50 px-3 text-sm font-semibold text-emerald-700">
+        Approved
+      </button>
+      <button type="button" onClick={() => updateReturnStatus(row, 'Rejected').catch((error) => setError(error.message))} className="inline-flex min-h-9 items-center rounded-xl bg-rose-50 px-3 text-sm font-semibold text-rose-700">
+        Rejected
+      </button>
+      <button type="button" onClick={() => updateReturnStatus(row, 'Refunded').catch((error) => setError(error.message))} className="inline-flex min-h-9 items-center rounded-xl bg-amber-50 px-3 text-sm font-semibold text-amber-700">
+        Refunded
+      </button>
+    </div>
+  );
+
+  const notificationRowActions = (row) => (
+    <div className="flex flex-wrap gap-2">
+      <button type="button" onClick={() => toggleNotificationRead(row, true).catch((error) => setError(error.message))} className="inline-flex min-h-9 items-center rounded-xl bg-teal-50 px-3 text-sm font-semibold text-teal-700">
+        Mark Read
+      </button>
+      <button type="button" onClick={() => toggleNotificationRead(row, false).catch((error) => setError(error.message))} className="inline-flex min-h-9 items-center rounded-xl bg-slate-100 px-3 text-sm font-semibold text-slate-700">
+        Mark Unread
+      </button>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -772,8 +1223,8 @@ export default function AdminDashboard({ session, storeName, logoSrc, onLogout }
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[280px_1fr]">
-        <aside className={`fixed inset-y-0 left-0 z-50 w-[85%] max-w-sm overflow-y-auto border-r border-slate-200 bg-white p-4 shadow-2xl transition lg:sticky lg:top-[88px] lg:h-[calc(100vh-104px)] lg:translate-x-0 ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-[110%] lg:translate-x-0'}`}>
+      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+        <aside className={`fixed inset-y-0 left-0 z-50 w-[85%] max-w-[290px] overflow-y-auto border-r border-slate-200 bg-white p-4 shadow-2xl transition lg:sticky lg:top-[88px] lg:h-[calc(100vh-104px)] lg:w-auto lg:rounded-3xl lg:border lg:translate-x-0 ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-[110%] lg:translate-x-0'}`}>
           <div className="flex items-center justify-between lg:hidden">
             <img src={logoSrc} alt={storeName} className="h-10 w-auto object-contain" />
             <button type="button" onClick={() => setMobileSidebarOpen(false)} className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200">
@@ -787,11 +1238,24 @@ export default function AdminDashboard({ session, storeName, logoSrc, onLogout }
             <p className="mt-2 text-sm text-slate-300">{session.business_name || session.name || 'Signed in user'}</p>
           </div>
 
-          <nav className="mt-4 grid gap-4">
-            {sidebar.map((section) => (
-              <div key={section.heading}>
-                <p className="px-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{section.heading}</p>
-                <div className="mt-2 grid gap-1">
+          <nav className="mt-4 grid gap-3">
+            {sidebar.map((section, sectionIndex) => {
+              const sectionKey = section.heading || `main-${sectionIndex}`;
+              const isOpen = !section.heading || openSections[sectionKey] !== false;
+              return (
+              <div key={sectionKey}>
+                {section.heading ? (
+                  <button
+                    type="button"
+                    onClick={() => setOpenSections((current) => ({ ...current, [sectionKey]: current[sectionKey] === false }))}
+                    className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs font-bold uppercase tracking-[0.18em] text-slate-400 transition hover:bg-slate-50 hover:text-slate-700"
+                    aria-expanded={isOpen}
+                  >
+                    {section.heading}
+                    <ChevronDown size={15} className={`transition-transform ${isOpen ? '' : '-rotate-90'}`} />
+                  </button>
+                ) : null}
+                <div className={`${section.heading ? 'mt-1' : ''} grid gap-1 overflow-hidden ${isOpen ? '' : 'hidden'}`}>
                   {section.items.map((item) => (
                     <button
                       key={item.page}
@@ -808,7 +1272,8 @@ export default function AdminDashboard({ session, storeName, logoSrc, onLogout }
                   ))}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </nav>
         </aside>
 
@@ -836,9 +1301,9 @@ export default function AdminDashboard({ session, storeName, logoSrc, onLogout }
                       <Package className="text-teal-600" />
                     </div>
                     <div className="mt-4 grid gap-3">
-                      {(loading ? Array.from({ length: 4 }) : rows).map((row, index) => (
+                      {(loading ? Array.from({ length: 4 }) : dashboardDetails.products).map((row, index) => (
                         <div key={row?.id || index} className="flex items-center gap-3 rounded-2xl bg-slate-50 p-3">
-                          {loading ? <div className="h-14 w-14 rounded-2xl bg-slate-100" /> : <img src={row.image_url} alt={row.name} className="h-14 w-14 rounded-2xl object-cover" />}
+                          {loading ? <div className="h-14 w-14 rounded-2xl bg-slate-100" /> : row.image_url ? <img src={row.image_url} alt={row.name} className="h-14 w-14 rounded-2xl object-cover" /> : <div className="grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-slate-400"><Package size={20} /></div>}
                           <div className="min-w-0 flex-1">
                             <h3 className="truncate font-semibold text-slate-950">{loading ? 'Loading...' : row.name}</h3>
                             <p className="text-sm text-slate-500">{loading ? '' : row.category}</p>
@@ -846,6 +1311,7 @@ export default function AdminDashboard({ session, storeName, logoSrc, onLogout }
                           {!loading ? <strong>{money(row.actual_price || row.discounted_price)}</strong> : null}
                         </div>
                       ))}
+                      {!loading && !dashboardDetails.products.length ? <p className="rounded-2xl bg-slate-50 p-5 text-center text-sm text-slate-500">No products yet.</p> : null}
                     </div>
                   </article>
 
@@ -869,6 +1335,7 @@ export default function AdminDashboard({ session, storeName, logoSrc, onLogout }
                           </div>
                         </div>
                       ))}
+                      {!loading && !(summary?.lowStockItems || []).length ? <p className="rounded-2xl bg-slate-50 p-5 text-center text-sm text-slate-500">No low-stock items.</p> : null}
                     </div>
                   </article>
 
@@ -881,7 +1348,7 @@ export default function AdminDashboard({ session, storeName, logoSrc, onLogout }
                       <ClipboardList className="text-teal-600" />
                     </div>
                     <div className="mt-4 grid gap-3">
-                      {(loading ? Array.from({ length: 4 }) : summary?.orders ? [] : rows).map((row, index) => (
+                      {(loading ? Array.from({ length: 4 }) : dashboardDetails.orders).map((row, index) => (
                         <div key={row?.id || index} className="flex items-center justify-between rounded-2xl bg-slate-50 p-4">
                           <div>
                             <h3 className="font-semibold text-slate-950">{loading ? 'Loading...' : row.customer_name}</h3>
@@ -890,6 +1357,7 @@ export default function AdminDashboard({ session, storeName, logoSrc, onLogout }
                           {!loading ? <strong>{money(row.total_amount)}</strong> : null}
                         </div>
                       ))}
+                      {!loading && !dashboardDetails.orders.length ? <p className="rounded-2xl bg-slate-50 p-5 text-center text-sm text-slate-500">No orders yet.</p> : null}
                     </div>
                   </article>
                 </div>
@@ -921,44 +1389,88 @@ export default function AdminDashboard({ session, storeName, logoSrc, onLogout }
                   <h2 className="mt-1 text-2xl font-black text-slate-950">{config.title}</h2>
                   <p className="mt-2 text-sm text-slate-500">{config.description}</p>
                 </div>
-                {!config.readonly ? (
-                  <button type="button" onClick={() => setModal({})} className="inline-flex min-h-11 items-center gap-2 rounded-2xl bg-teal-600 px-4 text-sm font-bold text-white">
-                    <Edit3 size={16} />
-                    {config.addLabel}
-                  </button>
-                ) : null}
+                <div className="flex items-center gap-2">
+                  {activePage === 'Customers' ? (
+                    <button type="button" onClick={printMissingContacts} className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700">
+                      <Printer size={16} />
+                      Print Missing
+                    </button>
+                  ) : null}
+                  {activePage === 'Notifications' ? (
+                    <button type="button" onClick={() => markAllNotifications().catch((error) => setError(error.message))} className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700">
+                      Mark All Read
+                    </button>
+                  ) : null}
+                  {!config.readonly && !config.noCreate ? (
+                    <button type="button" onClick={() => setModal({})} className="inline-flex min-h-11 items-center gap-2 rounded-2xl bg-teal-600 px-4 text-sm font-bold text-white">
+                      <Edit3 size={16} />
+                      {config.addLabel}
+                    </button>
+                  ) : null}
+                </div>
               </section>
 
-              <DataTable
-                columns={config.columns}
-                rows={rows}
-                loading={loading}
-                onEdit={(row) => setModal(row)}
-                onDelete={deleteRecord}
-                readonly={config.readonly}
-              />
+              {activePage === 'Customers' ? (
+                <div className="grid gap-6">
+                  <DataTable
+                    columns={config.columns}
+                    rows={rows}
+                    loading={loading}
+                    onEdit={(row) => setModal(row)}
+                    onDelete={deleteRecord}
+                    readonly={config.readonly}
+                    noDelete={config.noDelete}
+                  />
 
-              <div className="flex items-center justify-between gap-3">
-                <button
-                  type="button"
-                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold disabled:opacity-50"
-                  disabled={page === 1}
-                  onClick={() => setPage((value) => Math.max(value - 1, 1))}
-                >
-                  Previous
-                </button>
-                <span className="text-sm text-slate-500">
-                  Page {page} of {totalPages}
-                </span>
-                <button
-                  type="button"
-                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold disabled:opacity-50"
-                  disabled={page === totalPages}
-                  onClick={() => setPage((value) => Math.min(value + 1, totalPages))}
-                >
-                  Next
-                </button>
-              </div>
+                  <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-600">Accounts</p>
+                        <h2 className="mt-1 text-xl font-black text-slate-950">Login accounts</h2>
+                      </div>
+                      <ShieldCheck className="text-teal-600" />
+                    </div>
+                    <div className="mt-4">
+                      <DataTable columns={accountColumns} rows={businessRows} loading={loading} readonly />
+                    </div>
+                  </article>
+                </div>
+              ) : (
+                <DataTable
+                  columns={config.columns}
+                  rows={rows}
+                  loading={loading}
+                  onEdit={(row) => setModal(row)}
+                  onDelete={deleteRecord}
+                  readonly={config.readonly}
+                  noDelete={config.noDelete}
+                  rowActions={activePage === 'Orders' ? orderRowActions : activePage === 'Returns' ? returnRowActions : activePage === 'Notifications' ? notificationRowActions : undefined}
+                />
+              )}
+
+              {activePage !== 'Customers' ? (
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold disabled:opacity-50"
+                    disabled={page === 1}
+                    onClick={() => setPage((value) => Math.max(value - 1, 1))}
+                  >
+                    Previous
+                  </button>
+                  <span className="text-sm text-slate-500">
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold disabled:opacity-50"
+                    disabled={page === totalPages}
+                    onClick={() => setPage((value) => Math.min(value + 1, totalPages))}
+                  >
+                    Next
+                  </button>
+                </div>
+              ) : null}
             </>
           )}
         </section>
@@ -974,6 +1486,98 @@ export default function AdminDashboard({ session, storeName, logoSrc, onLogout }
           onSubmit={submitRecord}
           loading={saving}
         />
+      ) : null}
+
+      {selectedReturnDraft ? (
+        <RecordModal
+          open={Boolean(selectedReturnDraft)}
+          title="Add Return"
+          fields={[
+            ['order_id', 'Order ID', 'number'],
+            ['product_id', 'Product ID', 'number'],
+            ['customer', 'Customer', 'text'],
+            ['product', 'Product', 'text'],
+            ['reason', 'Reason', 'textarea'],
+            ['refund_amount', 'Refund Amount', 'number'],
+            ['refund_method', 'Refund Method', 'select', ['Bank', 'Easypaisa', 'JazzCash', 'Cash']],
+            ['status', 'Status', 'select', ['Requested', 'Approved', 'Rejected', 'Refunded']]
+          ]}
+          initial={selectedReturnDraft}
+          onClose={() => setSelectedReturnDraft(null)}
+          onSubmit={submitReturnDraft}
+          loading={saving}
+        />
+      ) : null}
+
+      {selectedOrder ? (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/55 p-4">
+          <button type="button" className="absolute inset-0 h-full w-full" aria-label="Close order details" onClick={() => setSelectedOrder(null)} />
+          <section className="relative z-10 max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[2rem] bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-600">Order Details</p>
+                <h3 className="mt-1 text-2xl font-black text-slate-950">#ORD-{selectedOrder.id}</h3>
+              </div>
+              <button type="button" onClick={() => setSelectedOrder(null)} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-semibold">
+                Close
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl bg-slate-50 p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Customer</p>
+                <p className="mt-2 font-semibold text-slate-950">{selectedOrder.customer_name || '-'}</p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Status</p>
+                <p className="mt-2 font-semibold text-slate-950">{selectedOrder.order_status || '-'}</p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Payment</p>
+                <p className="mt-2 font-semibold text-slate-950">{selectedOrder.payment_status || '-'}</p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Total</p>
+                <p className="mt-2 font-semibold text-slate-950">{money(selectedOrder.total_amount)}</p>
+              </div>
+            </div>
+
+            <div className="mt-6 rounded-3xl border border-slate-200 p-5">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-600">Shipping Address</p>
+              <p className="mt-2 text-sm text-slate-700">{selectedOrder.shipping_address || '-'}</p>
+            </div>
+
+            <div className="mt-6">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-600">Items</p>
+              <div className="mt-3 grid gap-3">
+                {(selectedOrder.items || []).map((item) => (
+                  <div key={item.id || item.product_id || item.product_name} className="flex items-center justify-between rounded-2xl bg-slate-50 p-4">
+                    <div>
+                      <p className="font-semibold text-slate-950">{item.product_name || item.name || 'Item'}</p>
+                      <p className="text-sm text-slate-500">Qty {item.qty || 1}</p>
+                    </div>
+                    <strong className="text-slate-950">{money((item.price || 0) * (item.qty || 1))}</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-2">
+              <button type="button" onClick={() => changeOrderStatus(selectedOrder, 'To Ship').catch((error) => setError(error.message))} className="inline-flex min-h-11 items-center rounded-2xl bg-amber-50 px-4 text-sm font-bold text-amber-700">
+                To Ship
+              </button>
+              <button type="button" onClick={() => changeOrderStatus(selectedOrder, 'Received').catch((error) => setError(error.message))} className="inline-flex min-h-11 items-center rounded-2xl bg-emerald-50 px-4 text-sm font-bold text-emerald-700">
+                Received
+              </button>
+              <button type="button" onClick={() => changeOrderStatus(selectedOrder, 'Pending').catch((error) => setError(error.message))} className="inline-flex min-h-11 items-center rounded-2xl bg-slate-100 px-4 text-sm font-bold text-slate-700">
+                Pending
+              </button>
+              <button type="button" onClick={() => createReturnFromOrder(selectedOrder)} className="inline-flex min-h-11 items-center rounded-2xl bg-rose-50 px-4 text-sm font-bold text-rose-700">
+                Create Return
+              </button>
+            </div>
+          </section>
+        </div>
       ) : null}
 
       {mobileSidebarOpen ? <button type="button" aria-label="Close sidebar overlay" className="fixed inset-0 z-40 bg-slate-950/45 lg:hidden" onClick={() => setMobileSidebarOpen(false)} /> : null}
