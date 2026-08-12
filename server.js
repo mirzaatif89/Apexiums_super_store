@@ -1357,34 +1357,34 @@ app.put('/api/notifications/mark-all-read', async (req, res) => {
   }
 });
 
-// Vite dev middleware or static serving for production
-if (process.env.NODE_ENV !== 'production') {
-  const vite = await createViteServer({
-    server: { middlewareMode: true },
-    appType: 'spa'
-  });
-  app.use(vite.middlewares);
-} else {
-  if (existsSync(distPath)) {
+let httpServer;
+
+async function startServer() {
+  // Vite dev middleware or static serving for production
+  if (process.env.NODE_ENV !== 'production') {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'spa'
+    });
+    app.use(vite.middlewares);
+  } else if (existsSync(distPath)) {
     app.use(express.static(distPath));
     app.use((req, res, next) => {
       if (req.method !== 'GET' || req.path.startsWith('/api/')) return next();
       return res.sendFile(path.join(distPath, 'index.html'));
     });
   }
+
+  await initializeDatabase();
+  httpServer = app.listen(port, host, () => {
+    console.log(`API server running on http://${host}:${port}`);
+  });
 }
 
-let httpServer;
-
-initializeDatabase()
-  .then(() => {
-    httpServer = app.listen(port, host, () => {
-      console.log(`API server running on http://${host}:${port}`);
-    });
-  })
-  .catch((error) => {
-    console.error('Server initialization failed:', error);
-  });
+startServer().catch((error) => {
+  console.error('Failed to start server:', error);
+  process.exit(1);
+});
 
 function shutdown(signal) {
   console.log(`${signal} received; shutting down gracefully.`);
