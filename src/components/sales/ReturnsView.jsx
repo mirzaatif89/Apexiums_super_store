@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import Badge from '../common/Badge';
+import ActionMenu from '../common/ActionMenu';
 import { RotateCcw, Search, CheckCircle2, XCircle, Eye, X, Plus } from 'lucide-react';
 
 export const ReturnsView = () => {
@@ -65,14 +66,29 @@ export const ReturnsView = () => {
                     <Badge status={r.status}>{r.status}</Badge>
                   </td>
                   <td className="p-3.5 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => setSelectedReturn(r)}
-                        className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs"
-                      >
-                        Inspect
-                      </button>
-                    </div>
+                    <ActionMenu
+                      buttonTitle="Return actions"
+                      actions={[
+                        { label: 'Inspect', icon: Eye, onClick: () => setSelectedReturn(r) },
+                        {
+                          label: 'Approve & Refund',
+                          icon: CheckCircle2,
+                          onClick: () => {
+                            updateReturnStatus(r.id, 'Refunded');
+                            setSelectedReturn(null);
+                          }
+                        },
+                        {
+                          label: 'Reject Claim',
+                          icon: XCircle,
+                          variant: 'danger',
+                          onClick: () => {
+                            updateReturnStatus(r.id, 'Rejected');
+                            setSelectedReturn(null);
+                          }
+                        }
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}

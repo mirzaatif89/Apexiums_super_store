@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import Badge from '../common/Badge';
+import ActionMenu from '../common/ActionMenu';
 import {
   ShoppingCart,
   Search,
@@ -113,7 +114,13 @@ export const OrdersView = () => {
                     </td>
                     <td className="p-3.5 text-slate-500 font-medium">{o.orderDate}</td>
                     <td className="p-3.5 text-right">
-                      <div className="flex justify-end gap-2"><button onClick={() => setSelectedOrder(o)} className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center gap-1.5 cursor-pointer"><Eye size={14} /> Details</button><button onClick={() => { createReturnFromOrder(o); setActiveTab('returns'); }} className="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer"><RotateCcw size={14}/> Return</button></div>
+                      <ActionMenu
+                        buttonTitle="Order actions"
+                        actions={[
+                          { label: 'View details', icon: Eye, onClick: () => setSelectedOrder(o) },
+                          { label: 'Move to Returns', icon: RotateCcw, variant: 'danger', onClick: () => { createReturnFromOrder(o); setActiveTab('returns'); } }
+                        ]}
+                      />
                     </td>
                   </tr>
                 ))

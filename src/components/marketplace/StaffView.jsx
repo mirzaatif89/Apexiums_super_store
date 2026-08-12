@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import Badge from '../common/Badge';
+import ActionMenu from '../common/ActionMenu';
 import { UserCheck, Plus, Trash2, Edit2, X } from 'lucide-react';
 
 export const StaffView = () => {
@@ -94,20 +95,13 @@ export const StaffView = () => {
                     <Badge status={s.status}>{s.status}</Badge>
                   </td>
                   <td className="p-3.5 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => handleOpenEdit(s)}
-                        className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 cursor-pointer"
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                      <button
-                        onClick={() => deleteStaffMember(s.id)}
-                        className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 cursor-pointer"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+                    <ActionMenu
+                      buttonTitle="Staff actions"
+                      actions={[
+                        { label: 'Edit staff', icon: Edit2, onClick: () => handleOpenEdit(s) },
+                        { label: 'Delete staff', icon: Trash2, variant: 'danger', onClick: () => deleteStaffMember(s.id) }
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import Badge from '../common/Badge';
+import ActionMenu from '../common/ActionMenu';
 import { Radio, Plus, Trash2, Eye, MousePointer, DollarSign, X } from 'lucide-react';
 
 export const AdsView = () => {
@@ -79,12 +80,12 @@ export const AdsView = () => {
                     <Badge status={a.status}>{a.status}</Badge>
                   </td>
                   <td className="p-3.5 text-right">
-                    <button
-                      onClick={() => deleteAd(a.id)}
-                      className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 cursor-pointer"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    <ActionMenu
+                      buttonTitle="Ad actions"
+                      actions={[
+                        { label: 'Delete campaign', icon: Trash2, variant: 'danger', onClick: () => deleteAd(a.id) }
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}

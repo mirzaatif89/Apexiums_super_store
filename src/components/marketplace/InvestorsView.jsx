@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import StatCard from '../common/StatCard';
 import Badge from '../common/Badge';
+import ActionMenu from '../common/ActionMenu';
 import { TrendingUp, Plus, DollarSign, Users, CheckCircle2, X } from 'lucide-react';
 
 export const InvestorsView = () => {
@@ -125,12 +126,20 @@ export const InvestorsView = () => {
                     <Badge status={inv.status}>{inv.status}</Badge>
                   </td>
                   <td className="p-3.5 text-right">
-                    <button
-                      onClick={() => setSelectedInvestor(inv)}
-                      className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs cursor-pointer"
-                    >
-                      Portfolio File
-                    </button>
+                    <ActionMenu
+                      buttonTitle="Investor actions"
+                      actions={[
+                        { label: 'Portfolio file', icon: TrendingUp, onClick: () => setSelectedInvestor(inv) },
+                        {
+                          label: inv.status === 'Pending Approval' ? 'Approve investment' : 'Mark active',
+                          icon: CheckCircle2,
+                          onClick: () => {
+                            updateInvestorStatus(inv.id, 'Active');
+                            setSelectedInvestor(inv);
+                          }
+                        }
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}

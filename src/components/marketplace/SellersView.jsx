@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import Badge from '../common/Badge';
+import ActionMenu from '../common/ActionMenu';
 import { Store, Search, Plus, CheckCircle2, ShieldAlert, X, Star, DollarSign, Package } from 'lucide-react';
 
 export const SellersView = () => {
@@ -106,14 +107,29 @@ export const SellersView = () => {
                     <Badge status={s.status}>{s.status}</Badge>
                   </td>
                   <td className="p-3.5 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => setSelectedSeller(s)}
-                        className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs cursor-pointer"
-                      >
-                        Inspect
-                      </button>
-                    </div>
+                    <ActionMenu
+                      buttonTitle="Seller actions"
+                      actions={[
+                        { label: 'Inspect store', icon: Store, onClick: () => setSelectedSeller(s) },
+                        {
+                          label: s.verificationStatus === 'Pending' ? 'Approve & Verify' : 'Open details',
+                          icon: CheckCircle2,
+                          onClick: () => {
+                            updateSellerStatus(s.id, 'Active', 'Verified');
+                            setSelectedSeller(s);
+                          }
+                        },
+                        {
+                          label: s.status === 'Suspended' ? 'Un-suspend store' : 'Suspend store',
+                          icon: ShieldAlert,
+                          variant: s.status === 'Suspended' ? 'default' : 'danger',
+                          onClick: () => {
+                            updateSellerStatus(s.id, s.status === 'Suspended' ? 'Active' : 'Suspended', s.status === 'Suspended' ? 'Verified' : 'Suspended');
+                            setSelectedSeller(s);
+                          }
+                        }
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}

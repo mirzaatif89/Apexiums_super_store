@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import Badge from '../common/Badge';
+import ActionMenu from '../common/ActionMenu';
 import {
   Search,
   Plus,
@@ -14,8 +15,7 @@ import {
   Image as ImageIcon,
   Check,
   ChevronLeft,
-  ChevronRight,
-  MoreVertical
+  ChevronRight
 } from 'lucide-react';
 
 export const ProductListing = () => {
@@ -379,36 +379,15 @@ export const ProductListing = () => {
                         <Badge status={p.status}>{p.status}</Badge>
                       </td>
                       <td className="p-3.5 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => setViewingProduct(p)}
-                            title="View Details"
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 cursor-pointer"
-                          >
-                            <Eye size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleOpenEdit(p)}
-                            title="Edit Product"
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 cursor-pointer"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                          <button
-                            onClick={() => duplicateProduct(p.id)}
-                            title="Duplicate"
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-purple-600 hover:bg-purple-50 cursor-pointer"
-                          >
-                            <Copy size={14} />
-                          </button>
-                          <button
-                            onClick={() => deleteProduct(p.id)}
-                            title="Delete"
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
+                        <ActionMenu
+                          buttonTitle="Product actions"
+                          actions={[
+                            { label: 'View details', icon: Eye, onClick: () => setViewingProduct(p) },
+                            { label: 'Edit product', icon: Edit2, onClick: () => handleOpenEdit(p) },
+                            { label: 'Duplicate product', icon: Copy, onClick: () => duplicateProduct(p.id) },
+                            { label: 'Delete product', icon: Trash2, variant: 'danger', onClick: () => deleteProduct(p.id) }
+                          ]}
+                        />
                       </td>
                     </tr>
                   );

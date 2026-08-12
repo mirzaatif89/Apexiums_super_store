@@ -1,5 +1,6 @@
 import React from 'react';
 import { Building2, Plus, Power, Trash2, X } from 'lucide-react';
+import ActionMenu from '../common/ActionMenu';
 
 const emptyForm = {
   business_name: '',
@@ -125,7 +126,15 @@ export default function BusinessAccountsView({ session }) {
                   <td className="p-4"><p>{account.email || '—'}</p><p className="text-[10px] text-slate-500">{account.phone || ''}</p></td>
                   <td className="p-4 font-semibold">{account.role}</td>
                   <td className="p-4"><span className={`rounded-full px-2 py-1 text-[10px] font-bold ${account.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>{account.status}</span></td>
-                  <td className="p-4"><div className="flex justify-end gap-2"><button onClick={() => updateStatus(account)} disabled={Number(account.id) === 1} title="Activate / deactivate" className="rounded-lg p-2 text-amber-600 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-30"><Power size={15} /></button><button onClick={() => deleteAccount(account)} disabled={Number(account.id) === 1} title="Delete account" className="rounded-lg p-2 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-30"><Trash2 size={15} /></button></div></td>
+                  <td className="p-4 text-right">
+                    <ActionMenu
+                      buttonTitle="Business account actions"
+                      actions={[
+                        { label: account.status === 'Active' ? 'Deactivate account' : 'Activate account', icon: Power, onClick: () => updateStatus(account) },
+                        { label: 'Delete account', icon: Trash2, variant: 'danger', onClick: () => deleteAccount(account), disabled: Number(account.id) === 1 }
+                      ]}
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>
