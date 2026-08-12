@@ -22,7 +22,7 @@
     "mysql2": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "recharts": "^3.10.1",
+    "recharts": "3.10.0",
     "vite": "latest"
   },
   "devDependencies": {

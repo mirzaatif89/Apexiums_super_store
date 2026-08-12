@@ -1,113 +1,169 @@
-import { Heart, Menu, Search, ShoppingCart, User2, X } from 'lucide-react';
+import React from 'react';
+import { Heart, Menu, Search, ShoppingCart, User } from 'lucide-react';
 
 export default function Header({
-  storeName,
+  storeName = 'Apexiums',
   logoSrc,
   authUser,
-  cartCount,
+  cartCount = 0,
+  wishlistCount = 0,
   onAccountClick,
+  onCartClick,
+  onWishlistClick,
   onMenuToggle,
-  mobileMenuOpen,
+  onMenuClick,
   searchQuery,
   onSearchChange,
   onSearchSubmit,
   onSearchFocus
 }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur">
-      <div className="hidden border-b border-slate-100 bg-slate-900 px-4 py-2 text-[11px] text-slate-100 lg:block">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
-          <div className="flex items-center gap-4 font-medium text-slate-200">
-            <a href="#" className="transition hover:text-white">Download App</a>
-            <a href="#" className="transition hover:text-white">Sell on {storeName}</a>
-            <a href="#" className="transition hover:text-white">Help</a>
-            <a href="#" className="transition hover:text-white">Track Order</a>
+    <header className="w-full bg-[#E8262A] text-white transition-all relative z-20 shadow-md">
+      {/* Header Content Container - Full Available Width */}
+      <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-3 sm:py-3.5 md:py-2.5">
+
+        {/* DESKTOP LAYOUT (md & larger): Menu on left, search in center, cart, wishlist & account on right */}
+        <div className="hidden md:flex items-center justify-between gap-6 w-full">
+          {/* Left: Menu */}
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={onMenuToggle || onMenuClick}
+              className="flex h-10 w-10 lg:h-11 lg:w-11 items-center justify-center rounded-[16px] bg-white/20 hover:bg-white/30 text-white transition active:scale-95 cursor-pointer backdrop-blur-md"
+              aria-label="Menu"
+              title="Menu"
+            >
+              <Menu size={21} strokeWidth={2.2} className="text-white" />
+            </button>
           </div>
-          <p className="text-slate-300">Free delivery over Rs 3,999</p>
-        </div>
-      </div>
 
-      <div className="mx-auto max-w-7xl px-3 py-3 sm:px-4 lg:px-6">
-        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 lg:grid-cols-[auto_1fr_auto] lg:gap-4">
-          <button
-            type="button"
-            onClick={onMenuToggle}
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-900 shadow-sm lg:hidden"
-            aria-label="Open menu"
-          >
-            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-
-          <a href="#" className="flex min-w-0 items-center">
-            <img
-              src={logoSrc}
-              alt={storeName}
-              loading="lazy"
-              className="h-11 w-auto max-w-[14rem] object-contain sm:h-12"
-            />
-          </a>
-
-          <form onSubmit={onSearchSubmit} className="hidden w-full lg:block">
-            <label className="flex min-h-12 w-full items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 shadow-sm shadow-slate-900/5 focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-100">
+          {/* Center: Search Bar */}
+          <form onSubmit={onSearchSubmit} className="flex-1 max-w-2xl mx-auto">
+            <div className="relative flex h-10 lg:h-11 items-center rounded-full bg-white px-4 shadow-sm focus-within:ring-2 focus-within:ring-white/40 transition-all">
+              <Search size={18} className="text-slate-400 shrink-0 mr-2.5" />
               <input
                 value={searchQuery}
                 onChange={(event) => onSearchChange(event.target.value)}
                 onFocus={onSearchFocus}
-                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
-                placeholder="Search products, brands and categories"
-                aria-label="Search products"
-              />
-              <button
-                type="submit"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-teal-600 text-white transition hover:bg-teal-700"
+                className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400"
+                placeholder="Search products, categories..."
                 aria-label="Search"
-              >
-                <Search size={18} />
-              </button>
-            </label>
+              />
+            </div>
           </form>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button className="hidden min-h-11 min-w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:inline-flex" aria-label="Wishlist">
-              <Heart size={18} />
-            </button>
+          {/* Right: Wishlist, Cart & Account Icons */}
+          <div className="flex items-center gap-2.5 shrink-0">
             <button
               type="button"
-              onClick={onAccountClick}
-              className="hidden min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:inline-flex"
-              aria-label="Account/Login"
+              onClick={onWishlistClick}
+              className="group relative flex h-10 w-10 lg:h-11 lg:w-11 items-center justify-center rounded-[16px] bg-white/20 hover:bg-white/30 text-white shadow-xs transition active:scale-95 cursor-pointer backdrop-blur-md"
+              title="Wishlist"
+              aria-label="Wishlist"
             >
-              <User2 size={18} />
-              <span>{authUser?.name ? authUser.name : 'Account'}</span>
+              <Heart size={20} className="text-white transition-transform group-hover:scale-110" />
+              {wishlistCount > 0 ? (
+                <span className="absolute -top-1 -right-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-white px-1 text-[9px] font-black text-[#E8262A] shadow-md animate-bounce">
+                  {wishlistCount}
+                </span>
+              ) : null}
             </button>
-            <button className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-slate-950 text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" aria-label="Cart">
-              <ShoppingCart size={18} />
-              <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-teal-600 px-1 text-[10px] font-bold text-white">
-                {cartCount}
-              </span>
+
+            <button
+              type="button"
+              onClick={onCartClick}
+              className="group relative flex h-10 w-10 lg:h-11 lg:w-11 items-center justify-center rounded-[16px] bg-white/20 hover:bg-white/30 text-white shadow-xs transition active:scale-95 cursor-pointer backdrop-blur-md"
+              title="Cart"
+              aria-label="Cart"
+            >
+              <ShoppingCart size={20} strokeWidth={2.2} className="text-white transition-transform group-hover:scale-105" />
+              {cartCount > 0 ? (
+                <span className="absolute -top-1 -right-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-white px-1 text-[9px] font-black text-[#E8262A] shadow-md animate-bounce">
+                  {cartCount}
+                </span>
+              ) : null}
+            </button>
+
+            {onAccountClick ? (
+              <button
+                type="button"
+                onClick={onAccountClick}
+                className="group relative flex h-10 w-10 lg:h-11 lg:w-11 items-center justify-center rounded-[16px] bg-white/20 hover:bg-white/30 text-white shadow-xs transition active:scale-95 cursor-pointer backdrop-blur-md"
+                title="Account"
+                aria-label="Account"
+              >
+                <User size={20} className="text-white transition-transform group-hover:scale-105" />
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        {/* MOBILE LAYOUT (under md): Unchanged 2-row layout */}
+        <div className="block md:hidden space-y-3 sm:space-y-3.5">
+          {/* Top Row: Menu on Left, Cart on Far Right */}
+          <div className="flex items-center justify-between gap-3 w-full">
+            <button
+              type="button"
+              onClick={onMenuToggle || onMenuClick}
+              className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-[16px] bg-white/20 hover:bg-white/30 text-white transition active:scale-95 cursor-pointer shrink-0 backdrop-blur-md"
+              aria-label="Menu"
+              title="Menu"
+            >
+              <Menu size={20} strokeWidth={2.2} className="text-white" />
+            </button>
+
+            <button
+              type="button"
+              onClick={onCartClick}
+              className="group relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-[16px] bg-white/20 hover:bg-white/30 text-white transition active:scale-95 cursor-pointer shrink-0 backdrop-blur-md"
+              title="Cart"
+              aria-label="Cart"
+            >
+              <ShoppingCart size={20} strokeWidth={2.2} className="text-white transition-transform group-hover:scale-105" />
+              {cartCount > 0 ? (
+                <span className="absolute -top-1 -right-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-white px-1 text-[9px] font-black text-[#E8262A] shadow-md animate-bounce">
+                  {cartCount}
+                </span>
+              ) : null}
+            </button>
+          </div>
+
+          {/* Second Row: Search Input Row + Wishlist Button */}
+          <div className="flex items-center gap-2.5 sm:gap-3 w-full">
+            <form onSubmit={onSearchSubmit} className="flex-1 flex items-center min-w-0">
+              <div className="relative flex-1 flex h-10 sm:h-11 items-center rounded-full bg-white px-4 shadow-sm focus-within:ring-2 focus-within:ring-white/40 transition-all">
+                <Search
+                  size={18}
+                  className="text-slate-400 shrink-0 mr-2.5"
+                />
+                <input
+                  value={searchQuery}
+                  onChange={(event) => onSearchChange(event.target.value)}
+                  onFocus={onSearchFocus}
+                  className="w-full bg-transparent text-xs sm:text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400"
+                  placeholder="Search"
+                  aria-label="Search"
+                />
+              </div>
+            </form>
+
+            <button
+              type="button"
+              onClick={onWishlistClick}
+              className="group relative flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl bg-white/20 hover:bg-white/30 text-white shadow-xs transition active:scale-95 cursor-pointer backdrop-blur-xs"
+              title="Wishlist"
+              aria-label="Wishlist"
+            >
+              <Heart size={19} className="text-white transition-transform group-hover:scale-110" />
+              {wishlistCount > 0 ? (
+                <span className="absolute -top-1 -right-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-white px-1 text-[9px] font-black text-[#E8262A] shadow-md animate-bounce">
+                  {wishlistCount}
+                </span>
+              ) : null}
             </button>
           </div>
         </div>
 
-        <form onSubmit={onSearchSubmit} className="mt-3 lg:hidden">
-          <label className="flex min-h-12 w-full items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 shadow-sm shadow-slate-900/5 focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-100">
-            <button
-              type="submit"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-teal-600 text-white"
-              aria-label="Search"
-            >
-              <Search size={18} />
-            </button>
-            <input
-              value={searchQuery}
-              onChange={(event) => onSearchChange(event.target.value)}
-              onFocus={onSearchFocus}
-              className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
-              placeholder="Search products, brands and categories"
-              aria-label="Search products"
-            />
-          </label>
-        </form>
       </div>
     </header>
   );

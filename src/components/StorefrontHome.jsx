@@ -8,136 +8,324 @@ import ProductGrid from './ProductGrid';
 import Footer from './Footer';
 import BottomNav from './BottomNav';
 import LoginModal from './LoginModal';
+import CheckoutModal from './CheckoutModal';
+import ProductDetailsModal from './ProductDetailsModal';
+import UserProfileView from './UserProfileView';
 import {
+  Briefcase,
+  ChevronRight,
+  Download,
+  Headphones,
+  Heart,
+  Info,
+  LogIn,
+  LogOut,
+  Minus,
+  Package,
+  Plus,
+  ShieldCheck,
+  ShoppingBag,
+  ShoppingCart,
+  Smartphone,
+  Store,
+  Truck,
+  User,
+  X
+} from 'lucide-react';
+import {
+  categories,
   footerSections,
+  flashSaleProducts,
+  heroSlides,
+  mainNav,
   paymentMethods,
+  productSections,
+  promoBanners,
   storeLogoSrc,
   storeName,
   topLinks
 } from '../data/storeData';
 
-function filterProducts(list, query) {
+function matchesCategory(product, cat) {
+  if (!cat || cat === 'All') return true;
+  const c = cat.toLowerCase();
+  const pCat = (product.category || '').toLowerCase();
+  const pTitle = (product.title || '').toLowerCase();
+
+  if (pCat.includes(c) || pTitle.includes(c)) return true;
+
+  if (c === 'fashion' || c === 'clothes' || c === 'shirts') {
+    return (
+      pCat.includes('fashion') ||
+      pCat.includes('shirt') ||
+      pCat.includes('cloth') ||
+      pCat.includes('accessor') ||
+      pTitle.includes('tee') ||
+      pTitle.includes('shirt') ||
+      pTitle.includes('sneaker') ||
+      pTitle.includes('backpack') ||
+      pTitle.includes('hoodie')
+    );
+  }
+  if (c === 'electronics' || c === 'mobiles' || c === 'audio' || c === 'gaming' || c === 'laptops') {
+    return (
+      pCat.includes('electr') ||
+      pCat.includes('audio') ||
+      pCat.includes('gamin') ||
+      pCat.includes('laptop') ||
+      pTitle.includes('earbud') ||
+      pTitle.includes('watch') ||
+      pTitle.includes('phone') ||
+      pTitle.includes('tv') ||
+      pTitle.includes('controller') ||
+      pTitle.includes('camera') ||
+      pTitle.includes('keyboard') ||
+      pTitle.includes('speaker')
+    );
+  }
+  if (c === 'home & living' || c === 'home' || c === 'decor' || c === 'appliances') {
+    return (
+      pCat.includes('home') ||
+      pCat.includes('decor') ||
+      pCat.includes('appliance') ||
+      pTitle.includes('lamp') ||
+      pTitle.includes('chair') ||
+      pTitle.includes('art') ||
+      pTitle.includes('desk')
+    );
+  }
+  if (c === 'shoes') {
+    return (
+      pCat.includes('shoe') ||
+      pTitle.includes('shoe') ||
+      pTitle.includes('sneaker')
+    );
+  }
+  if (c === 'watches' || c === 'watch') {
+    return pCat.includes('watch') || pTitle.includes('watch');
+  }
+  if (c === 'health & beauty' || c === 'beauty' || c === 'health') {
+    return pCat.includes('beaut') || pCat.includes('health') || pTitle.includes('skin') || pTitle.includes('face') || pTitle.includes('fragrance');
+  }
+  if (c === 'sports' || c === 'fitness') {
+    return pCat.includes('sport') || pCat.includes('fitn') || pTitle.includes('shoe') || pTitle.includes('mat');
+  }
+
+  return false;
+}
+
+function filterProducts(list, query, cat) {
+  let result = list;
+  if (cat && cat !== 'All') {
+    result = result.filter((p) => matchesCategory(p, cat));
+  }
   const needle = query.trim().toLowerCase();
-  if (!needle) return list;
-  return list.filter((product) =>
-    [product.title, product.category, product.badge].some((field) => String(field || '').toLowerCase().includes(needle))
+  if (!needle) return result;
+  return result.filter((product) =>
+    [product.title, product.category, product.badge].some((field) => (field || '').toLowerCase().includes(needle))
   );
 }
 
-function normalizeProduct(product) {
-  const originalPrice = Number(product.actual_price || product.base_price || 0);
-  const discountedPrice = Number(product.discounted_price || 0);
-  const price = discountedPrice > 0 ? discountedPrice : originalPrice;
-  const discount = originalPrice > price && originalPrice > 0
-    ? `${Math.round(((originalPrice - price) / originalPrice) * 100)}% OFF`
-    : product.status;
-  return {
-    id: product.id,
-    title: product.name,
-    price,
-    originalPrice,
-    badge: discount,
-    image: product.image_url,
-    category: product.category || 'Uncategorized'
-  };
-}
-
-export default function StorefrontHome({ onLogin }) {
+export default function StorefrontHome({ onLogin, session, onLogout }) {
   const [searchQuery, setSearchQuery] = React.useState('');
-  const [cartCount] = React.useState(0);
+  const [selectedCategory, setSelectedCategory] = React.useState('All');
+  const [cartItems, setCartItems] = React.useState([]);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [loginOpen, setLoginOpen] = React.useState(false);
-  const [authUser, setAuthUser] = React.useState(null);
-  const [catalog, setCatalog] = React.useState({ banners: [], promotions: [], categories: [], products: [] });
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState('');
-
-  React.useEffect(() => {
-    let cancelled = false;
-    async function loadStorefront() {
-      setLoading(true);
-      setError('');
+  const [checkoutOpen, setCheckoutOpen] = React.useState(false);
+  const [profileOpen, setProfileOpen] = React.useState(false);
+  const [authUser, setAuthUser] = React.useState(() => {
+    if (session) return session;
+    if (typeof localStorage !== 'undefined') {
       try {
-        const responses = await Promise.all([
-          fetch('/api/banners?limit=50'),
-          fetch('/api/promotions?limit=50'),
-          fetch('/api/categories?limit=100'),
-          fetch('/api/products?limit=100')
-        ]);
-        const payloads = await Promise.all(responses.map((response) => response.json()));
-        const failed = responses.findIndex((response) => !response.ok);
-        if (failed >= 0) throw new Error(payloads[failed]?.message || 'Unable to load storefront');
-        if (!cancelled) {
-          setCatalog({
-            banners: payloads[0].rows || [],
-            promotions: payloads[1].rows || [],
-            categories: payloads[2].rows || [],
-            products: payloads[3].rows || []
-          });
-        }
-      } catch (loadError) {
-        if (!cancelled) setError(loadError.message);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+        const saved = localStorage.getItem('apexiums-auth-session');
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
     }
-    loadStorefront();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    return null;
+  });
 
   React.useEffect(() => {
-    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+    if (session) {
+      setAuthUser(session);
+    }
+  }, [session]);
+
+  const [selectedProduct, setSelectedProduct] = React.useState(null);
+  const [modalQty, setModalQty] = React.useState(1);
+
+  const cartCount = React.useMemo(() => {
+    return cartItems.reduce((sum, item) => sum + (item.qty || 1), 0);
+  }, [cartItems]);
+
+  const [infoModal, setInfoModal] = React.useState(null);
+
+  const handleAddProductToCart = (product, qty = 1) => {
+    if (!product) return;
+    setCartItems((prev) => {
+      const idx = prev.findIndex((item) => item.id === product.id);
+      if (idx > -1) {
+        const copy = [...prev];
+        copy[idx] = { ...copy[idx], qty: (copy[idx].qty || 1) + qty };
+        return copy;
+      }
+      return [...prev, { ...product, qty }];
+    });
+  };
+
+  React.useEffect(() => {
+    document.body.style.overflow = mobileMenuOpen || selectedProduct || checkoutOpen || infoModal ? 'hidden' : '';
     return () => {
       document.body.style.overflow = '';
     };
-  }, [mobileMenuOpen]);
+  }, [mobileMenuOpen, selectedProduct, checkoutOpen, infoModal]);
 
-  const products = catalog.products.filter((product) => product.status === 'Live').map(normalizeProduct);
-  const filteredProducts = filterProducts(products, searchQuery);
-  const filteredFlashSale = filteredProducts.filter((product) => product.originalPrice > product.price);
-  const filteredSections = [{
-    title: searchQuery ? 'Search Results' : 'Products',
-    description: searchQuery ? `Results for “${searchQuery}”` : 'Browse the latest available products',
-    products: filteredProducts
-  }];
-  const categories = catalog.categories
-    .filter((category) => category.status === 'Active')
-    .map((category) => ({ id: category.id, label: category.name, image: category.image_url }));
-  const mainNav = categories.map((category) => ({ label: category.label, items: [] }));
-  const heroSlides = catalog.banners
-    .filter((banner) => banner.status === 'Active' && banner.image_url)
-    .map((banner) => ({
-      id: banner.id,
-      title: banner.title,
-      description: banner.position || 'Featured marketplace offer',
-      image: banner.image_url,
-      cta: 'Explore Now',
-      accent: banner.position || 'Featured'
-    }));
-  const promoBanners = catalog.promotions
-    .filter((promotion) => promotion.status === 'Active' && promotion.show_on_website !== 'No' && promotion.image_url)
-    .map((promotion) => ({
-      id: promotion.id,
-      title: promotion.name,
-      subtitle: promotion.valid_till ? `Valid until ${String(promotion.valid_till).slice(0, 10)}` : 'Current offer',
-      image: promotion.image_url
-    }));
+  const filteredFlashSale = filterProducts(flashSaleProducts, searchQuery, selectedCategory);
+  const filteredSections = productSections.map((section) => ({
+    ...section,
+    products: filterProducts(section.products, searchQuery, selectedCategory)
+  }));
+
+  const allProductsList = React.useMemo(() => {
+    const map = new Map();
+    flashSaleProducts.forEach((p) => map.set(p.id, p));
+    productSections.forEach((s) => s.products.forEach((p) => map.set(p.id, p)));
+    return Array.from(map.values());
+  }, []);
 
   function handleLogin(user) {
     setAuthUser(user);
-    onLogin(user);
+    if (typeof localStorage !== 'undefined' && user) {
+      localStorage.setItem('apexiums-auth-session', JSON.stringify(user));
+    }
+    if (onLogin) onLogin(user);
+    setLoginOpen(false);
+    setProfileOpen(true);
   }
 
+  const handleAccountClick = () => {
+    if (authUser) {
+      setProfileOpen(true);
+    } else {
+      setLoginOpen(true);
+    }
+  };
+
+  function handleLogout() {
+    setAuthUser(null);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('apexiums-auth-session');
+      localStorage.removeItem('apexiums-user-avatar');
+    }
+    if (onLogout) {
+      onLogout();
+    }
+    setInfoModal({
+      title: 'Logged Out',
+      content: 'You have been successfully logged out of your Apexiums account.'
+    });
+  }
+
+  const sideMenuOptions = [
+    {
+      label: authUser ? 'My Profile' : 'Login / Register',
+      icon: authUser ? <User size={18} /> : <LogIn size={18} />,
+      onClick: handleAccountClick
+    },
+    {
+      label: 'My Orders',
+      icon: <Package size={18} />,
+      onClick: () => setCheckoutOpen(true)
+    },
+    {
+      label: 'Wishlist',
+      icon: <Heart size={18} />,
+      onClick: () => {
+        const el = document.getElementById('products-section');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }
+    },
+    {
+      label: 'About',
+      icon: <Info size={18} />,
+      onClick: () =>
+        setInfoModal({
+          title: 'About Apexiums',
+          content:
+            'Apexiums Technologies is your premier online e-commerce marketplace offering high-quality fashion, electronics, gadgets, and daily essentials with fast delivery and guaranteed satisfaction.'
+        })
+    },
+    {
+      label: 'Download the app',
+      icon: <Smartphone size={18} />,
+      onClick: () =>
+        setInfoModal({
+          title: 'Download Apexiums App',
+          content:
+            'Get exclusive discounts, real-time order tracking, and instant flash sale notifications! Available now on Android Play Store and Apple App Store.'
+        })
+    },
+    {
+      label: 'Become a Seller',
+      icon: <Store size={18} />,
+      onClick: () =>
+        setInfoModal({
+          title: 'Become a Seller',
+          content:
+            'Join thousands of successful merchants on Apexiums! List your products, reach millions of active shoppers across Pakistan, and grow your sales effortless.'
+        })
+    },
+    {
+      label: 'Become an Investor',
+      icon: <Briefcase size={18} />,
+      onClick: () =>
+        setInfoModal({
+          title: 'Become an Investor',
+          content:
+            'Apexiums Technologies is expanding rapidly! Partner with us to revolutionize next-generation logistics and digital e-commerce infrastructure.'
+        })
+    },
+    {
+      label: 'Privacy Policy',
+      icon: <ShieldCheck size={18} />,
+      onClick: () =>
+        setInfoModal({
+          title: 'Privacy Policy',
+          content:
+            'Your privacy and data security are our top priorities. All customer transactions are encrypted, and personal details are strictly protected under our global privacy standard.'
+        })
+    },
+    {
+      label: 'Help and Support',
+      icon: <Headphones size={18} />,
+      onClick: () =>
+        setInfoModal({
+          title: 'Help and Support',
+          content:
+            'Need assistance? Our 24/7 dedicated support team is available via Live Chat, email at support@apexiums.com, or phone hotline.'
+        })
+    },
+    {
+      label: 'Logout',
+      icon: <LogOut size={18} />,
+      isLogout: true,
+      onClick: handleLogout
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="flex flex-col min-h-screen bg-[#E8262A] text-slate-900 font-sans">
       <Header
         storeName={storeName}
         logoSrc={storeLogoSrc}
         authUser={authUser}
         cartCount={cartCount}
-        onAccountClick={() => setLoginOpen(true)}
+        onAccountClick={handleAccountClick}
+        onCartClick={() => setCheckoutOpen(true)}
+        onWishlistClick={() => {
+          const el = document.getElementById('products-section');
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }}
         mobileMenuOpen={mobileMenuOpen}
         onMenuToggle={() => setMobileMenuOpen((value) => !value)}
         searchQuery={searchQuery}
@@ -146,64 +334,149 @@ export default function StorefrontHome({ onLogin }) {
         onSearchFocus={() => setMobileMenuOpen(false)}
       />
 
+      {/* Main Content Card with Crisp White / Light Slate #F8F9FA */}
+      <main className="flex-1 bg-[#F8F9FA] rounded-t-[32px] sm:rounded-t-[40px] shadow-xl relative z-10 pt-3 pb-24 sm:pb-28 space-y-2 sm:space-y-3 lg:space-y-4">
+        <HeroBanner slides={heroSlides} promoBanners={promoBanners} />
+        <CategoryGrid
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onSelectCategory={(cat) => setSelectedCategory(cat)}
+        />
+        <FlashSale
+          products={filteredFlashSale}
+          onProductClick={(p) => { setSelectedProduct(p); setModalQty(1); }}
+          onAddToCart={(p) => handleAddProductToCart(p, 1)}
+        />
+        <ProductGrid
+          sections={filteredSections}
+          selectedCategory={selectedCategory}
+          onSelectCategory={(cat) => setSelectedCategory(cat)}
+          onSelectProduct={(p) => { setSelectedProduct(p); setModalQty(1); }}
+          onAddToCart={(p) => handleAddProductToCart(p, 1)}
+        />
+      </main>
+
+      <Footer sections={footerSections} paymentMethods={paymentMethods} storeName={storeName} logoSrc={storeLogoSrc} onAdminClick={() => setLoginOpen(true)} />
+
+      {!selectedProduct ? (
+        <BottomNav
+          cartCount={cartCount}
+          isCartOpen={checkoutOpen}
+          isProfileOpen={profileOpen}
+          onCartClick={() => {
+            setProfileOpen(false);
+            setCheckoutOpen(true);
+          }}
+          onHomeClick={() => {
+            setProfileOpen(false);
+            setCheckoutOpen(false);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onAccountClick={() => {
+            setCheckoutOpen(false);
+            handleAccountClick();
+          }}
+          onWishlistClick={() => {
+            setProfileOpen(false);
+            setCheckoutOpen(false);
+            const el = document.getElementById('products-section');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }}
+          onSupportClick={() => {
+            setProfileOpen(false);
+            setCheckoutOpen(false);
+            window.location.href = 'mailto:support@apexiums.com?subject=Customer Support Inquiry';
+          }}
+        />
+      ) : null}
+
+      {/* Slide-out Menu Drawer */}
       {mobileMenuOpen ? (
-        <div className="fixed inset-0 z-50 bg-slate-950/45 lg:hidden">
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs transition-opacity">
           <button
             type="button"
             aria-label="Close menu overlay"
-            className="absolute inset-0 h-full w-full"
+            className="absolute inset-0 h-full w-full cursor-pointer"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <aside className="absolute left-0 top-0 h-full w-[85%] max-w-sm overflow-y-auto bg-white p-5 shadow-2xl">
-            <div className="flex items-center justify-between">
-              <img src={storeLogoSrc} alt={storeName} loading="lazy" className="h-10 w-auto object-contain" />
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setLoginOpen(true);
-                  }}
-                  className="inline-flex min-h-11 items-center rounded-xl border border-teal-200 bg-teal-50 px-3 text-sm font-semibold text-teal-700"
-                >
-                  Login
-                </button>
+          <aside className="absolute left-0 top-0 h-full w-[85%] max-w-sm overflow-y-auto bg-white p-5 shadow-2xl z-10 flex flex-col justify-between">
+            <div>
+              {/* Drawer Header */}
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-50 text-[#E8262A] font-black text-lg shadow-2xs">
+                    A
+                  </div>
+                  <div>
+                    <h2 className="font-black text-slate-900 text-base leading-tight">{storeName}</h2>
+                    <p className="text-[11px] font-medium text-slate-500">Super Online Marketplace</p>
+                  </div>
+                </div>
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-slate-200"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer"
                 >
-                  X
+                  <X size={18} />
                 </button>
               </div>
-            </div>
 
-            <div className="mt-6 grid gap-3">
-              {topLinks.map((link) => (
-                <a
-                  key={link}
-                  href="#"
-                  className="flex min-h-11 items-center rounded-2xl bg-slate-50 px-4 text-sm font-semibold text-slate-700"
-                >
-                  {link}
-                </a>
-              ))}
-            </div>
+              {/* User Account Banner with Red Gradient */}
+              <div className="mt-4 rounded-2xl bg-gradient-to-r from-[#E8262A] to-[#E8262A] p-3.5 text-white shadow-sm flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] font-medium text-red-100">Welcome to {storeName}</p>
+                  <p className="text-xs sm:text-sm font-bold mt-0.5 truncate max-w-[170px]">
+                    {authUser ? authUser.name || authUser.email : 'Guest Account'}
+                  </p>
+                </div>
+                {!authUser ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setLoginOpen(true);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-white text-[#E8262A] font-bold text-xs shadow-2xs hover:bg-red-50 transition cursor-pointer shrink-0"
+                  >
+                    Login
+                  </button>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-md bg-white/20 text-[10px] font-bold backdrop-blur-xs">
+                    Signed In
+                  </span>
+                )}
+              </div>
 
-            <div className="mt-8">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Menu</p>
-              <div className="mt-3 grid gap-3">
-                {mainNav.map((item) => (
-                  <div key={item.label} className="rounded-2xl border border-slate-200 p-4">
-                    <h3 className="font-bold text-slate-950">{item.label}</h3>
-                    <div className="mt-3 grid grid-cols-2 gap-2">
-                      {item.items.map((subItem) => (
-                        <span key={subItem} className="rounded-xl bg-teal-50 px-3 py-2 text-xs font-semibold text-teal-700">
-                          {subItem}
-                        </span>
-                      ))}
+              {/* Menu Options List */}
+              <div className="mt-4 space-y-1">
+                {sideMenuOptions.map((item) => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      item.onClick();
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                      item.isLogout
+                        ? 'text-red-600 hover:bg-red-50 mt-3 border border-red-100'
+                        : 'text-slate-800 hover:bg-red-50/60 hover:text-[#E8262A]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        className={`flex h-8 w-8 items-center justify-center rounded-xl ${
+                          item.isLogout
+                            ? 'bg-red-100 text-red-600'
+                            : 'bg-red-50 text-[#E8262A]'
+                        }`}
+                      >
+                        {item.icon}
+                      </span>
+                      <span>{item.label}</span>
                     </div>
-                  </div>
+                    <ChevronRight size={16} className="text-slate-400" />
+                  </button>
                 ))}
               </div>
             </div>
@@ -211,25 +484,72 @@ export default function StorefrontHome({ onLogin }) {
         </div>
       ) : null}
 
-      <main className="pb-20 lg:pb-0">
-        <CategoryNav navItems={mainNav} />
-        {error ? (
-          <div className="mx-auto mt-4 max-w-7xl rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>
-        ) : null}
-        {loading ? (
-          <div className="mx-auto grid min-h-[360px] max-w-7xl place-items-center px-4 text-sm font-semibold text-slate-500">Loading marketplace…</div>
-        ) : (
-          <>
-        <HeroBanner slides={heroSlides} promoBanners={promoBanners} />
-        {filteredFlashSale.length ? <FlashSale products={filteredFlashSale} /> : null}
-        <CategoryGrid categories={categories} />
-        <ProductGrid sections={filteredSections} />
-          </>
-        )}
-        <Footer sections={footerSections} paymentMethods={paymentMethods} storeName={storeName} logoSrc={storeLogoSrc} />
-      </main>
+      {/* Dynamic Info Popup Modal */}
+      {infoModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-5 sm:p-6 shadow-2xl border border-slate-100 text-slate-900 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 text-[#E8262A]">
+                  <Info size={20} />
+                </div>
+                <h3 className="font-extrabold text-base text-[#1E1E1E]">{infoModal.title}</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setInfoModal(null)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
 
-      <BottomNav />
+            <p className="mt-4 text-xs sm:text-sm leading-relaxed text-slate-600 font-medium">
+              {infoModal.content}
+            </p>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setInfoModal(null)}
+                className="w-full py-2.5 rounded-xl bg-[#E8262A] hover:bg-red-700 text-white font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer"
+              >
+                Got It
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Interactive Product Detail Modal */}
+      {selectedProduct ? (
+        <ProductDetailsModal
+          product={selectedProduct}
+          allProducts={allProductsList}
+          storeName={storeName}
+          cartCount={cartCount}
+          onOpenCart={() => {
+            if (selectedProduct) {
+              handleAddProductToCart(selectedProduct, modalQty);
+            }
+            setSelectedProduct(null);
+            setCheckoutOpen(true);
+          }}
+          onSelectProduct={(p) => {
+            setSelectedProduct(p);
+            setModalQty(1);
+          }}
+          onClose={() => setSelectedProduct(null)}
+          onAddToCart={(qty) => {
+            handleAddProductToCart(selectedProduct, qty);
+          }}
+          onBuyNow={(qty) => {
+            handleAddProductToCart(selectedProduct, qty);
+            setSelectedProduct(null);
+            setCheckoutOpen(true);
+          }}
+        />
+      ) : null}
 
       <LoginModal
         open={loginOpen}
@@ -238,6 +558,47 @@ export default function StorefrontHome({ onLogin }) {
         storeName={storeName}
         logoSrc={storeLogoSrc}
       />
+
+      <CheckoutModal
+        open={checkoutOpen}
+        onClose={() => setCheckoutOpen(false)}
+        storeName={storeName}
+        logoSrc={storeLogoSrc}
+        cartItems={cartItems}
+        onUpdateQty={(id, delta) => {
+          setCartItems((prev) =>
+            prev
+              .map((item) =>
+                item.id === id ? { ...item, qty: Math.max(1, (item.qty || 1) + delta) } : item
+              )
+          );
+        }}
+        onRemoveItem={(id) => {
+          setCartItems((prev) => prev.filter((item) => item.id !== id));
+        }}
+        onOrderPlaced={() => setCartItems([])}
+      />
+
+      {profileOpen ? (
+        <div className="fixed inset-0 z-[90] bg-white overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
+          <UserProfileView
+            session={authUser}
+            onBack={() => setProfileOpen(false)}
+            onOpenLogin={() => {
+              setProfileOpen(false);
+              setLoginOpen(true);
+            }}
+            onLogout={() => {
+              handleLogout();
+              setProfileOpen(false);
+            }}
+            onNavigateTab={(tab, filter) => {
+              setProfileOpen(false);
+              setCheckoutOpen(true);
+            }}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

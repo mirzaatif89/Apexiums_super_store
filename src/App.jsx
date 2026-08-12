@@ -19,6 +19,7 @@ function saveSession(session) {
     localStorage.removeItem(AUTH_KEY);
     return;
   }
+
   localStorage.setItem(AUTH_KEY, JSON.stringify(session));
 }
 
@@ -28,8 +29,12 @@ export default function App() {
   function handleLogin(user) {
     const nextSession = {
       ...user,
-      businessId: user.role === 'SuperAdmin' ? null : user.businessId || user.id || null
+      businessId:
+        user.role === 'SuperAdmin'
+          ? null
+          : user.businessId || user.id || null,
     };
+
     saveSession(nextSession);
     setSession(nextSession);
   }
@@ -43,16 +48,46 @@ export default function App() {
     document.title = session
       ? `${session.role === 'SuperAdmin' ? 'Admin' : 'User'} Dashboard | ${storeName}`
       : `${storeName} | Online Marketplace`;
+
     return undefined;
   }, [session]);
 
+  // No logged-in user → show the existing storefront/login flow
   if (!session) {
-    return <StorefrontHome onLogin={handleLogin} />;
+    return (
+      <StorefrontHome
+        onLogin={handleLogin}
+        storeName={storeName}
+        logoSrc={storeLogoSrc}
+      />
+    );
   }
 
-  if (session.role === 'SuperAdmin') {
-    return <AdminDashboard session={session} storeName={storeName} logoSrc={storeLogoSrc} onLogout={handleLogout} />;
+  // Existing Admin Panel → restore/show it
+  if (
+    ['SuperAdmin', 'BusinessAdmin', 'Admin', 'Staff', 'Manager'].includes(
+      session.role
+    ) ||
+    session.loginType === 'admin'
+  ) {
+    return (
+      <AdminDashboard
+        session={session}
+        storeName={storeName}
+        logoSrc={storeLogoSrc}
+        onLogout={handleLogout}
+      />
+    );
   }
 
-  return <UserDashboard session={session} storeName={storeName} logoSrc={storeLogoSrc} onLogout={handleLogout} />;
+  // Normal customer/user -> show storefront with active session
+  return (
+    <StorefrontHome
+      session={session}
+      onLogin={handleLogin}
+      onLogout={handleLogout}
+      storeName={storeName}
+      logoSrc={storeLogoSrc}
+    />
+  );
 }

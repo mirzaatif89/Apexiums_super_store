@@ -1,53 +1,203 @@
-import { ChevronRight } from 'lucide-react';
+import React from 'react';
+import { ChevronRight, Flame, Heart, ShoppingBag, Star, Zap } from 'lucide-react';
 
-export default function FlashSale({ products }) {
+const pad = (value) => String(value).padStart(2, '0');
+
+export default function FlashSale({ products = [], onProductClick, onAddToCart }) {
+  const [activeTab, setActiveTab] = React.useState('All');
+  const [remaining, setRemaining] = React.useState({ h: 2, m: 12, s: 56 });
+  const [wishlistedIds, setWishlistedIds] = React.useState(new Set());
+
+  const tabs = ['All', 'Newest', 'Popular', 'Clothes'];
+
+  const toggleWishlist = (id, e) => {
+    e.stopPropagation();
+    setWishlistedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  React.useEffect(() => {
+    const timer = window.setInterval(() => {
+      setRemaining((current) => {
+        let total = current.h * 3600 + current.m * 60 + current.s - 1;
+        if (total < 0) total = 2 * 3600 + 12 * 60 + 56;
+        return {
+          h: Math.floor(total / 3600),
+          m: Math.floor((total % 3600) / 60),
+          s: total % 60
+        };
+      });
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const displayedProducts = React.useMemo(() => {
+    if (!products || products.length === 0) return [];
+    let list = [...products];
+    if (activeTab === 'Popular') {
+      list.sort((a, b) => (b.reviewsCount || 50) - (a.reviewsCount || 50));
+    } else if (activeTab === 'Newest') {
+      list.reverse();
+    } else if (activeTab === 'Clothes') {
+      list = list.filter((p) => p.category?.toLowerCase().includes('fash') || p.category?.toLowerCase().includes('cloth'));
+      if (list.length === 0) list = products.slice(0, 4);
+    }
+    return list;
+  }, [products, activeTab]);
+
   return (
-    <section className="mx-auto max-w-7xl px-3 py-2 sm:px-4 lg:px-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-teal-600">Flash Sale</p>
-          <h2 className="mt-1 text-xl font-black text-slate-950">Limited time deals</h2>
-        </div>
-        <span className="rounded-full bg-slate-950 px-3 py-2 text-xs font-bold text-white">Active offers</span>
-      </div>
+    <section className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-6 pt-1 pb-2">
+      <div className="rounded-2xl sm:rounded-3xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-2xs">
+        {/* Top Header Bar: Flash Sale Title on Left, Closing Timer on Right Corner */}
+        <div className="flex items-center justify-between gap-2.5 sm:gap-4 border-b border-slate-100 pb-3">
+          {/* Flash Sale Title */}
+          <div className="flex items-center gap-1.5 text-slate-900 font-black text-xl sm:text-2xl md:text-3xl tracking-tight shrink-0">
+            <Flame className="fill-[#E8262A] text-[#E8262A] shrink-0" size={28} />
+            <span>Flash Sale</span>
+          </div>
 
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <p className="text-sm text-slate-500">Hurry up before these prices end.</p>
-          <a href="#" className="inline-flex items-center gap-1 text-sm font-semibold text-teal-600">
-            See All <ChevronRight size={16} />
-          </a>
-      </div>
-
-      <div className="mt-4 flex gap-4 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {products.map((product) => (
-          <article
-            key={product.id}
-            className="group min-w-[12.5rem] flex-none overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/10 sm:min-w-[15rem]"
-          >
-            <div className="relative overflow-hidden">
-              <img
-                src={product.image}
-                alt={product.title}
-                loading="lazy"
-                className="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105"
-              />
-              <span className="absolute left-3 top-3 rounded-full bg-teal-600 px-2.5 py-1 text-[11px] font-bold text-white">
-                {product.badge}
+          {/* Countdown timer on the right corner */}
+          <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-extrabold text-[#1E1E1E] bg-slate-50 border border-slate-200/80 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl shadow-2xs shrink-0">
+            <span className="text-[11px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider hidden sm:inline">Closing in:</span>
+            <div className="flex items-center gap-1 font-mono text-xs font-black">
+              <span className="flex h-6.5 w-6.5 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-[#1E1E1E] text-white shadow-xs">
+                {pad(remaining.h)}
+              </span>
+              <span className="text-[#1E1E1E] font-black text-xs sm:text-sm">:</span>
+              <span className="flex h-6.5 w-6.5 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-[#1E1E1E] text-white shadow-xs">
+                {pad(remaining.m)}
+              </span>
+              <span className="text-[#1E1E1E] font-black text-xs sm:text-sm">:</span>
+              <span className="flex h-6.5 w-6.5 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-[#1E1E1E] text-white shadow-xs">
+                {pad(remaining.s)}
               </span>
             </div>
-            <div className="grid gap-2 p-4">
-              <h3 className="line-clamp-2 min-h-10 text-sm font-semibold leading-5 text-slate-900">
-                {product.title}
-              </h3>
-              <div className="flex items-center gap-2">
-                <span className="text-base font-black text-slate-950">Rs {product.price.toLocaleString('en-PK')}</span>
-                {product.originalPrice > product.price ? <span className="text-xs text-slate-400 line-through">
-                  Rs {product.originalPrice.toLocaleString('en-PK')}
-                </span> : null}
-              </div>
-            </div>
-          </article>
-        ))}
+          </div>
+        </div>
+
+        {/* Filter Pills Tabs (All, Newest, Popular, Clothes) */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 no-scrollbar border-b border-slate-100">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab;
+            return (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer shrink-0 ${
+                  isActive
+                    ? 'bg-[#E8262A] text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {tab}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Product Cards Grid */}
+        <div className="mt-4 grid grid-cols-2 gap-1 sm:gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          {displayedProducts.map((product) => {
+            const discountPercent = product.originalPrice
+              ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+              : null;
+
+            return (
+              <article
+                key={product.id}
+                onClick={() => onProductClick && onProductClick(product)}
+                className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-0 shadow-2xs transition-all duration-300 hover:-translate-y-1 hover:border-red-300 hover:shadow-md cursor-pointer"
+              >
+                {/* Image container - Full Edge to Edge */}
+                <div className="relative aspect-[1/1.12] w-full overflow-hidden rounded-t-2xl bg-slate-100">
+                  <img
+                    src={product.image}
+                    alt={product.title}
+                    loading="lazy"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+
+                  {/* Wishlist Icon */}
+                  <button
+                    type="button"
+                    onClick={(e) => toggleWishlist(product.id, e)}
+                    className={`absolute right-1.5 top-1.5 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-xl bg-white/90 text-slate-700 shadow-xs backdrop-blur-xs transition hover:bg-white hover:scale-105 active:scale-95 cursor-pointer z-10 ${
+                      wishlistedIds.has(product.id) ? 'text-red-600' : 'hover:text-red-600'
+                    }`}
+                    title="Wishlist"
+                    aria-label="Wishlist"
+                  >
+                    <Heart size={14} className={wishlistedIds.has(product.id) ? 'fill-red-600' : ''} />
+                  </button>
+
+                  {/* Discount Badge */}
+                  {discountPercent ? (
+                    <span className="absolute left-1.5 top-1.5 rounded-md bg-[#E8262A] px-1.5 py-0.5 text-[9px] font-black uppercase text-white shadow-xs tracking-wider">
+                      -{discountPercent}%
+                    </span>
+                  ) : product.badge ? (
+                    <span className="absolute left-1.5 top-1.5 rounded-md bg-[#E8262A] px-1.5 py-0.5 text-[9px] font-black uppercase text-white shadow-xs tracking-wider">
+                      {product.badge}
+                    </span>
+                  ) : null}
+                </div>
+
+                {/* Info & Pricing */}
+                <div className="p-2 sm:p-2.5 flex flex-col justify-between flex-1">
+                  <div>
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-[#E8262A] block leading-tight">
+                      {product.category || 'Deal'}
+                    </span>
+                    <h3 className="line-clamp-2 text-xs font-bold leading-snug text-[#1E1E1E] transition group-hover:text-[#E8262A] mt-0.5">
+                      {product.title}
+                    </h3>
+
+                    {/* Rating stars */}
+                    <div className="mt-0.5 flex items-center gap-1 text-[10px] text-amber-500">
+                      <Star size={11} className="fill-amber-400 text-amber-400" />
+                      <span className="font-bold text-slate-700 text-[10px]">{product.rating || '4.8'}</span>
+                      <span className="text-slate-400 text-[9px]">({product.reviewsCount || 42})</span>
+                    </div>
+                  </div>
+
+                  {/* Price and Add to Cart */}
+                  <div className="pt-1 mt-1 border-t border-slate-100 flex items-center justify-between gap-1">
+                    <div>
+                      <div className="text-xs sm:text-sm font-black text-[#E8262A] leading-none">
+                        Rs {product.price.toLocaleString('en-PK')}
+                      </div>
+                      {product.originalPrice ? (
+                        <div className="text-[9px] text-slate-400 line-through font-medium mt-0.5 leading-none">
+                          Rs {product.originalPrice.toLocaleString('en-PK')}
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onAddToCart) onAddToCart(product);
+                        else if (onProductClick) onProductClick(product);
+                      }}
+                      className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-[#E8262A] text-white shadow-xs transition hover:bg-red-700 active:scale-95 cursor-pointer shrink-0"
+                      title="Add to Cart"
+                      aria-label="Add to Cart"
+                    >
+                      <ShoppingBag size={14} />
+                    </button>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
       </div>
     </section>
   );

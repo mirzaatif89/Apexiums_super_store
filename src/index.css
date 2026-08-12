@@ -6,7 +6,7 @@
   }
 
   body {
-    @apply bg-slate-50 text-slate-900 antialiased overflow-x-hidden;
+    @apply bg-[#F8F9FA] text-[#1E1E1E] antialiased overflow-x-hidden;
   }
 
   button,

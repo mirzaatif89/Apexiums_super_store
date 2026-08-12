@@ -1,133 +1,151 @@
 import React from 'react';
-import { ArrowRight } from 'lucide-react';
 
-export default function HeroBanner({ slides, promoBanners }) {
-  const [activeIndex, setActiveIndex] = React.useState(0);
-  const mobileTrackRef = React.useRef(null);
+export default function HeroBanner({ slides = [], promoBanners = [] }) {
+  const [currentSlide, setCurrentSlide] = React.useState(0);
 
+  const displaySlides = [
+    {
+      id: 1,
+      badge: 'Limited time!',
+      subtitle: 'Get Special Offer',
+      offerPrefix: 'Up to',
+      offerMain: '40%',
+      terms: 'All Services Available | T&C Applied',
+      cta: 'Claim',
+      image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80'
+    },
+    {
+      id: 2,
+      badge: 'New Season',
+      subtitle: 'Exclusive Gadgets Deal',
+      offerPrefix: 'Up to',
+      offerMain: '50%',
+      terms: 'Free Shipping Nationwide | T&C Applied',
+      cta: 'Claim',
+      image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=600&q=80'
+    },
+    {
+      id: 3,
+      badge: 'Hot Offer',
+      subtitle: 'Top Accessories Upgrade',
+      offerPrefix: 'Up to',
+      offerMain: '35%',
+      terms: 'Cash on Delivery Available | T&C Applied',
+      cta: 'Claim',
+      image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80'
+    }
+  ];
+
+  // Auto-slide carousel
   React.useEffect(() => {
-    if (!slides.length) return undefined;
-    const timer = window.setInterval(() => {
-      setActiveIndex((current) => (current + 1) % slides.length);
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % displaySlides.length);
     }, 4500);
+    return () => clearInterval(timer);
+  }, [displaySlides.length]);
 
-    return () => window.clearInterval(timer);
-  }, [slides.length]);
-
-  React.useEffect(() => {
-    const node = mobileTrackRef.current?.children?.[activeIndex];
-    node?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  }, [activeIndex]);
-
-  const activeSlide = slides[activeIndex];
-  if (!activeSlide) {
-    return (
-      <section className="mx-auto max-w-7xl px-3 py-4 sm:px-4 lg:px-6">
-        <div className="grid min-h-72 place-items-center rounded-[2rem] border border-dashed border-slate-300 bg-white p-8 text-center">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.22em] text-teal-600">Apexiums Marketplace</p>
-            <h2 className="mt-2 text-3xl font-black text-slate-950">New offers are on the way</h2>
-            <p className="mt-3 text-sm text-slate-500">Active banners will appear here as soon as they are published.</p>
-          </div>
-        </div>
-      </section>
-    );
-  }
-  const promotionCards = promoBanners.length
-    ? [promoBanners[activeIndex % promoBanners.length], promoBanners[(activeIndex + 1) % promoBanners.length]].filter(Boolean)
-    : [];
+  const activeSlide = displaySlides[currentSlide] || displaySlides[0];
 
   return (
-    <section className="mx-auto max-w-7xl px-3 py-4 sm:px-4 lg:px-6">
-      <div className="lg:hidden">
-        <div
-          ref={mobileTrackRef}
-          className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    <section className="w-full max-w-none px-3 sm:px-4 md:px-6 lg:px-8 pt-1 pb-1">
+      {/* Section Header: #SpecialForYou */}
+      <div className="flex items-center justify-between pb-1.5 mb-1">
+        <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
+          #SpecialForYou
+        </h2>
+        <button
+          type="button"
+          onClick={() => {
+            const el = document.getElementById('products-section');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className="text-xs sm:text-sm font-bold text-[#E8262A] hover:text-red-700 tracking-wide transition cursor-pointer"
         >
-          {slides.map((slide) => (
-            <article
-              key={slide.id}
-              className="min-w-full snap-center overflow-hidden rounded-3xl bg-slate-900 shadow-lg shadow-slate-900/10"
+          See All
+        </button>
+      </div>
+
+      {/* Main Banner Card (Polished Premium Silver/Gray Banner with Smooth Depth & Hierarchy) */}
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-slate-100 via-slate-200/90 to-slate-300/80 p-4 sm:p-6 md:p-8 lg:p-9 shadow-sm border border-slate-200/90 w-full">
+        {/* Subtle Ambient Light Overlay */}
+        <div className="absolute top-0 right-0 -mt-8 -mr-8 h-48 w-48 rounded-full bg-white/30 blur-2xl pointer-events-none" />
+
+        <div className="relative z-10 flex items-center justify-between gap-3 sm:gap-6 md:gap-8 lg:gap-10 w-full">
+
+          {/* Left Text Content - Spans full remaining card width */}
+          <div className="flex-1 min-w-0 w-full flex flex-col justify-center items-start">
+            {/* Limited time Badge */}
+            {activeSlide.badge && (
+              <span className="inline-flex items-center rounded-full bg-white/90 backdrop-blur-md px-3 py-1 text-[10px] sm:text-xs font-bold text-slate-700 shadow-2xs border border-white/80 mb-2 sm:mb-2.5">
+                {activeSlide.badge}
+              </span>
+            )}
+
+            <h3 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-800 tracking-tight leading-snug w-full">
+              {activeSlide.subtitle}
+            </h3>
+
+            {/* Offer Display (Up to 40%) */}
+            <div className="my-1 sm:my-1.5 flex items-baseline gap-1.5 flex-wrap w-full">
+              <span className="text-xs sm:text-sm md:text-base lg:text-lg font-bold text-slate-700">
+                {activeSlide.offerPrefix}
+              </span>
+              <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-none">
+                {activeSlide.offerMain}
+              </span>
+            </div>
+
+            <p className="text-[10px] sm:text-xs md:text-sm font-medium text-slate-500 leading-tight mb-3 sm:mb-4 w-full">
+              {activeSlide.terms}
+            </p>
+
+            {/* Red Action Button */}
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById('products-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="inline-flex items-center justify-center rounded-full bg-[#E8262A] hover:bg-[#d01f23] text-white font-extrabold text-xs sm:text-sm md:text-base px-5 sm:px-6 md:px-8 py-2 sm:py-2.5 md:py-3 shadow-md shadow-red-500/20 transition-all duration-200 hover:shadow-lg hover:shadow-red-500/30 active:scale-95 cursor-pointer"
             >
-              <div className="grid gap-4 p-4">
-                <div className="overflow-hidden rounded-2xl">
-                  <img
-                    src={slide.image}
-                    alt={slide.title}
-                    loading="lazy"
-                    className="aspect-[16/10] w-full object-cover"
-                  />
-                </div>
-                <div className="grid gap-3 text-white">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-300">{slide.accent}</p>
-                    <h2 className="mt-2 text-2xl font-black leading-tight">{slide.title}</h2>
-                    <p className="mt-2 text-sm leading-6 text-slate-300">{slide.description}</p>
-                  </div>
-                  <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-teal-600 px-4 text-sm font-bold text-white transition hover:bg-teal-700">
-                    {slide.cta}
-                    <ArrowRight size={16} />
-                  </button>
-                </div>
-              </div>
-            </article>
-          ))}
+              {activeSlide.cta}
+            </button>
+          </div>
+
+          {/* Right Product Image - Styled exactly as in reference screenshot */}
+          <div className="relative shrink-0 w-32 xs:w-40 sm:w-52 md:w-72 lg:w-96 h-28 xs:h-36 sm:h-44 md:h-56 lg:h-64 overflow-hidden rounded-2xl md:rounded-3xl shadow-md border border-slate-200/80 group">
+            <img
+              src={activeSlide.image}
+              alt={activeSlide.subtitle}
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+            {/* Bottom Overlay Bar matching reference screenshot */}
+            <div className="absolute inset-x-0 bottom-0 flex items-center justify-between px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-slate-950/70 backdrop-blur-md text-white border-t border-white/10">
+              <span className="flex items-center gap-1 text-[10px] sm:text-xs font-semibold text-white/90">
+                <span>🔥</span> Hot Deal
+              </span>
+              <span className="bg-[#E8262A] text-white text-[8px] sm:text-[10px] font-black uppercase tracking-wider px-1.5 sm:px-2 py-0.5 rounded">
+                ACTIVE
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="hidden lg:block">
-        <article className="w-full overflow-hidden rounded-[2rem] bg-slate-950 text-white shadow-xl shadow-slate-900/10">
-          <div className={`grid h-full grid-cols-1 gap-0 ${promotionCards.length ? 'md:grid-cols-[2fr_1fr]' : ''}`}>
-            <div className="relative min-h-[26rem] overflow-hidden">
-              <img
-                src={activeSlide.image}
-                alt={activeSlide.title}
-                loading="lazy"
-                className="h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/35 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-8">
-                <p className="text-sm font-bold uppercase tracking-[0.24em] text-teal-300">
-                  {activeSlide.accent}
-                </p>
-                <h2 className="mt-3 max-w-xl text-4xl font-black leading-tight">{activeSlide.title}</h2>
-                <p className="mt-3 max-w-lg text-sm leading-7 text-slate-200">{activeSlide.description}</p>
-                <button className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-2xl bg-white px-5 text-sm font-bold text-slate-950 transition hover:bg-teal-50">
-                  {activeSlide.cta}
-                  <ArrowRight size={16} />
-                </button>
-              </div>
-            </div>
-
-            {promotionCards.length ? <div className="grid gap-4 bg-slate-100 p-4">
-              {promotionCards.map((promo, index) => (
-                <article key={`${promo.id || promo.title}-${index}`} className="relative overflow-hidden rounded-[1.75rem] bg-white shadow-sm">
-                  <img
-                    src={promo.image}
-                    alt={promo.title}
-                    loading="lazy"
-                    className="h-full min-h-48 w-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
-                  <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-300">{promo.subtitle}</p>
-                    <h3 className="mt-2 text-xl font-extrabold leading-tight">{promo.title}</h3>
-                  </div>
-                </article>
-              ))}
-            </div> : null}
-          </div>
-        </article>
-      </div>
-
-      <div className="mt-3 flex justify-center gap-2">
-        {slides.map((slide, index) => (
+      {/* Carousel Pagination Dots Below Banner */}
+      <div className="flex items-center justify-center gap-1.5 mt-2.5">
+        {displaySlides.map((_, idx) => (
           <button
-            key={slide.id}
+            key={idx}
             type="button"
-            onClick={() => setActiveIndex(index)}
-            className={`h-2 rounded-full transition-all ${index === activeIndex ? 'w-7 bg-teal-600' : 'w-2 bg-slate-300'}`}
-            aria-label={`Go to banner ${index + 1}`}
+            onClick={() => setCurrentSlide(idx)}
+            className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+              idx === currentSlide
+                ? 'w-6 bg-[#E8262A]'
+                : 'w-2 bg-slate-300 hover:bg-slate-400'
+            }`}
+            aria-label={`Go to slide ${idx + 1}`}
           />
         ))}
       </div>
