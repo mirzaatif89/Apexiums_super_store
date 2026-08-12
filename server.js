@@ -1367,8 +1367,9 @@ if (process.env.NODE_ENV !== 'production') {
 } else {
   if (existsSync(distPath)) {
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+    app.use((req, res, next) => {
+      if (req.method !== 'GET' || req.path.startsWith('/api/')) return next();
+      return res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 }
