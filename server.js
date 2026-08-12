@@ -652,7 +652,13 @@ function verifyPassword(password, stored) {
 }
 
 function getContext(req) {
-  const role = String(req.headers['x-user-role'] || '').trim();
+  const rawRole = String(req.headers['x-user-role'] || '').trim();
+  const normalizedRole = rawRole.replace(/[\s_-]+/g, '').toLowerCase();
+  const role = normalizedRole === 'superadmin'
+    ? 'SuperAdmin'
+    : normalizedRole === 'businessadmin'
+      ? 'BusinessAdmin'
+      : rawRole;
   const businessId = Number(req.headers['x-business-id'] || 0) || null;
   return { role, businessId };
 }

@@ -3,6 +3,7 @@ import AdminDashboard from './components/AdminDashboard';
 import StorefrontHome from './components/StorefrontHome';
 import UserDashboard from './components/UserDashboard';
 import { storeLogoSrc, storeName } from './data/storeData';
+import { isAdminRole, isSuperAdminRole } from './utils/roles';
 
 const AUTH_KEY = 'apexiums-auth-session';
 
@@ -30,7 +31,7 @@ export default function App() {
     const nextSession = {
       ...user,
       businessId:
-        user.role === 'SuperAdmin'
+        isSuperAdminRole(user.role)
           ? null
           : user.businessId || user.id || null,
     };
@@ -46,7 +47,7 @@ export default function App() {
 
   React.useEffect(() => {
     document.title = session
-      ? `${session.role === 'SuperAdmin' ? 'Admin' : 'User'} Dashboard | ${storeName}`
+      ? `${isAdminRole(session.role) ? 'Admin' : 'User'} Dashboard | ${storeName}`
       : `${storeName} | Online Marketplace`;
 
     return undefined;
@@ -64,12 +65,7 @@ export default function App() {
   }
 
   // Existing Admin Panel → restore/show it
-  if (
-    ['SuperAdmin', 'BusinessAdmin', 'Admin', 'Staff', 'Manager'].includes(
-      session.role
-    ) ||
-    session.loginType === 'admin'
-  ) {
+  if (isAdminRole(session.role) || session.loginType === 'admin') {
     return (
       <AdminDashboard
         session={session}

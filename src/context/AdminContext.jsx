@@ -15,10 +15,11 @@ import {
   initialNotifications,
   initialSettings
 } from '../data/mockAdminData';
+import { isSuperAdminRole } from '../utils/roles';
 
 const AdminContext = createContext();
 
-export const AdminProvider = ({ children }) => {
+export const AdminProvider = ({ children, session }) => {
   // Navigation & Active View State
   const [activeTab, setActiveTab] = useState('dashboard');
   const [activeSubTab, setActiveSubTab] = useState('');
@@ -62,13 +63,13 @@ export const AdminProvider = ({ children }) => {
   const [settings, setSettings] = useState(initialSettings);
 
   // User Profile
-  const [currentUser, setCurrentUser] = useState({
-    name: 'Alexander Wright',
-    email: 'alex.wright@apexiums-admin.com',
-    role: 'Super Admin',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80',
-    department: 'Executive Board'
-  });
+  const [currentUser, setCurrentUser] = useState(() => ({
+    name: session?.name || session?.owner_name || session?.username || 'Administrator',
+    email: session?.email || '',
+    role: isSuperAdminRole(session?.role) ? 'Super Admin' : session?.role || 'Admin',
+    avatar: session?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80',
+    department: session?.department || (isSuperAdminRole(session?.role) ? 'Executive Board' : 'Administration')
+  }));
 
   // --- CRUD Handlers ---
 
@@ -262,6 +263,10 @@ export const AdminProvider = ({ children }) => {
 
   // Permissions
   const updateRolePermission = (roleName, permissionKey, value) => {
+    if (isSuperAdminRole(roleName) && !value) {
+      addToast('Super Admin always has full system access.', 'info');
+      return;
+    }
     setRolesPermissions((prev) =>
       prev.map((r) => {
         if (r.role === roleName) {

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
+import { isSuperAdminRole } from '../../utils/roles';
 import {
   LayoutDashboard,
   Package,
@@ -13,6 +14,7 @@ import {
   TrendingUp,
   UserCheck,
   Store,
+  Building2,
   ShieldCheck,
   DollarSign,
   Receipt,
@@ -29,16 +31,23 @@ import {
   X
 } from 'lucide-react';
 
-export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLogout }) => {
+export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLogout, session }) => {
   const { activeTab, setActiveTab, activeSubTab, setActiveSubTab, notifications, currentUser } = useAdmin();
+  const isSuperAdmin = isSuperAdminRole(session?.role || currentUser.role);
 
   // Collapsible accordion sub-menus
-  const [openSection, setOpenSection] = useState('catalog');
+  const [openSections, setOpenSections] = useState(() =>
+    isSuperAdmin ? ['catalog', 'sales', 'marketing', 'marketplace', 'finance'] : ['catalog']
+  );
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const toggleSection = (section) => {
-    setOpenSection(openSection === section ? '' : section);
+    setOpenSections((sections) =>
+      sections.includes(section)
+        ? sections.filter((item) => item !== section)
+        : [...sections, section]
+    );
   };
 
   const handleNav = (tab, subTab = '') => {
@@ -96,6 +105,7 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
         { id: 'investors', label: 'Investors', icon: TrendingUp },
         { id: 'staff', label: 'Staff Management', icon: UserCheck },
         { id: 'sellers', label: 'Sellers / Vendors', icon: Store },
+        ...(isSuperAdmin ? [{ id: 'business-accounts', label: 'Business Accounts', icon: Building2 }] : []),
         { id: 'permissions', label: 'Permissions & Roles', icon: ShieldCheck }
       ]
     },
@@ -200,7 +210,7 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
             const isGroupActive =
               activeTab === item.id ||
               item.children.some((c) => c.id === activeTab || c.id === activeSubTab);
-            const isExpanded = openSection === item.id || isGroupActive;
+            const isExpanded = openSections.includes(item.id) || isGroupActive;
 
             return (
               <div key={item.id} className="space-y-1">

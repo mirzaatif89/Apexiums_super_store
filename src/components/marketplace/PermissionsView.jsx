@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import { ShieldCheck, Check, Plus, X } from 'lucide-react';
+import { isSuperAdminRole } from '../../utils/roles';
 
 export const PermissionsView = () => {
   const { rolesPermissions, updateRolePermission } = useAdmin();
@@ -44,15 +45,18 @@ export const PermissionsView = () => {
                 <tr key={perm.key} className="hover:bg-slate-50 transition-colors">
                   <td className="p-4 font-bold text-slate-900">{perm.label}</td>
                   {rolesPermissions.map((r) => {
-                    const isChecked = r.permissions[perm.key] || false;
+                    const isProtected = isSuperAdminRole(r.role);
+                    const isChecked = isProtected || r.permissions[perm.key] || false;
                     return (
                       <td key={r.role} className="p-4 text-center">
                         <label className="inline-flex items-center cursor-pointer">
                           <input
                             type="checkbox"
                             checked={isChecked}
+                            disabled={isProtected}
+                            title={isProtected ? 'Super Admin always has full access' : undefined}
                             onChange={(e) => updateRolePermission(r.role, perm.key, e.target.checked)}
-                            className="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500 cursor-pointer"
+                            className="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-80"
                           />
                         </label>
                       </td>

@@ -19,6 +19,7 @@ import InvestorsView from './marketplace/InvestorsView';
 import StaffView from './marketplace/StaffView';
 import SellersView from './marketplace/SellersView';
 import PermissionsView from './marketplace/PermissionsView';
+import BusinessAccountsView from './marketplace/BusinessAccountsView';
 import RevenueView from './finance/RevenueView';
 import ExpensesView from './finance/ExpensesView';
 import SoftwareFeesView from './finance/SoftwareFeesView';
@@ -59,6 +60,8 @@ const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
         return <SellersView />;
       case 'permissions':
         return <PermissionsView />;
+      case 'business-accounts':
+        return <BusinessAccountsView session={session} />;
       case 'revenue':
         return <RevenueView />;
       case 'expenses':
@@ -115,7 +118,7 @@ const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
 
 export default function AdminDashboard(props) {
   return (
-    <AdminProvider>
+    <AdminProvider session={props.session}>
       <AdminDashboardContent {...props} />
     </AdminProvider>
   );
