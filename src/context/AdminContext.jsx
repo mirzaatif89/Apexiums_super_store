@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import {
   initialCategories,
   initialSellers,
@@ -15,9 +15,37 @@ import {
   initialNotifications,
   initialSettings
 } from '../data/mockAdminData';
-import { isSuperAdminRole } from '../utils/roles';
+import { isSuperAdminRole, roleKey } from '../utils/roles';
 
 const AdminContext = createContext();
+
+const defaultChats = [
+  { id: 'chat-1', customerName: 'Aisha Malik', customerEmail: 'aisha.m@gmail.com', message: 'Mera order kab deliver hoga?', reply: '', status: 'Open', date: '2026-08-11 10:30 AM' },
+  { id: 'chat-2', customerName: 'Jordan Reed', customerEmail: 'jordan.reed@outlook.com', message: 'Hoodie ka size exchange karna hai.', reply: 'Ji, return request submit kar dein.', status: 'Replied', date: '2026-08-10 03:15 PM' }
+];
+
+function loadRegisteredCustomers() {
+  if (typeof localStorage === 'undefined') return [];
+  try {
+    return JSON.parse(localStorage.getItem('apexiums-registered-users') || '[]').map((user, index) => ({
+      id: user.id || `CUST-REG-${index + 1}`,
+      name: user.name || user.username || 'Customer',
+      username: user.username || user.email || '',
+      password: user.password || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      totalOrders: 0,
+      totalSpent: 0,
+      lastOrderDate: 'No orders yet',
+      status: 'Active',
+      avatar: user.avatar || 'https://ui-avatars.com/api/?background=fee2e2&color=dc2626&name=Customer',
+      city: user.city || '',
+      joinDate: user.joinDate || new Date().toISOString().split('T')[0]
+    }));
+  } catch {
+    return [];
+  }
+}
 
 export const AdminProvider = ({ children, session }) => {
   // Navigation & Active View State
@@ -52,15 +80,131 @@ export const AdminProvider = ({ children, session }) => {
   const [products, setProducts] = useState(initialProducts);
   const [orders, setOrders] = useState(initialOrders);
   const [returns, setReturns] = useState(initialReturns);
-  const [customers, setCustomers] = useState(initialCustomers);
+  const [customers, setCustomers] = useState(() => {
+    const registered = loadRegisteredCustomers();
+    const existingIds = new Set(initialCustomers.map((customer) => String(customer.id)));
+    return [...initialCustomers, ...registered.filter((customer) => !existingIds.has(String(customer.id)))];
+  });
   const [banners, setBanners] = useState(initialBanners);
   const [ads, setAds] = useState(initialAds);
   const [investors, setInvestors] = useState(initialInvestors);
   const [staff, setStaff] = useState(initialStaff);
-  const [rolesPermissions, setRolesPermissions] = useState(initialRolesPermissions);
+  const [rolesPermissions, setRolesPermissions] = useState(() => {
+    if (typeof localStorage === 'undefined') return initialRolesPermissions;
+    try {
+      return JSON.parse(localStorage.getItem('apexiums-role-permissions') || 'null') || initialRolesPermissions;
+    } catch {
+      return initialRolesPermissions;
+    }
+  });
   const [finance, setFinance] = useState(initialFinanceData);
   const [notifications, setNotifications] = useState(initialNotifications);
+  const [stockRecords, setStockRecords] = useState(() => initialProducts.map((product) => ({
+    id: `STK-${product.id}`,
+    productId: product.id,
+    productName: product.name,
+    totalItems: product.stock,
+    stockBelongTo: product.seller,
+    quantity: product.stock,
+    description: product.description
+  })));
+  const [chats, setChats] = useState(() => {
+    if (typeof localStorage === 'undefined') return defaultChats;
+    try { return [...JSON.parse(localStorage.getItem('apexiums-support-chats') || '[]'), ...defaultChats]; } catch { return defaultChats; }
+  });
   const [settings, setSettings] = useState(initialSettings);
+
+  useEffect(() => {
+    const syncChats = () => {
+      try {
+        const stored = JSON.parse(localStorage.getItem('apexiums-support-chats') || '[]');
+        setChats((current) => [...stored, ...current.filter((chat) => !stored.some((item) => item.id === chat.id))]);
+      } catch { /* Ignore invalid local support data. */ }
+    };
+    window.addEventListener('storage', syncChats);
+    window.addEventListener('apexiums-chat-created', syncChats);
+    return () => { window.removeEventListener('storage', syncChats); window.removeEventListener('apexiums-chat-created', syncChats); };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const loadNotifications = async () => {
+      try {
+        const headers = { 'x-user-role': session?.role || '' };
+        if (session?.businessId) headers['x-business-id'] = String(session.businessId);
+        const response = await fetch('/api/notifications?limit=100', { headers });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!active || !Array.isArray(data.rows)) return;
+        const rows = data.rows.map((row) => ({ id: `api-${row.id}`, title: row.title, message: row.message, type: row.type, date: row.created_at || '', time: row.created_at || '', read: Boolean(row.is_read), actionUrl: row.entity_type === 'order' ? 'orders' : row.entity_type === 'return' ? 'returns' : 'notifications' }));
+        setNotifications((current) => [...rows, ...current.filter((item) => !rows.some((row) => row.id === item.id))]);
+      } catch { /* Keep local notifications when the API is unavailable. */ }
+    };
+    loadNotifications();
+    const interval = window.setInterval(loadNotifications, 30000);
+    return () => { active = false; window.clearInterval(interval); };
+  }, [session?.role, session?.businessId]);
+
+  useEffect(() => {
+    let active = true;
+    const loadOrders = async () => {
+      try {
+        const headers = { 'x-user-role': session?.role || '' };
+        if (session?.businessId) headers['x-business-id'] = String(session.businessId);
+        const response = await fetch('/api/orders?limit=200', { headers });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!active || !Array.isArray(data.rows)) return;
+        const detailedRows = await Promise.all(data.rows.map(async (row) => {
+          try { const detailResponse = await fetch(`/api/orders/${row.id}`, { headers }); return detailResponse.ok ? await detailResponse.json() : row; } catch { return row; }
+        }));
+        if (!active) return;
+        const apiOrders = detailedRows.map((row) => ({ id: `ORD-${row.id}`, customerName: row.customer_name || 'Customer', customerEmail: row.customer_email || '', customerPhone: row.customer_phone || '', products: (row.items || []).map((item) => ({ id: item.product_id, name: item.product_name, qty: Number(item.qty || 1), price: Number(item.price || 0), image: item.image_url || '' })), sellerName: 'Marketplace', totalAmount: Number(row.total_amount || 0), paymentStatus: row.payment_status || 'Pending', orderStatus: row.order_status || 'Pending', orderDate: row.created_at ? new Date(row.created_at).toLocaleDateString() : '', shippingAddress: row.shipping_address || '', paymentMethod: row.payment_method || '', deliveryCourier: 'Unassigned', timeline: [{ title: 'Order Placed', time: row.created_at || '', done: true }, { title: row.order_status || 'Pending', time: 'Current status', done: false }] }));
+        setOrders((current) => [...apiOrders, ...current.filter((item) => !apiOrders.some((api) => api.id === item.id))]);
+      } catch { /* Keep local order data when API is unavailable. */ }
+    };
+    loadOrders();
+    const interval = window.setInterval(loadOrders, 30000);
+    return () => { active = false; window.clearInterval(interval); };
+  }, [session?.role, session?.businessId]);
+
+  useEffect(() => {
+    let active = true;
+    const loadChats = async () => {
+      try {
+        const headers = { 'x-user-role': session?.role || '' };
+        if (session?.businessId) headers['x-business-id'] = String(session.businessId);
+        const response = await fetch('/api/chats?limit=200', { headers });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!active || !Array.isArray(data.rows)) return;
+        const apiChats = data.rows.map((row) => ({ id: `api-${row.id}`, customerName: row.sender_name, customerEmail: row.sender_type || 'Customer', message: row.message, reply: row.reply_message || '', status: row.status || 'Open', date: row.created_at || '' }));
+        setChats((current) => [...apiChats, ...current.filter((item) => !apiChats.some((api) => api.id === item.id))]);
+      } catch { /* Keep local chats when API is unavailable. */ }
+    };
+    loadChats();
+    const interval = window.setInterval(loadChats, 15000);
+    return () => { active = false; window.clearInterval(interval); };
+  }, [session?.role, session?.businessId]);
+
+  useEffect(() => {
+    let active = true;
+    const loadCustomers = async () => {
+      try {
+        const headers = { 'x-user-role': session?.role || '' };
+        if (session?.businessId) headers['x-business-id'] = String(session.businessId);
+        const response = await fetch('/api/customers?limit=500', { headers });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!active || !Array.isArray(data.rows)) return;
+        const apiCustomers = data.rows.map((row) => ({ id: row.id, name: row.name, username: row.username, password: row.plain_password, email: row.email || '', phone: row.phone || '', totalOrders: Number(row.total_orders || 0), totalSpent: Number(row.total_spent || 0), lastOrderDate: row.last_order_date || 'No orders yet', status: row.status || 'Active', avatar: row.avatar_url || 'https://ui-avatars.com/api/?background=fee2e2&color=dc2626&name=Customer', city: row.city || '', joinDate: row.created_at || '' }));
+        setCustomers((current) => [...apiCustomers, ...current.filter((item) => !apiCustomers.some((api) => String(api.id) === String(item.id) || (api.email && api.email === item.email)))]);
+      } catch { /* Keep local customer data when API is unavailable. */ }
+    };
+    loadCustomers();
+    const interval = window.setInterval(loadCustomers, 30000);
+    return () => { active = false; window.clearInterval(interval); };
+  }, [session?.role, session?.businessId]);
 
   // User Profile
   const [currentUser, setCurrentUser] = useState(() => ({
@@ -70,6 +214,17 @@ export const AdminProvider = ({ children, session }) => {
     avatar: session?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80',
     department: session?.department || (isSuperAdminRole(session?.role) ? 'Executive Board' : 'Administration')
   }));
+  const hasPermission = (permission) => {
+    const normalizedCurrentRole = roleKey(session?.role || currentUser.role);
+    if (['superadmin', 'businessadmin', 'admin', 'manager'].includes(normalizedCurrentRole)) return true;
+    const role = rolesPermissions.find((item) => roleKey(item.role) === normalizedCurrentRole);
+    return Boolean(role?.permissions?.[permission]);
+  };
+  const apiHeaders = () => {
+    const headers = { 'Content-Type': 'application/json', 'x-user-role': session?.role || '' };
+    if (session?.businessId) headers['x-business-id'] = String(session.businessId);
+    return headers;
+  };
 
   // --- CRUD Handlers ---
 
@@ -142,6 +297,21 @@ export const AdminProvider = ({ children, session }) => {
     addToast(`Updated status to "${newStatus}" for ${ids.length} products.`, 'success');
   };
 
+  const addStockRecord = (record) => {
+    const product = products.find((item) => String(item.id) === String(record.productId));
+    const quantity = Number(record.quantity) || 0;
+    setStockRecords((current) => [{
+      ...record,
+      id: `STK-${Date.now()}`,
+      productName: product?.name || `Product ${record.productId}`,
+      totalItems: Number(record.totalItems) || quantity,
+      quantity
+    }, ...current]);
+    if (product) updateProductStock(product.id, product.stock + quantity);
+    fetch('/api/stock', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ product_id: record.productId, product_name: product?.name || '', total_items: Number(record.totalItems) || quantity, stock_belong_to: record.stockBelongTo, quantity, description: record.description }) }).catch(() => {});
+    addToast('Stock entry added successfully.', 'success');
+  };
+
   // Categories
   const addCategory = (cat) => {
     const newCat = {
@@ -178,7 +348,32 @@ export const AdminProvider = ({ children, session }) => {
         return o;
       })
     );
+    if (String(id).startsWith('ORD-') && /^ORD-\d+$/.test(String(id))) {
+      fetch(`/api/orders/${String(id).replace('ORD-', '')}/status`, { method: 'PUT', headers: apiHeaders(), body: JSON.stringify({ order_status: newStatus }) }).catch(() => {});
+    }
     addToast(`Order ${id} status changed to ${newStatus}.`, 'success');
+  };
+
+  const createReturnFromOrder = (order) => {
+    const item = order.products?.[0] || {};
+    const newReturn = {
+      id: `RET-${Date.now()}`,
+      orderId: order.id,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail || '',
+      productName: item.name || 'Order items',
+      sellerName: order.sellerName || '',
+      reason: 'Return created from order actions',
+      amount: Number(order.totalAmount) || 0,
+      status: 'Requested',
+      date: new Date().toISOString().split('T')[0],
+      images: []
+    };
+    setReturns((current) => current.some((item) => item.orderId === order.id) ? current : [newReturn, ...current]);
+    updateOrderStatus(order.id, 'Returned');
+    setNotifications((current) => [{ id: `notif-${Date.now()}`, title: `Return created (${order.id})`, message: `${order.customerName}'s order was moved to Returns.`, type: 'Return Request', date: new Date().toLocaleString(), read: false, actionUrl: 'returns' }, ...current]);
+    fetch('/api/returns', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ order_id: Number(String(order.id).replace(/\D/g, '')) || null, product_id: item.id || null, customer: order.customerName, product: item.name || 'Order items', reason: newReturn.reason, status: 'Requested', refund_amount: newReturn.amount }) }).catch(() => {});
+    addToast(`${order.id} moved to Returns.`, 'success');
   };
 
   // Returns
@@ -186,7 +381,14 @@ export const AdminProvider = ({ children, session }) => {
     setReturns((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r))
     );
+    if (/^RET-\d+$/.test(String(id))) fetch(`/api/returns/${String(id).replace('RET-', '')}/status`, { method: 'PUT', headers: apiHeaders(), body: JSON.stringify({ status: newStatus }) }).catch(() => {});
     addToast(`Return ${id} set to ${newStatus}.`, 'success');
+  };
+
+  const addReturn = (returnData) => {
+    setReturns((current) => [{ ...returnData, id: `RET-${Date.now()}`, status: returnData.status || 'Requested', date: returnData.date || new Date().toISOString().split('T')[0], images: [] }, ...current]);
+    fetch('/api/returns', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ order_id: Number(String(returnData.orderId).replace(/\D/g, '')) || null, customer: returnData.customerName, product: returnData.productName, reason: returnData.reason, status: returnData.status || 'Requested', refund_amount: Number(returnData.amount) || 0 }) }).catch(() => {});
+    addToast('Manual return added successfully.', 'success');
   };
 
   // Sellers
@@ -216,6 +418,7 @@ export const AdminProvider = ({ children, session }) => {
       joinedDate: new Date().toISOString().split('T')[0]
     };
     setSellers((prev) => [newSeller, ...prev]);
+    fetch('/api/wholesellers', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ name: sellerData.sellerName, business_name: sellerData.storeName || sellerData.stockSellerSell, contact_person: sellerData.contact, phone: sellerData.phone, email: sellerData.email, address: sellerData.address, description: sellerData.description, seller_image: sellerData.sellerImage, stock_seller_sell: sellerData.stockSellerSell, username: sellerData.username, password: sellerData.password, status: sellerData.status || 'Pending' }) }).catch(() => {});
     addToast(`New seller "${newSeller.storeName}" registered!`, 'success');
   };
 
@@ -228,6 +431,7 @@ export const AdminProvider = ({ children, session }) => {
       investmentDate: new Date().toISOString().split('T')[0]
     };
     setInvestors((prev) => [newInv, ...prev]);
+    fetch('/api/investors', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ name: invData.name, email: invData.email, phone: invData.phone, address: invData.address, investment_amount: Number(invData.investmentAmount) || 0, investment_date: invData.investmentDate, description: invData.description, username: invData.username, password: invData.password, status: invData.status || 'Pending' }) }).catch(() => {});
     addToast(`Investor "${newInv.name}" added to registry.`, 'success');
   };
 
@@ -267,8 +471,8 @@ export const AdminProvider = ({ children, session }) => {
       addToast('Super Admin always has full system access.', 'info');
       return;
     }
-    setRolesPermissions((prev) =>
-      prev.map((r) => {
+    setRolesPermissions((prev) => {
+      const next = prev.map((r) => {
         if (r.role === roleName) {
           return {
             ...r,
@@ -279,8 +483,10 @@ export const AdminProvider = ({ children, session }) => {
           };
         }
         return r;
-      })
-    );
+      });
+      if (typeof localStorage !== 'undefined') localStorage.setItem('apexiums-role-permissions', JSON.stringify(next));
+      return next;
+    });
     addToast(`Permission updated for role: ${roleName}`, 'success');
   };
 
@@ -338,6 +544,18 @@ export const AdminProvider = ({ children, session }) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   };
 
+  const clearAllNotifications = () => setNotifications([]);
+
+  const replyToChat = (id, reply) => {
+    setChats((current) => current.map((chat) => chat.id === id ? { ...chat, reply, status: 'Replied' } : chat));
+    if (String(id).startsWith('api-')) {
+      const headers = { 'Content-Type': 'application/json', 'x-user-role': session?.role || '' };
+      if (session?.businessId) headers['x-business-id'] = String(session.businessId);
+      fetch(`/api/chats/${String(id).replace('api-', '')}`, { method: 'PUT', headers, body: JSON.stringify({ reply_message: reply, status: 'Replied' }) }).catch(() => {});
+    }
+    addToast('Reply sent to customer.', 'success');
+  };
+
   // Settings
   const updateSettings = (newSettings) => {
     setSettings((prev) => ({ ...prev, ...newSettings }));
@@ -361,10 +579,12 @@ export const AdminProvider = ({ children, session }) => {
         addToast,
         removeToast,
         currentUser,
+        hasPermission,
         setCurrentUser,
         categories,
         sellers,
         products,
+        stockRecords,
         orders,
         returns,
         customers,
@@ -375,6 +595,7 @@ export const AdminProvider = ({ children, session }) => {
         rolesPermissions,
         finance,
         notifications,
+        chats,
         settings,
         // Methods
         addProduct,
@@ -384,11 +605,14 @@ export const AdminProvider = ({ children, session }) => {
         updateProductStock,
         bulkDeleteProducts,
         bulkUpdateProductStatus,
+        addStockRecord,
         addCategory,
         updateCategory,
         deleteCategory,
         updateOrderStatus,
+        createReturnFromOrder,
         updateReturnStatus,
+        addReturn,
         updateSellerStatus,
         addSeller,
         addInvestor,
@@ -405,6 +629,8 @@ export const AdminProvider = ({ children, session }) => {
         markNotificationRead,
         markAllNotificationsRead,
         deleteNotification,
+        clearAllNotifications,
+        replyToChat,
         updateSettings
       }}
     >

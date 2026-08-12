@@ -26,13 +26,22 @@ import SoftwareFeesView from './finance/SoftwareFeesView';
 import StaffSalariesView from './finance/StaffSalariesView';
 import DeliveryExpensesView from './finance/DeliveryExpensesView';
 import NotificationsView from './common/NotificationsView';
+import ChatsView from './common/ChatsView';
 import SettingsView from './common/SettingsView';
+import { isSuperAdminRole } from '../utils/roles';
 
 const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
-  const { activeTab } = useAdmin();
+  const { activeTab, hasPermission } = useAdmin();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
   const renderActiveView = () => {
+    const tabPermissions = { dashboard: 'viewDashboard', products: 'manageProducts', categories: 'manageCategories', stock: 'manageStock', orders: 'manageOrders', returns: 'manageReturns', customers: 'manageCustomers', banners: 'manageMarketing', ads: 'manageMarketing', investors: 'manageInvestors', staff: 'manageStaff', sellers: 'manageSellers', revenue: 'manageFinance', expenses: 'manageFinance', 'software-fees': 'manageFinance', 'staff-salaries': 'manageFinance', 'delivery-expenses': 'manageFinance', chats: 'manageChats', notifications: 'viewNotifications', settings: 'manageSettings' };
+    if (['permissions', 'business-accounts'].includes(activeTab) && !isSuperAdminRole(session?.role)) {
+      return <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center"><h2 className="text-lg font-black text-red-800">SuperAdmin access required</h2><p className="mt-1 text-xs text-red-600">You do not have permission to open this module.</p></div>;
+    }
+    if (tabPermissions[activeTab] && !hasPermission(tabPermissions[activeTab])) {
+      return <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center"><h2 className="text-lg font-black text-amber-800">Access denied</h2><p className="mt-1 text-xs text-amber-700">Ask SuperAdmin to enable this permission for your role.</p></div>;
+    }
     switch (activeTab) {
       case 'dashboard':
         return <DashboardView />;
@@ -74,6 +83,8 @@ const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
         return <DeliveryExpensesView />;
       case 'notifications':
         return <NotificationsView />;
+      case 'chats':
+        return <ChatsView />;
       case 'settings':
       case 'profile':
         return <SettingsView />;

@@ -69,7 +69,7 @@ export const NotificationsView = () => {
                     {!n.read && <span className="w-2 h-2 rounded-full bg-red-600" />}
                   </div>
                   <p className="text-xs text-slate-600 font-medium mt-0.5">{n.message}</p>
-                  <p className="text-[10px] text-slate-400 font-semibold mt-1">{n.time}</p>
+                  <p className="text-[10px] text-slate-400 font-semibold mt-1">{n.time || n.date}</p>
                 </div>
               </div>
 

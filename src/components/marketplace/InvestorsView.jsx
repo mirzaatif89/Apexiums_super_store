@@ -17,7 +17,13 @@ export const InvestorsView = () => {
     name: '',
     contactPerson: '',
     email: '',
+    phone: '',
+    address: '',
     investmentAmount: 100000,
+    investmentDate: new Date().toISOString().split('T')[0],
+    description: '',
+    username: '',
+    password: '',
     returnRate: 12.0,
     equityShare: '5%',
     notes: ''
@@ -28,6 +34,8 @@ export const InvestorsView = () => {
     if (!formData.name) return;
     addInvestor({
       ...formData,
+      contactPerson: formData.name,
+      notes: formData.description,
       status: 'Active'
     });
     setIsModalOpen(false);
@@ -134,7 +142,7 @@ export const InvestorsView = () => {
       {/* Register Investor Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-5 space-y-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl max-h-[90vh] overflow-y-auto w-full p-5 space-y-4">
             <div className="flex items-center justify-between border-b pb-3">
               <h3 className="text-sm font-extrabold text-slate-900">Register New Investor</h3>
               <button onClick={() => setIsModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-800">
@@ -156,22 +164,24 @@ export const InvestorsView = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Contact Person & Email</label>
-                <input
-                  type="text"
-                  value={formData.contactPerson}
-                  onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-xl font-semibold mb-2"
-                  placeholder="Full Name"
-                />
+                <label className="block font-bold text-slate-700 mb-1">Email *</label>
                 <input
                   type="email"
+                  required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full px-3 py-2 border rounded-xl font-semibold"
                   placeholder="Email Address"
                 />
               </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div><label className="block font-bold text-slate-700 mb-1">Phone *</label><input required value={formData.phone} onChange={(e)=>setFormData({...formData,phone:e.target.value})} className="w-full px-3 py-2 border rounded-xl font-semibold" /></div>
+                <div><label className="block font-bold text-slate-700 mb-1">Investment Date *</label><input required type="date" value={formData.investmentDate} onChange={(e)=>setFormData({...formData,investmentDate:e.target.value})} className="w-full px-3 py-2 border rounded-xl font-semibold" /></div>
+              </div>
+              <div><label className="block font-bold text-slate-700 mb-1">Address *</label><textarea required value={formData.address} onChange={(e)=>setFormData({...formData,address:e.target.value})} className="w-full px-3 py-2 border rounded-xl font-semibold" /></div>
+              <div><label className="block font-bold text-slate-700 mb-1">Description</label><textarea value={formData.description} onChange={(e)=>setFormData({...formData,description:e.target.value})} className="w-full px-3 py-2 border rounded-xl font-semibold" /></div>
+              <div className="grid grid-cols-2 gap-2"><div><label className="block font-bold text-slate-700 mb-1">Username *</label><input required value={formData.username} onChange={(e)=>setFormData({...formData,username:e.target.value})} className="w-full px-3 py-2 border rounded-xl font-semibold" /></div><div><label className="block font-bold text-slate-700 mb-1">Password *</label><input required type="password" value={formData.password} onChange={(e)=>setFormData({...formData,password:e.target.value})} className="w-full px-3 py-2 border rounded-xl font-semibold" /></div></div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>

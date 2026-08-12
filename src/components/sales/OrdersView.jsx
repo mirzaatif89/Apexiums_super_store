@@ -12,11 +12,12 @@ import {
   MapPin,
   CreditCard,
   PackageCheck,
-  User
+  User,
+  RotateCcw
 } from 'lucide-react';
 
 export const OrdersView = () => {
-  const { orders, updateOrderStatus } = useAdmin();
+  const { orders, updateOrderStatus, createReturnFromOrder, setActiveTab } = useAdmin();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -58,12 +59,8 @@ export const OrdersView = () => {
         >
           <option value="">All Order Statuses</option>
           <option value="Pending">Pending</option>
-          <option value="Confirmed">Confirmed</option>
-          <option value="Processing">Processing</option>
-          <option value="Shipped">Shipped</option>
-          <option value="Delivered">Delivered</option>
-          <option value="Cancelled">Cancelled</option>
-          <option value="Returned">Returned</option>
+          <option value="To Ship">To Ship</option>
+          <option value="Received">Received</option>
         </select>
       </div>
 
@@ -105,27 +102,18 @@ export const OrdersView = () => {
                     </td>
                     <td className="p-3.5">
                       <select
-                        value={o.orderStatus}
+                        value={o.orderStatus === 'Delivered' || o.orderStatus === 'Received' ? 'Received' : o.orderStatus === 'Pending' ? 'Pending' : 'To Ship'}
                         onChange={(e) => updateOrderStatus(o.id, e.target.value)}
                         className="px-2 py-1 bg-slate-100 border rounded-lg text-[11px] font-bold text-slate-800 focus:outline-none cursor-pointer"
                       >
                         <option value="Pending">Pending</option>
-                        <option value="Confirmed">Confirmed</option>
-                        <option value="Processing">Processing</option>
-                        <option value="Shipped">Shipped</option>
-                        <option value="Delivered">Delivered</option>
-                        <option value="Cancelled">Cancelled</option>
-                        <option value="Returned">Returned</option>
+                        <option value="To Ship">To Ship</option>
+                        <option value="Received">Received</option>
                       </select>
                     </td>
                     <td className="p-3.5 text-slate-500 font-medium">{o.orderDate}</td>
                     <td className="p-3.5 text-right">
-                      <button
-                        onClick={() => setSelectedOrder(o)}
-                        className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center gap-1.5 ml-auto cursor-pointer"
-                      >
-                        <Eye size={14} /> View Order
-                      </button>
+                      <div className="flex justify-end gap-2"><button onClick={() => setSelectedOrder(o)} className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center gap-1.5 cursor-pointer"><Eye size={14} /> Details</button><button onClick={() => { createReturnFromOrder(o); setActiveTab('returns'); }} className="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer"><RotateCcw size={14}/> Return</button></div>
                     </td>
                   </tr>
                 ))

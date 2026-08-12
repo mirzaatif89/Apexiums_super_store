@@ -159,6 +159,9 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
   }, [cartItems]);
 
   const [infoModal, setInfoModal] = React.useState(null);
+  const [chatOpen, setChatOpen] = React.useState(false);
+  const [chatMessage, setChatMessage] = React.useState('');
+  const [chatSent, setChatSent] = React.useState(false);
 
   const handleAddProductToCart = (product, qty = 1) => {
     if (!product) return;
@@ -174,11 +177,11 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
   };
 
   React.useEffect(() => {
-    document.body.style.overflow = mobileMenuOpen || selectedProduct || checkoutOpen || infoModal ? 'hidden' : '';
+    document.body.style.overflow = mobileMenuOpen || selectedProduct || checkoutOpen || infoModal || chatOpen ? 'hidden' : '';
     return () => {
       document.body.style.overflow = '';
     };
-  }, [mobileMenuOpen, selectedProduct, checkoutOpen, infoModal]);
+  }, [mobileMenuOpen, selectedProduct, checkoutOpen, infoModal, chatOpen]);
 
   const filteredFlashSale = filterProducts(flashSaleProducts, searchQuery, selectedCategory);
   const filteredSections = productSections.map((section) => ({
@@ -387,6 +390,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
             setCheckoutOpen(false);
             window.location.href = 'mailto:support@apexiums.com?subject=Customer Support Inquiry';
           }}
+          onChatClick={() => { setProfileOpen(false); setCheckoutOpen(false); setChatSent(false); setChatOpen(true); }}
         />
       ) : null}
 
@@ -485,6 +489,8 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
       ) : null}
 
       {/* Dynamic Info Popup Modal */}
+      {chatOpen ? <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"><form onSubmit={async(e)=>{e.preventDefault();if(!chatMessage.trim())return;const chat={id:`chat-${Date.now()}`,customerName:authUser?.name||'Guest Customer',customerEmail:authUser?.email||'',message:chatMessage.trim(),reply:'',status:'Open',date:new Date().toLocaleString()};const chats=JSON.parse(localStorage.getItem('apexiums-support-chats')||'[]');localStorage.setItem('apexiums-support-chats',JSON.stringify([chat,...chats]));window.dispatchEvent(new Event('apexiums-chat-created'));try{await fetch('/api/chats',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sender_name:chat.customerName,sender_type:'Customer',subject:'Customer Support',message:chat.message,status:'Open'})})}catch{}setChatMessage('');setChatSent(true)}} className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"><div className="flex items-center justify-between border-b pb-3"><div className="flex items-center gap-2"><Headphones className="text-red-600" size={20}/><h3 className="font-black">Chat with Support</h3></div><button type="button" onClick={()=>setChatOpen(false)}><X size={18}/></button></div>{chatSent&&<div className="mt-4 rounded-xl bg-emerald-50 p-3 text-xs font-bold text-emerald-700">Message sent. Admin will reply from Customer Chats.</div>}<label className="mt-4 block text-xs font-bold">Your question<textarea required rows="5" value={chatMessage} onChange={(e)=>setChatMessage(e.target.value)} placeholder="Apna sawal yahan likhein..." className="mt-1 w-full rounded-xl border p-3 font-medium outline-none focus:border-red-500"/></label><button className="mt-4 w-full rounded-xl bg-red-600 py-3 text-xs font-black text-white">Send Message</button></form></div> : null}
+
       {infoModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs">
           <div className="w-full max-w-sm rounded-3xl bg-white p-5 sm:p-6 shadow-2xl border border-slate-100 text-slate-900 animate-in fade-in zoom-in-95 duration-200">
@@ -565,6 +571,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
         storeName={storeName}
         logoSrc={storeLogoSrc}
         cartItems={cartItems}
+        customerEmail={authUser?.email || ''}
         onUpdateQty={(id, delta) => {
           setCartItems((prev) =>
             prev

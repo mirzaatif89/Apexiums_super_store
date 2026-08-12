@@ -24,7 +24,8 @@ export const Header = ({ onToggleSidebar }) => {
     markNotificationRead,
     markAllNotificationsRead,
     setActiveTab,
-    currentUser
+    currentUser,
+    hasPermission
   } = useAdmin();
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -62,22 +63,22 @@ export const Header = ({ onToggleSidebar }) => {
         {/* Right Side: Quick Action CTAs, Date Range Picker, Notifications, User Profile */}
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Become a Seller Quick Button */}
-          <button
+          {hasPermission('manageSellers') && <button
             onClick={() => setActiveTab('sellers')}
             className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200/80 cursor-pointer transition-colors"
           >
             <Store size={14} />
             <span>+ Become Seller</span>
-          </button>
+          </button>}
 
           {/* Become an Investor Quick Button */}
-          <button
+          {hasPermission('manageInvestors') && <button
             onClick={() => setActiveTab('investors')}
             className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold border border-purple-200/80 cursor-pointer transition-colors"
           >
             <TrendingUp size={14} />
             <span>+ Investor Portal</span>
-          </button>
+          </button>}
 
           {/* Date Range Selector Dropdown */}
           <div className="relative">

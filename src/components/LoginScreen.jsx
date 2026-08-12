@@ -98,6 +98,12 @@ export default function LoginScreen({ logoSrc, storeName, onLogin }) {
 
     setLoading(true);
     try {
+      const registeredUser = { id: Date.now(), name: signupName.trim(), username: signupEmail.trim(), email: signupEmail.trim(), password: signupPassword, joinDate: new Date().toISOString().split('T')[0], role: 'User', loginType: 'user' };
+      const registeredUsers = JSON.parse(localStorage.getItem('apexiums-registered-users') || '[]');
+      localStorage.setItem('apexiums-registered-users', JSON.stringify([...registeredUsers.filter((user) => user.email !== registeredUser.email), registeredUser]));
+      try {
+        await fetch('/api/customers/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: registeredUser.name, username: registeredUser.username, email: registeredUser.email, password: registeredUser.password }) });
+      } catch (e) {}
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

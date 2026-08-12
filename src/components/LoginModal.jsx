@@ -221,6 +221,8 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
         name: signupName.trim(),
         username: signupEmail.trim(),
         email: signupEmail.trim(),
+        password: signupPassword,
+        joinDate: new Date().toISOString().split('T')[0],
         role: 'User',
         loginType: 'user'
       };
@@ -229,6 +231,14 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
         const existing = JSON.parse(localStorage.getItem('apexiums-registered-users') || '[]');
         existing.push(newUser);
         localStorage.setItem('apexiums-registered-users', JSON.stringify(existing));
+      } catch (e) {}
+
+      try {
+        await fetch('/api/customers/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: newUser.name, username: newUser.username, email: newUser.email, password: newUser.password })
+        });
       } catch (e) {}
 
       try {

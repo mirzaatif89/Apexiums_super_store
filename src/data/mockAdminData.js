@@ -712,87 +712,65 @@ export const initialStaff = [
 
 export const initialRolesPermissions = [
   {
-    role: 'Super Admin',
-    description: 'Full un-restricted system access across all financial, user, and administrative settings.',
+    role: 'Sellers',
+    description: 'Seller access for own catalog, stock, orders, returns, customer chats, and notifications.',
     permissions: {
       viewDashboard: true,
       manageProducts: true,
-      manageCategories: true,
+      manageCategories: false,
+      manageStock: true,
       manageOrders: true,
-      manageCustomers: true,
-      manageSellers: true,
-      manageStaff: true,
-      manageMarketing: true,
-      manageFinance: true,
-      manageInvestors: true,
-      manageSettings: true
-    }
-  },
-  {
-    role: 'Admin',
-    description: 'High-level admin access to operations, products, sales, sellers, and marketing.',
-    permissions: {
-      viewDashboard: true,
-      manageProducts: true,
-      manageCategories: true,
-      manageOrders: true,
-      manageCustomers: true,
-      manageSellers: true,
+      manageReturns: true,
+      manageCustomers: false,
+      manageSellers: false,
       manageStaff: false,
-      manageMarketing: true,
+      manageMarketing: false,
       manageFinance: true,
       manageInvestors: false,
-      manageSettings: true
-    }
-  },
-  {
-    role: 'Manager',
-    description: 'Operational manager for catalog, order fulfillment, returns, and customer service.',
-    permissions: {
-      viewDashboard: true,
-      manageProducts: true,
-      manageCategories: true,
-      manageOrders: true,
-      manageCustomers: true,
-      manageSellers: true,
-      manageStaff: false,
-      manageMarketing: true,
-      manageFinance: false,
-      manageInvestors: false,
+      manageChats: true,
+      viewNotifications: true,
       manageSettings: false
     }
   },
   {
     role: 'Staff',
-    description: 'Support staff view for reviewing customer orders, inventory checks, and return tickets.',
+    description: 'Operations access for stock, order processing, returns, customers, and support chats.',
     permissions: {
       viewDashboard: true,
-      manageProducts: false,
-      manageCategories: false,
+      manageProducts: true,
+      manageCategories: true,
+      manageStock: true,
       manageOrders: true,
+      manageReturns: true,
       manageCustomers: true,
       manageSellers: false,
       manageStaff: false,
       manageMarketing: false,
       manageFinance: false,
       manageInvestors: false,
+      manageChats: true,
+      viewNotifications: true,
       manageSettings: false
     }
   },
   {
-    role: 'Seller',
-    description: 'Vendor portal view limited to managing store products, orders, and sales reports.',
+    role: 'Investors',
+    description: 'Investor access limited to investment portfolio, revenue visibility, chats, and notifications.',
     permissions: {
       viewDashboard: true,
-      manageProducts: true,
+      manageProducts: false,
       manageCategories: false,
-      manageOrders: true,
+      manageStock: false,
+      manageOrders: false,
+      manageReturns: false,
       manageCustomers: false,
       manageSellers: false,
       manageStaff: false,
       manageMarketing: false,
-      manageFinance: false,
-      manageInvestors: false,
+      manageFinance: true,
+      manageInvestors: true,
+      manageChats: true,
+      viewNotifications: true,
       manageSettings: false
     }
   }

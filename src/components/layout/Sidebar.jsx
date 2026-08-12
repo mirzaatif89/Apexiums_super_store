@@ -14,7 +14,6 @@ import {
   TrendingUp,
   UserCheck,
   Store,
-  Building2,
   ShieldCheck,
   DollarSign,
   Receipt,
@@ -22,22 +21,22 @@ import {
   UsersRound,
   Truck,
   Bell,
+  MessageSquare,
   User,
   Settings,
   LogOut,
   ChevronDown,
   ChevronRight,
-  Store as StoreIcon,
   X
 } from 'lucide-react';
 
 export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLogout, session }) => {
-  const { activeTab, setActiveTab, activeSubTab, setActiveSubTab, notifications, currentUser } = useAdmin();
+  const { activeTab, setActiveTab, activeSubTab, setActiveSubTab, notifications, currentUser, hasPermission } = useAdmin();
   const isSuperAdmin = isSuperAdminRole(session?.role || currentUser.role);
 
   // Collapsible accordion sub-menus
   const [openSections, setOpenSections] = useState(() =>
-    isSuperAdmin ? ['catalog', 'sales', 'marketing', 'marketplace', 'finance'] : ['catalog']
+    isSuperAdmin ? ['catalog', 'sales', 'marketing', 'marketplace', 'finance', 'notifications'] : ['catalog']
   );
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -61,7 +60,8 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
       id: 'dashboard',
       label: 'Dashboard',
       icon: LayoutDashboard,
-      type: 'single'
+      type: 'single',
+      permission: 'viewDashboard'
     },
     {
       id: 'catalog',
@@ -69,9 +69,9 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
       icon: Package,
       type: 'group',
       children: [
-        { id: 'categories', label: 'Categories', icon: Layers },
-        { id: 'stock', label: 'Stock / Inventory', icon: Boxes },
-        { id: 'products', label: 'Product Listing', icon: Package }
+        { id: 'products', label: 'Product Listing', icon: Package, permission: 'manageProducts' },
+        { id: 'categories', label: 'Categories', icon: Layers, permission: 'manageCategories' },
+        { id: 'stock', label: 'Stock', icon: Boxes, permission: 'manageStock' }
       ]
     },
     {
@@ -80,10 +80,9 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
       icon: ShoppingCart,
       type: 'group',
       children: [
-        { id: 'orders', label: 'Orders', icon: ShoppingCart },
-        { id: 'returns', label: 'Returns', icon: RotateCcw },
-        { id: 'customers', label: 'Customers', icon: Users },
-        { id: 'expenses', label: 'Expense', icon: Receipt }
+        { id: 'orders', label: 'Orders', icon: ShoppingCart, permission: 'manageOrders' },
+        { id: 'returns', label: 'Returns', icon: RotateCcw, permission: 'manageReturns' },
+        { id: 'customers', label: 'Customers', icon: Users, permission: 'manageCustomers' }
       ]
     },
     {
@@ -92,8 +91,8 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
       icon: Megaphone,
       type: 'group',
       children: [
-        { id: 'banners', label: 'Banners', icon: Megaphone },
-        { id: 'ads', label: 'Ads Campaigns', icon: Radio }
+        { id: 'banners', label: 'Website Banner', icon: Megaphone, permission: 'manageMarketing' },
+        { id: 'ads', label: 'APP Banner', icon: Radio, permission: 'manageMarketing' }
       ]
     },
     {
@@ -102,11 +101,10 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
       icon: Store,
       type: 'group',
       children: [
-        { id: 'investors', label: 'Investors', icon: TrendingUp },
-        { id: 'staff', label: 'Staff Management', icon: UserCheck },
-        { id: 'sellers', label: 'Sellers / Vendors', icon: Store },
-        ...(isSuperAdmin ? [{ id: 'business-accounts', label: 'Business Accounts', icon: Building2 }] : []),
-        { id: 'permissions', label: 'Permissions & Roles', icon: ShieldCheck }
+        { id: 'investors', label: 'Investors', icon: TrendingUp, permission: 'manageInvestors' },
+        { id: 'staff', label: 'Staff', icon: UserCheck, permission: 'manageStaff' },
+        { id: 'sellers', label: 'Sellers', icon: Store, permission: 'manageSellers' },
+        ...(isSuperAdmin ? [{ id: 'permissions', label: 'Permissions', icon: ShieldCheck }] : [])
       ]
     },
     {
@@ -115,20 +113,29 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
       icon: DollarSign,
       type: 'group',
       children: [
-        { id: 'revenue', label: 'Revenue', icon: DollarSign },
-        { id: 'software-fees', label: 'Software Fees', icon: Server },
-        { id: 'staff-salaries', label: 'Staff Salaries', icon: UsersRound },
-        { id: 'delivery-expenses', label: 'Delivery Expenses', icon: Truck }
+        { id: 'revenue', label: 'Revenue', icon: DollarSign, permission: 'manageFinance' },
+        { id: 'expenses', label: 'Expense', icon: Receipt, permission: 'manageFinance' },
+        { id: 'software-fees', label: 'Software Fees', icon: Server, permission: 'manageFinance' },
+        { id: 'staff-salaries', label: 'Staff Salaries', icon: UsersRound, permission: 'manageFinance' },
+        { id: 'delivery-expenses', label: 'Delivery Expenses', icon: Truck, permission: 'manageFinance' }
       ]
     },
     {
       id: 'notifications',
       label: 'Notifications',
       icon: Bell,
-      type: 'single',
-      badge: unreadCount > 0 ? unreadCount : null
+      type: 'group',
+      children: [
+        { id: 'chats', label: 'Chats', icon: MessageSquare, permission: 'manageChats' },
+        { id: 'sellers', label: 'Become a Seller', icon: Store, permission: 'manageSellers' },
+        { id: 'investors', label: 'Become an Investor', icon: TrendingUp, permission: 'manageInvestors' },
+        { id: 'notifications', label: 'All Notifications', icon: Bell, permission: 'viewNotifications', badge: unreadCount > 0 ? unreadCount : null }
+      ]
     }
   ];
+  const visibleMenuItems = menuItems
+    .map((item) => item.type === 'group' ? { ...item, children: item.children.filter((child) => !child.permission || hasPermission(child.permission)) } : item)
+    .filter((item) => item.type === 'group' ? item.children.length > 0 : !item.permission || hasPermission(item.permission));
 
   return (
     <>
@@ -178,7 +185,7 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
             Main Menu
           </div>
 
-          {menuItems.map((item) => {
+          {visibleMenuItems.map((item) => {
             const Icon = item.icon;
 
             if (item.type === 'single') {
@@ -251,7 +258,12 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
                           }`}
                         >
                           <ChildIcon size={14} className={isChildActive ? 'text-red-400' : 'text-slate-500'} />
-                          <span>{child.label}</span>
+                          <span className="flex-1 text-left">{child.label}</span>
+                          {child.badge && (
+                            <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-black text-white">
+                              {child.badge}
+                            </span>
+                          )}
                         </button>
                       );
                     })}
@@ -279,7 +291,7 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
           </button>
 
           {/* Settings */}
-          <button
+          {(isSuperAdmin || hasPermission('manageSettings')) && <button
             onClick={() => handleNav('settings')}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 cursor-pointer ${
               activeTab === 'settings'
@@ -289,7 +301,7 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
           >
             <Settings size={18} />
             <span>Settings</span>
-          </button>
+          </button>}
         </div>
 
         {/* Footer User Avatar Profile */}

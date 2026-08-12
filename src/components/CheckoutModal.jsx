@@ -25,6 +25,7 @@ export default function CheckoutModal({
   storeName,
   logoSrc,
   cartItems = [],
+  customerEmail = '',
   onUpdateQty,
   onRemoveItem,
   onOrderPlaced
@@ -127,11 +128,14 @@ export default function CheckoutModal({
       const orderPayload = {
         payment_method: paymentMethod.toUpperCase(),
         customer_name: currentName,
+        customer_email: customerEmail,
         customer_phone: currentPhone,
         shipping_address: `${currentAddress}, ${currentCity}`,
         total_amount: grandTotal,
+        items_count: items.reduce((sum, item) => sum + Number(item.qty || 1), 0),
         items: items,
-        order_status: 'Placed'
+        payment_status: paymentMethod === 'cod' ? 'Pending' : 'Paid',
+        order_status: 'Pending'
       };
 
       const response = await fetch('/api/orders', {

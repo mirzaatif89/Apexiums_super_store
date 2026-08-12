@@ -10,13 +10,17 @@ export const PermissionsView = () => {
     { key: 'viewDashboard', label: 'View Dashboard & Analytics' },
     { key: 'manageProducts', label: 'Manage Catalog Products' },
     { key: 'manageCategories', label: 'Manage Categories' },
+    { key: 'manageStock', label: 'Manage Stock & Inventory' },
     { key: 'manageOrders', label: 'Manage Orders & Fulfillment' },
+    { key: 'manageReturns', label: 'Manage Returns & Refunds' },
     { key: 'manageCustomers', label: 'Manage Customer CRM' },
     { key: 'manageSellers', label: 'Manage Vendors & Sellers' },
     { key: 'manageStaff', label: 'Manage Staff & Users' },
     { key: 'manageMarketing', label: 'Manage Banners & Ad Campaigns' },
     { key: 'manageFinance', label: 'Manage Finance & Revenue' },
     { key: 'manageInvestors', label: 'Manage Investors & Equity' },
+    { key: 'manageChats', label: 'Reply to Customer Chats' },
+    { key: 'viewNotifications', label: 'View Notifications' },
     { key: 'manageSettings', label: 'Manage Store Settings' }
   ];
 
@@ -24,7 +28,7 @@ export const PermissionsView = () => {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-black text-slate-900 tracking-tight">Granular Roles & Permission Matrix</h2>
-        <p className="text-xs text-slate-500 font-medium">Configure fine-grained access control permissions for Super Admin, Admin, Manager, Staff, and Seller accounts.</p>
+        <p className="text-xs text-slate-500 font-medium">Working access matrix for Sellers, Staff, and Investors. Changes are saved in the browser.</p>
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">

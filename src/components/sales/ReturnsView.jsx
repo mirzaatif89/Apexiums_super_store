@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import Badge from '../common/Badge';
-import { RotateCcw, Search, CheckCircle2, XCircle, Eye, X } from 'lucide-react';
+import { RotateCcw, Search, CheckCircle2, XCircle, Eye, X, Plus } from 'lucide-react';
 
 export const ReturnsView = () => {
-  const { returns, updateReturnStatus } = useAdmin();
+  const { returns, updateReturnStatus, addReturn, orders } = useAdmin();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedReturn, setSelectedReturn] = useState(null);
+  const [isAdding, setIsAdding] = useState(false);
+  const [form, setForm] = useState({ orderId: '', customerName: '', customerEmail: '', productName: '', sellerName: '', reason: '', amount: '' });
 
   const filteredReturns = returns.filter((r) => {
     return (
@@ -19,10 +21,10 @@ export const ReturnsView = () => {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div>
         <h2 className="text-2xl font-black text-slate-900 tracking-tight">Returns & Refunds Management</h2>
         <p className="text-xs text-slate-500 font-medium">Review customer dispute claims, defect inspects, and refund authorizations.</p>
-      </div>
+      </div><button onClick={() => setIsAdding(true)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-xs font-bold text-white"><Plus size={16}/> Add Return</button></div>
 
       <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3">
         <Search size={16} className="text-slate-400" />
@@ -80,6 +82,8 @@ export const ReturnsView = () => {
       </div>
 
       {/* Return Detail Inspector Modal */}
+      {isAdding && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"><form onSubmit={(e)=>{e.preventDefault();addReturn({...form,amount:Number(form.amount)});setIsAdding(false);setForm({ orderId: '', customerName: '', customerEmail: '', productName: '', sellerName: '', reason: '', amount: '' });}} className="w-full max-w-lg rounded-2xl bg-white p-5"><div className="mb-4 flex justify-between"><h3 className="text-lg font-black">Add Manual Return</h3><button type="button" onClick={()=>setIsAdding(false)}><X size={18}/></button></div><div className="grid gap-3 sm:grid-cols-2"><label className="text-xs font-bold">Order ID *<select required value={form.orderId} onChange={(e)=>{const order=orders.find((o)=>o.id===e.target.value);const item=order?.products?.[0];setForm({...form,orderId:e.target.value,customerName:order?.customerName||'',customerEmail:order?.customerEmail||'',productName:item?.name||'',sellerName:order?.sellerName||'',amount:order?.totalAmount||''})}} className="mt-1 w-full rounded-xl border p-2"><option value="">Select or enter below</option>{orders.map((o)=><option key={o.id} value={o.id}>{o.id}</option>)}</select></label>{[['customerName','Customer Name *'],['customerEmail','Customer Email'],['productName','Product *'],['sellerName','Seller'],['amount','Return Amount *']].map(([key,label])=><label key={key} className="text-xs font-bold">{label}<input required={label.includes('*')} type={key==='amount'?'number':'text'} value={form[key]} onChange={(e)=>setForm({...form,[key]:e.target.value})} className="mt-1 w-full rounded-xl border p-2"/></label>)}<label className="text-xs font-bold sm:col-span-2">Return Reason *<textarea required value={form.reason} onChange={(e)=>setForm({...form,reason:e.target.value})} className="mt-1 w-full rounded-xl border p-2"/></label></div><div className="mt-4 flex justify-end gap-2"><button type="button" onClick={()=>setIsAdding(false)} className="rounded-xl border px-4 py-2 text-xs font-bold">Cancel</button><button className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white">Add Return</button></div></form></div>}
+
       {selectedReturn && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-5 space-y-4">

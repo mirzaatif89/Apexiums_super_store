@@ -53,6 +53,7 @@ export const ProductListing = () => {
   const [viewingProduct, setViewingProduct] = useState(null);
   const [stockModalProduct, setStockModalProduct] = useState(null);
   const [newStockQty, setNewStockQty] = useState(0);
+  const [uploadPreview, setUploadPreview] = useState('');
 
   // Form State for Add/Edit
   const [formData, setFormData] = useState({
@@ -135,9 +136,10 @@ export const ProductListing = () => {
       minStock: 10,
       status: 'Active',
       brand: 'Apexium',
-      image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80',
+      image: '',
       description: ''
     });
+    setUploadPreview('');
     setIsModalOpen(true);
   };
 
@@ -158,6 +160,7 @@ export const ProductListing = () => {
       image: p.image,
       description: p.description || ''
     });
+    setUploadPreview(p.image || '');
     setIsModalOpen(true);
   };
 
@@ -165,10 +168,13 @@ export const ProductListing = () => {
     e.preventDefault();
     if (!formData.name || !formData.price || formData.stock === '') return;
 
+    const image = formData.image || uploadPreview || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80';
+    const payload = { ...formData, image };
+
     if (editingProduct) {
-      updateProduct(editingProduct.id, formData);
+      updateProduct(editingProduct.id, payload);
     } else {
-      addProduct(formData);
+      addProduct(payload);
     }
     setIsModalOpen(false);
   };
@@ -555,13 +561,30 @@ export const ProductListing = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 text-xs mb-1">Image URL</label>
+                <label className="block font-bold text-slate-700 text-xs mb-1">Image Upload</label>
                 <input
-                  type="text"
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      const result = String(reader.result || '');
+                      setUploadPreview(result);
+                      setFormData({ ...formData, image: result });
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold focus:outline-none"
                 />
+                {(uploadPreview || formData.image) && (
+                  <img
+                    src={uploadPreview || formData.image}
+                    alt="Product preview"
+                    className="mt-2 h-32 w-full rounded-xl border object-cover"
+                  />
+                )}
               </div>
 
               <div>

@@ -6,22 +6,23 @@ import { Megaphone, Plus, Trash2, Calendar, Link2, X } from 'lucide-react';
 export const BannersView = () => {
   const { banners, addBanner, deleteBanner } = useAdmin();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [uploadPreview, setUploadPreview] = useState('');
 
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&q=80',
+    image: '',
     ctaText: 'Shop Now',
     ctaUrl: '/catalog',
     startDate: '2026-08-12',
     endDate: '2026-09-12',
-    status: 'Active'
+    status: 'Pending'
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.title) return;
-    addBanner(formData);
+    addBanner({ ...formData, image: formData.image || uploadPreview || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&q=80' });
     setIsModalOpen(false);
   };
 
@@ -29,7 +30,7 @@ export const BannersView = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Marketplace Banner Campaigns</h2>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Website Banner</h2>
           <p className="text-xs text-slate-500 font-medium">Manage homepage promotional banners, hero sliders, and category sales graphics.</p>
         </div>
         <button
@@ -114,13 +115,30 @@ export const BannersView = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Banner Image URL</label>
+                <label className="block font-bold text-slate-700 mb-1">Banner Image Upload</label>
                 <input
-                  type="text"
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-xl font-semibold"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      const result = String(reader.result || '');
+                      setUploadPreview(result);
+                      setFormData({ ...formData, image: result });
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                  className="w-full rounded-xl border px-3 py-2 font-semibold"
                 />
+                {(uploadPreview || formData.image) && (
+                  <img
+                    src={uploadPreview || formData.image}
+                    alt="Banner preview"
+                    className="mt-2 h-28 w-full rounded-xl border object-cover"
+                  />
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-2">
@@ -140,6 +158,7 @@ export const BannersView = () => {
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                     className="w-full px-3 py-2 border rounded-xl font-semibold"
                   >
+                    <option value="Pending">Pending</option>
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                   </select>

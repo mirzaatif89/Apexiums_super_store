@@ -9,12 +9,13 @@ export const CategoriesView = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [uploadPreview, setUploadPreview] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
     parent: '',
-    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80',
+    image: '',
     status: 'Active',
     subcategories: ''
   });
@@ -31,10 +32,11 @@ export const CategoriesView = () => {
       name: '',
       slug: '',
       parent: '',
-      image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80',
+      image: '',
       status: 'Active',
       subcategories: ''
     });
+    setUploadPreview('');
     setIsModalOpen(true);
   };
 
@@ -48,6 +50,7 @@ export const CategoriesView = () => {
       status: c.status,
       subcategories: Array.isArray(c.subcategories) ? c.subcategories.join(', ') : ''
     });
+    setUploadPreview(c.image || '');
     setIsModalOpen(true);
   };
 
@@ -57,6 +60,7 @@ export const CategoriesView = () => {
 
     const formattedData = {
       ...formData,
+      image: formData.image || uploadPreview || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80',
       slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-'),
       subcategories: formData.subcategories
         ? formData.subcategories.split(',').map((s) => s.trim())
@@ -195,13 +199,30 @@ export const CategoriesView = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Banner / Cover Image URL</label>
+                <label className="block font-bold text-slate-700 mb-1">Banner / Cover Image Upload</label>
                 <input
-                  type="text"
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-xl font-semibold focus:outline-none"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      const result = String(reader.result || '');
+                      setUploadPreview(result);
+                      setFormData({ ...formData, image: result });
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                  className="w-full rounded-xl border px-3 py-2 font-semibold focus:outline-none"
                 />
+                {(uploadPreview || formData.image) && (
+                  <img
+                    src={uploadPreview || formData.image}
+                    alt="Category preview"
+                    className="mt-2 h-32 w-full rounded-xl border object-cover"
+                  />
+                )}
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t">

@@ -71,6 +71,10 @@ class MockPool {
     return this.tables.get(name);
   }
 
+  async end() {
+    return undefined;
+  }
+
   async query(sql, params = []) {
     const queryStr = String(sql || '').trim();
     const upper = queryStr.toUpperCase();
@@ -618,12 +622,12 @@ const resources = {
   categories: ['name', 'parent_id', 'image_url', 'description', 'status'],
   products: ['image_url', 'product_images', 'name', 'description', 'product_detail', 'category', 'actual_price', 'base_price', 'discounted_price', 'sku', 'stock_qty', 'slug', 'meta_title', 'meta_desc', 'status'],
   stock: ['product_id', 'product_name', 'total_items', 'stock_belong_to', 'sku', 'category', 'quantity', 'reorder_level', 'description', 'warehouse'],
-  orders: ['customer_id', 'customer_name', 'items_count', 'total_amount', 'payment_method', 'payment_status', 'order_status', 'shipping_address', 'created_at'],
+  orders: ['customer_id', 'customer_name', 'customer_email', 'customer_phone', 'items_count', 'total_amount', 'payment_method', 'payment_status', 'order_status', 'shipping_address', 'created_at'],
   returns: ['order_id', 'product_id', 'customer_id', 'customer', 'product', 'reason', 'status', 'refund_amount', 'refund_method', 'created_at'],
   expenses: ['title', 'category', 'amount', 'payment_method', 'date', 'receipt_url', 'added_by', 'notes'],
   wholesellers: ['name', 'business_name', 'contact_person', 'phone', 'email', 'address', 'description', 'seller_image', 'stock_seller_sell', 'username', 'password', 'products_supplied', 'total_purchases', 'payment_due', 'status'],
   staff: ['photo_url', 'name', 'email', 'phone', 'role', 'password_hash', 'status', 'last_login'],
-  customers: ['avatar_url', 'name', 'email', 'phone', 'total_orders', 'total_spent', 'status', 'created_at'],
+  customers: ['avatar_url', 'name', 'username', 'password_hash', 'plain_password', 'email', 'phone', 'total_orders', 'total_spent', 'status', 'created_at'],
   notifications: ['type', 'title', 'message', 'is_read', 'created_at'],
   coupons: ['code', 'title', 'description', 'discount_type', 'discount_value', 'min_order_amount', 'use_for', 'usage_limit', 'used_count', 'valid_from', 'valid_till', 'status'],
   investors: ['name', 'email', 'phone', 'address', 'username', 'password', 'investment_amount', 'investment_date', 'agreement_url', 'status', 'description', 'notes', 'created_at'],
@@ -766,6 +770,11 @@ async function initializeDatabase() {
   await ensureColumn('products', 'product_images', 'LONGTEXT');
   await ensureColumn('products', 'product_detail', 'TEXT');
   await ensureColumn('products', 'actual_price', 'DECIMAL(12,2) DEFAULT 0');
+  await ensureColumn('orders', 'customer_email', 'VARCHAR(180)');
+  await ensureColumn('orders', 'customer_phone', 'VARCHAR(60)');
+  await ensureColumn('customers', 'username', 'VARCHAR(120)');
+  await ensureColumn('customers', 'password_hash', 'VARCHAR(255)');
+  await ensureColumn('customers', 'plain_password', 'VARCHAR(255)');
   await ensureColumn('stock', 'total_items', 'INT DEFAULT 0');
   await ensureColumn('stock', 'stock_belong_to', 'VARCHAR(180)');
   await ensureColumn('stock', 'description', 'TEXT');
@@ -835,6 +844,7 @@ async function listRows(table, req, res, queryOverride = null) {
     [...params, limit, offset]
   );
   if (table === 'staff') rows.forEach((row) => delete row.password_hash);
+  if (table === 'customers') rows.forEach((row) => delete row.password_hash);
   const [[{ total }]] = await pool.query(`SELECT COUNT(*) AS total FROM ${backtick(table)} ${where}`, params);
   res.json({ rows, total, page, limit });
 }
@@ -873,6 +883,19 @@ function crudRoutes(resource, required = []) {
         );
       }
       if (resource === 'orders') {
+        const items = Array.isArray(req.body.items) ? req.body.items : [];
+        for (const item of items) {
+          await pool.query(
+            'INSERT INTO order_items (business_id, order_id, product_id, product_name, image_url, qty, price) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [data.business_id || DEFAULT_BUSINESS_ID, result.insertId, item.id || null, item.title || item.name || 'Product', item.image || null, Number(item.qty || 1), Number(item.price || 0)]
+          );
+        }
+        if (data.customer_email || data.customer_phone) {
+          await pool.query(
+            'UPDATE customers SET total_orders = total_orders + 1, total_spent = total_spent + ? WHERE business_id = ? AND (email = ? OR phone = ?)',
+            [Number(data.total_amount || 0), data.business_id || DEFAULT_BUSINESS_ID, data.customer_email || '', data.customer_phone || '']
+          );
+        }
         await pool.query(
           'INSERT INTO notifications (business_id, type, title, message, entity_type, entity_id, severity, is_read) VALUES (?, ?, ?, ?, ?, ?, ?, 0)',
           [
@@ -901,6 +924,7 @@ function crudRoutes(resource, required = []) {
         );
       }
       const responseData = { id: result.insertId, ...data };
+      if (resource === 'orders') responseData.order = { id: result.insertId, ...data };
       if (resource === 'staff') delete responseData.password_hash;
       res.status(201).json(responseData);
     } catch (error) {
@@ -1136,6 +1160,8 @@ Object.entries({
   categories: ['name'],
   products: ['name'],
   stock: ['product_id', 'stock_belong_to', 'quantity'],
+  orders: ['customer_name', 'total_amount'],
+  returns: ['order_id', 'customer', 'product'],
   expenses: ['title'],
   wholesellers: ['business_name'],
   staff: ['name'],
@@ -1390,6 +1416,23 @@ async function startServer() {
 startServer().catch((error) => {
   console.error('Failed to start server:', error);
   process.exit(1);
+});
+
+app.post('/api/customers/register', async (req, res) => {
+  try {
+    const required = requireFields(req.body, ['name', 'username', 'password']);
+    if (required) return res.status(400).json({ message: required });
+    const username = String(req.body.username).trim();
+    const [existing] = await pool.query('SELECT id FROM customers WHERE username = ? OR email = ? LIMIT 1', [username, req.body.email || username]);
+    if (existing.length) return res.status(409).json({ message: 'Customer account already exists' });
+    const [result] = await pool.query(
+      'INSERT INTO customers (business_id, name, username, password_hash, plain_password, email, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [DEFAULT_BUSINESS_ID, req.body.name, username, hashPassword(req.body.password), req.body.password, req.body.email || null, req.body.phone || null, 'Active']
+    );
+    res.status(201).json({ id: result.insertId, name: req.body.name, username, email: req.body.email || null, phone: req.body.phone || null, status: 'Active' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 function shutdown(signal) {

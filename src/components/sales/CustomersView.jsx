@@ -1,45 +1,123 @@
 import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import Badge from '../common/Badge';
-import { Users, Search, ShoppingBag, DollarSign, Calendar, MapPin, X, Star } from 'lucide-react';
+import { Search, X, Printer } from 'lucide-react';
 
 export const CustomersView = () => {
-  const { customers } = useAdmin();
+  const { customers, orders } = useAdmin();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
 
-  const filteredCustomers = customers.filter(
-    (c) =>
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.city.toLowerCase().includes(searchTerm.toLowerCase())
+  const customersWithRevenue = customers.map((customer) => {
+    const customerOrders = orders.filter(
+      (order) => order.customerEmail === customer.email || order.customerName === customer.name
+    );
+
+    return {
+      ...customer,
+      totalOrders: Math.max(Number(customer.totalOrders) || 0, customerOrders.length),
+      totalSpent: Math.max(
+        Number(customer.totalSpent) || 0,
+        customerOrders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0)
+      )
+    };
+  });
+
+  const filteredCustomers = customersWithRevenue.filter((customer) =>
+    String(customer.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    String(customer.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    String(customer.phone || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    String(customer.city || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const printMissingContacts = () => {
+    const missing = customersWithRevenue.filter((customer) => !customer.email || !customer.phone);
+    const popup = window.open('', '_blank', 'width=900,height=650');
+    if (!popup) return;
+
+    popup.document.write(`
+      <html>
+        <head>
+          <title>Customers Missing Contact Details</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 24px; }
+            table { border-collapse: collapse; width: 100%; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background: #111827; color: white; }
+          </style>
+        </head>
+        <body>
+          <h2>Customers Missing Email or Phone</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Orders</th>
+                <th>Spent</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${missing
+                .map(
+                  (customer) => `
+                    <tr>
+                      <td>${customer.id}</td>
+                      <td>${customer.name}</td>
+                      <td>${customer.email || 'Missing'}</td>
+                      <td>${customer.phone || 'Missing'}</td>
+                      <td>${customer.totalOrders}</td>
+                      <td>${customer.totalSpent}</td>
+                    </tr>
+                  `
+                )
+                .join('')}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `);
+    popup.document.close();
+    popup.focus();
+    popup.print();
+  };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Customer Database & CRM</h2>
-        <p className="text-xs text-slate-500 font-medium">Customer activity metrics, total spending histories, and membership tiers.</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-black tracking-tight text-slate-900">Customer Database & CRM</h2>
+          <p className="text-xs font-medium text-slate-500">Customer activity metrics, total spending histories, and membership tiers.</p>
+        </div>
+        <button
+          onClick={printMissingContacts}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white"
+        >
+          <Printer size={16} /> Print Missing Contacts
+        </button>
       </div>
 
-      <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3">
+      <div className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
         <Search size={16} className="text-slate-400" />
         <input
           type="text"
           placeholder="Search customer name, email, city..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-transparent text-xs font-semibold text-slate-800 focus:outline-none"
+          className="w-full bg-transparent text-xs font-semibold text-slate-800 outline-none"
         />
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+              <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-500">
                 <th className="p-3.5">Customer</th>
                 <th className="p-3.5">Contact & City</th>
+                <th className="p-3.5">Login ID / Password</th>
                 <th className="p-3.5">Total Orders</th>
                 <th className="p-3.5">Total Spent</th>
                 <th className="p-3.5">Last Order</th>
@@ -48,31 +126,37 @@ export const CustomersView = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-              {filteredCustomers.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-50 transition-colors">
+              {filteredCustomers.map((customer) => (
+                <tr key={customer.id} className="transition-colors hover:bg-slate-50">
                   <td className="p-3.5">
                     <div className="flex items-center gap-3">
-                      <img src={c.avatar} alt={c.name} className="w-9 h-9 rounded-full object-cover border shrink-0" />
+                      <img src={customer.avatar} alt={customer.name} className="h-9 w-9 shrink-0 rounded-full border object-cover" />
                       <div>
-                        <p className="font-bold text-slate-900">{c.name}</p>
-                        <p className="text-[10px] text-slate-400">ID: {c.id}</p>
+                        <p className="font-bold text-slate-900">{customer.name}</p>
+                        <p className="text-[10px] text-slate-400">ID: {customer.id}</p>
                       </div>
                     </div>
                   </td>
                   <td className="p-3.5">
-                    <p className="font-semibold text-slate-800">{c.email}</p>
-                    <p className="text-[10px] text-slate-400">{c.city}</p>
+                    <p className="font-semibold text-slate-800">{customer.email}</p>
+                    <p className="text-[10px] text-slate-400">
+                      {customer.phone || 'Phone missing'} · {customer.city}
+                    </p>
                   </td>
-                  <td className="p-3.5 font-extrabold text-slate-900">{c.totalOrders} purchases</td>
-                  <td className="p-3.5 font-black text-emerald-600">${c.totalSpent.toLocaleString()}</td>
-                  <td className="p-3.5 font-medium text-slate-500">{c.lastOrderDate}</td>
                   <td className="p-3.5">
-                    <Badge status={c.status}>{c.status}</Badge>
+                    <p className="font-mono font-bold">{customer.username || customer.id}</p>
+                    <p className="font-mono text-[10px] text-slate-500">{customer.password || 'Password not stored'}</p>
+                  </td>
+                  <td className="p-3.5 font-extrabold text-slate-900">{customer.totalOrders} purchases</td>
+                  <td className="p-3.5 font-black text-emerald-600">${customer.totalSpent.toLocaleString()}</td>
+                  <td className="p-3.5 font-medium text-slate-500">{customer.lastOrderDate}</td>
+                  <td className="p-3.5">
+                    <Badge status={customer.status}>{customer.status}</Badge>
                   </td>
                   <td className="p-3.5 text-right">
                     <button
-                      onClick={() => setSelectedCustomer(c)}
-                      className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs cursor-pointer"
+                      onClick={() => setSelectedCustomer(customer)}
+                      className="cursor-pointer rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-200"
                     >
                       View CRM Profile
                     </button>
@@ -84,13 +168,12 @@ export const CustomersView = () => {
         </div>
       </div>
 
-      {/* Customer Profile Drawer Modal */}
       {selectedCustomer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-5 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
             <div className="flex items-center justify-between border-b pb-3">
               <div className="flex items-center gap-3">
-                <img src={selectedCustomer.avatar} alt={selectedCustomer.name} className="w-10 h-10 rounded-full object-cover border" />
+                <img src={selectedCustomer.avatar} alt={selectedCustomer.name} className="h-10 w-10 rounded-full border object-cover" />
                 <div>
                   <h3 className="text-sm font-extrabold text-slate-900">{selectedCustomer.name}</h3>
                   <p className="text-[10px] text-slate-400">{selectedCustomer.email}</p>
@@ -101,21 +184,39 @@ export const CustomersView = () => {
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-3 rounded-xl border">
-              <div><p className="text-slate-400">Total Spent:</p><p className="text-base font-black text-emerald-600">${selectedCustomer.totalSpent}</p></div>
-              <div><p className="text-slate-400">Total Orders:</p><p className="text-base font-black text-slate-900">{selectedCustomer.totalOrders}</p></div>
-              <div><p className="text-slate-400">City:</p><p className="font-bold text-slate-800">{selectedCustomer.city}</p></div>
-              <div><p className="text-slate-400">Joined Date:</p><p className="font-bold text-slate-800">{selectedCustomer.joinDate}</p></div>
+            <div className="grid grid-cols-2 gap-3 rounded-xl border bg-slate-50 p-3 text-xs">
+              <div>
+                <p className="text-slate-400">Total Spent:</p>
+                <p className="text-base font-black text-emerald-600">${selectedCustomer.totalSpent}</p>
+              </div>
+              <div>
+                <p className="text-slate-400">Total Orders:</p>
+                <p className="text-base font-black text-slate-900">{selectedCustomer.totalOrders}</p>
+              </div>
+              <div>
+                <p className="text-slate-400">City:</p>
+                <p className="font-bold text-slate-800">{selectedCustomer.city}</p>
+              </div>
+              <div>
+                <p className="text-slate-400">Joined Date:</p>
+                <p className="font-bold text-slate-800">{selectedCustomer.joinDate}</p>
+              </div>
+              <div>
+                <p className="text-slate-400">Login ID:</p>
+                <p className="font-bold text-slate-800">{selectedCustomer.username || selectedCustomer.id}</p>
+              </div>
+              <div>
+                <p className="text-slate-400">Password:</p>
+                <p className="font-mono font-bold text-slate-800">{selectedCustomer.password || 'Not available'}</p>
+              </div>
             </div>
 
-            <div className="pt-2 text-center">
-              <button
-                onClick={() => setSelectedCustomer(null)}
-                className="w-full py-2 bg-slate-900 text-white rounded-xl text-xs font-bold cursor-pointer"
-              >
-                Close Customer File
-              </button>
-            </div>
+            <button
+              onClick={() => setSelectedCustomer(null)}
+              className="w-full rounded-xl bg-slate-900 py-2 text-xs font-bold text-white"
+            >
+              Close Customer File
+            </button>
           </div>
         </div>
       )}

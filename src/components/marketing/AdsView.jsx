@@ -6,6 +6,7 @@ import { Radio, Plus, Trash2, Eye, MousePointer, DollarSign, X } from 'lucide-re
 export const AdsView = () => {
   const { ads, addAd, deleteAd } = useAdmin();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [uploadPreview, setUploadPreview] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -14,14 +15,14 @@ export const AdsView = () => {
     budget: 1000,
     startDate: '2026-08-15',
     endDate: '2026-09-15',
-    status: 'Scheduled',
-    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80'
+    status: 'Pending',
+    image: ''
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name) return;
-    addAd(formData);
+    addAd({ ...formData, image: formData.image || uploadPreview || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80' });
     setIsModalOpen(false);
   };
 
@@ -29,7 +30,7 @@ export const AdsView = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Digital Ad Campaign Analytics</h2>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">APP Banner</h2>
           <p className="text-xs text-slate-500 font-medium">Track paid acquisition campaigns across Google, Meta, TikTok, and Affiliate channels.</p>
         </div>
         <button
@@ -130,6 +131,33 @@ export const AdsView = () => {
                 </select>
               </div>
 
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Ad Image Upload</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      const result = String(reader.result || '');
+                      setUploadPreview(result);
+                      setFormData({ ...formData, image: result });
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                  className="w-full rounded-xl border px-3 py-2 font-semibold"
+                />
+                {(uploadPreview || formData.image) && (
+                  <img
+                    src={uploadPreview || formData.image}
+                    alt="Ad preview"
+                    className="mt-2 h-28 w-full rounded-xl border object-cover"
+                  />
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Total Budget ($)</label>
@@ -147,6 +175,7 @@ export const AdsView = () => {
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                     className="w-full px-3 py-2 border rounded-xl font-semibold"
                   >
+                    <option value="Pending">Pending</option>
                     <option value="Active">Active</option>
                     <option value="Scheduled">Scheduled</option>
                   </select>

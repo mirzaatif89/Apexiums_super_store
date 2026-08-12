@@ -12,11 +12,18 @@ export const SellersView = () => {
   const [formData, setFormData] = useState({
     sellerName: '',
     storeName: '',
+    contact: '',
+    address: '',
     email: '',
     phone: '',
+    description: '',
+    sellerImage: '',
+    stockSellerSell: '',
+    username: '',
+    password: '',
     commissionRate: 10,
     verificationStatus: 'Pending',
-    status: 'Active',
+    status: 'Pending',
     payoutMethod: 'Bank Transfer'
   });
 
@@ -80,8 +87,7 @@ export const SellersView = () => {
               {filteredSellers.map((s) => (
                 <tr key={s.id} className="hover:bg-slate-50 transition-colors">
                   <td className="p-3.5">
-                    <p className="font-extrabold text-slate-900">{s.storeName}</p>
-                    <p className="text-[10px] text-slate-400">Owner: {s.sellerName}</p>
+                    <div className="flex items-center gap-2">{s.sellerImage && <img src={s.sellerImage} alt={s.sellerName} className="h-9 w-9 rounded-lg object-cover"/>}<div><p className="font-extrabold text-slate-900">{s.storeName}</p><p className="text-[10px] text-slate-400">Owner: {s.sellerName}</p></div></div>
                   </td>
                   <td className="p-3.5">
                     <p className="font-semibold text-slate-800">{s.email}</p>
@@ -119,7 +125,7 @@ export const SellersView = () => {
       {/* Become a Seller Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-5 space-y-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl max-h-[90vh] overflow-y-auto w-full p-5 space-y-4">
             <div className="flex items-center justify-between border-b pb-3">
               <h3 className="text-sm font-extrabold text-slate-900">Seller Registration Application</h3>
               <button onClick={() => setIsModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-800">
@@ -129,19 +135,19 @@ export const SellersView = () => {
 
             <form onSubmit={handleSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Store / Business Name *</label>
+                <label className="block font-bold text-slate-700 mb-1">Which Stock Seller Sells *</label>
                 <input
                   type="text"
                   required
-                  value={formData.storeName}
-                  onChange={(e) => setFormData({ ...formData, storeName: e.target.value })}
+                  value={formData.stockSellerSell}
+                  onChange={(e) => setFormData({ ...formData, stockSellerSell: e.target.value, storeName: e.target.value })}
                   className="w-full px-3 py-2 border rounded-xl font-semibold"
                   placeholder="e.g. Apexium Electronics Store"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Owner Name *</label>
+                <label className="block font-bold text-slate-700 mb-1">Name *</label>
                 <input
                   type="text"
                   required
@@ -150,6 +156,9 @@ export const SellersView = () => {
                   className="w-full px-3 py-2 border rounded-xl font-semibold"
                 />
               </div>
+
+              <div className="grid grid-cols-2 gap-2"><div><label className="block font-bold text-slate-700 mb-1">Contact Person *</label><input required value={formData.contact} onChange={(e)=>setFormData({...formData,contact:e.target.value})} className="w-full px-3 py-2 border rounded-xl font-semibold" /></div><div><label className="block font-bold text-slate-700 mb-1">Phone *</label><input required value={formData.phone} onChange={(e)=>setFormData({...formData,phone:e.target.value})} className="w-full px-3 py-2 border rounded-xl font-semibold" /></div></div>
+              <div><label className="block font-bold text-slate-700 mb-1">Address *</label><textarea required value={formData.address} onChange={(e)=>setFormData({...formData,address:e.target.value})} className="w-full px-3 py-2 border rounded-xl font-semibold" /></div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -163,15 +172,11 @@ export const SellersView = () => {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Commission Rate (%)</label>
-                  <input
-                    type="number"
-                    value={formData.commissionRate}
-                    onChange={(e) => setFormData({ ...formData, commissionRate: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border rounded-xl font-semibold"
-                  />
+                  <label className="block font-bold text-slate-700 mb-1">Seller Image *</label><input required type="file" accept="image/*" onChange={(e)=>{const file=e.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=()=>setFormData({...formData,sellerImage:reader.result});reader.readAsDataURL(file)}} className="w-full px-3 py-2 border rounded-xl font-semibold" />
                 </div>
               </div>
+              <div><label className="block font-bold text-slate-700 mb-1">Description *</label><textarea required value={formData.description} onChange={(e)=>setFormData({...formData,description:e.target.value})} className="w-full px-3 py-2 border rounded-xl font-semibold" /></div>
+              <div className="grid grid-cols-2 gap-2"><div><label className="block font-bold text-slate-700 mb-1">Username *</label><input required value={formData.username} onChange={(e)=>setFormData({...formData,username:e.target.value})} className="w-full px-3 py-2 border rounded-xl font-semibold" /></div><div><label className="block font-bold text-slate-700 mb-1">Password *</label><input required type="password" value={formData.password} onChange={(e)=>setFormData({...formData,password:e.target.value})} className="w-full px-3 py-2 border rounded-xl font-semibold" /></div></div>
 
               <div className="flex justify-end gap-2 pt-3 border-t">
                 <button
