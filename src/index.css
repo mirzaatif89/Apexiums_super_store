@@ -1,5 +1,36 @@
 @import "tailwindcss";
 
+/* Apexiums brand palette */
+@theme {
+  --color-brand-primary: #FF384E;
+  --color-brand-light: #F62C40;
+  --color-brand-soft: #FFF1F1;
+}
+
+:root {
+  --brand-primary: #FF384E;
+  --brand-light: #F62C40;
+  --brand-soft: #FFF1F1;
+}
+
+/* Keep legacy utility classes aligned with the new brand colors. */
+[class*="bg-[#E8262A]"] { background-color: var(--brand-primary) !important; }
+[class*="text-[#E8262A]"] { color: var(--brand-primary) !important; }
+[class*="border-[#E8262A]"] { border-color: var(--brand-primary) !important; }
+[class*="fill-[#E8262A]"] { fill: var(--brand-primary) !important; }
+
+/* Browser password-manager autofill must not paint form fields red. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: #1e293b !important;
+  -webkit-box-shadow: 0 0 0 1000px #f8fafc inset !important;
+  box-shadow: 0 0 0 1000px #f8fafc inset !important;
+  caret-color: #1e293b;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;

@@ -14,6 +14,7 @@ import {
   X,
   Image as ImageIcon,
   Check,
+  Power,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
@@ -45,7 +46,6 @@ export const ProductListing = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
 
   // Modal states (Add/Edit, Stock Update, View Product)
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -98,6 +98,9 @@ export const ProductListing = () => {
     if (sortBy === 'stock-low') return a.stock - b.stock;
     return new Date(b.dateAdded) - new Date(a.dateAdded);
   });
+
+  // Show the complete product catalog on one page.
+  const itemsPerPage = Math.max(sortedProducts.length, 1);
 
   // Pagination logic
   const totalPages = Math.ceil(sortedProducts.length / itemsPerPage) || 1;
@@ -280,8 +283,8 @@ export const ProductListing = () => {
 
       {/* Main Table Card */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        <div className="overflow-hidden">
+          <table className="w-full table-fixed text-left text-xs">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                 <th className="p-3.5 w-10 text-center">
@@ -295,14 +298,14 @@ export const ProductListing = () => {
                     className="rounded text-red-600 focus:ring-red-500 cursor-pointer"
                   />
                 </th>
-                <th className="p-3.5">Product</th>
-                <th className="p-3.5">SKU</th>
-                <th className="p-3.5">Category</th>
-                <th className="p-3.5">Seller</th>
-                <th className="p-3.5">Price</th>
-                <th className="p-3.5">Stock</th>
-                <th className="p-3.5">Status</th>
-                <th className="p-3.5 text-right">Actions</th>
+                <th className="p-2.5">Product</th>
+                <th className="p-2.5">SKU</th>
+                <th className="p-2.5">Category</th>
+                <th className="p-2.5">Seller</th>
+                <th className="p-2.5">Price</th>
+                <th className="p-2.5">Stock</th>
+                <th className="p-2.5">Status</th>
+                <th className="p-2.5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
@@ -325,7 +328,7 @@ export const ProductListing = () => {
                         isChecked ? 'bg-red-50/20' : ''
                       }`}
                     >
-                      <td className="p-3.5 text-center">
+                      <td className="p-2.5 text-center">
                         <input
                           type="checkbox"
                           checked={isChecked}
@@ -333,7 +336,7 @@ export const ProductListing = () => {
                           className="rounded text-red-600 focus:ring-red-500 cursor-pointer"
                         />
                       </td>
-                      <td className="p-3.5">
+                      <td className="p-2.5">
                         <div className="flex items-center gap-3">
                           <img
                             src={p.image}
@@ -346,11 +349,11 @@ export const ProductListing = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="p-3.5 font-mono text-[11px] font-bold text-slate-600">{p.sku}</td>
-                      <td className="p-3.5 font-semibold text-slate-700">{p.category}</td>
-                      <td className="p-3.5 font-semibold text-slate-800">{p.seller}</td>
-                      <td className="p-3.5 font-black text-slate-900">${p.price}</td>
-                      <td className="p-3.5">
+                      <td className="p-2.5 font-mono text-[11px] font-bold text-slate-600 break-words">{p.sku}</td>
+                      <td className="p-2.5 font-semibold text-slate-700 break-words">{p.category}</td>
+                      <td className="p-2.5 font-semibold text-slate-800 break-words">{p.seller}</td>
+                      <td className="p-2.5 font-black text-slate-900">${p.price}</td>
+                      <td className="p-2.5">
                         <div className="flex items-center gap-1.5">
                           <span
                             className={`font-black text-xs ${
@@ -375,10 +378,31 @@ export const ProductListing = () => {
                           </button>
                         </div>
                       </td>
-                      <td className="p-3.5">
-                        <Badge status={p.status}>{p.status}</Badge>
+                      <td className="p-2.5">
+                        <div className="flex items-center gap-2">
+                          <Badge status={p.status} className="whitespace-nowrap text-[11px] px-2.5">
+                            {p.status}
+                          </Badge>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const nextStatus = p.status === 'Inactive' ? 'Active' : 'Inactive';
+                              updateProduct(p.id, { status: nextStatus });
+                              const hidden = JSON.parse(localStorage.getItem('apexiums-hidden-products') || '[]');
+                              const ids = nextStatus === 'Inactive'
+                                ? [...new Set([...hidden, p.id])]
+                                : hidden.filter((id) => id !== p.id);
+                              localStorage.setItem('apexiums-hidden-products', JSON.stringify(ids));
+                              window.dispatchEvent(new Event('apexiums-product-visibility-changed'));
+                            }}
+                            title={p.status === 'Inactive' ? 'Show on website' : 'Hide from website'}
+                            className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold cursor-pointer transition-colors ${p.status === 'Inactive' ? 'border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100' : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}
+                          >
+                            <Power size={11} /> {p.status === 'Inactive' ? 'Off' : 'On'}
+                          </button>
+                        </div>
                       </td>
-                      <td className="p-3.5 text-right">
+                      <td className="p-2.5 text-right">
                         <ActionMenu
                           buttonTitle="Product actions"
                           actions={[
@@ -397,32 +421,6 @@ export const ProductListing = () => {
           </table>
         </div>
 
-        {/* Pagination Footer */}
-        <div className="p-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-semibold text-slate-500">
-          <span>
-            Showing {(currentPage - 1) * itemsPerPage + 1} to{' '}
-            {Math.min(currentPage * itemsPerPage, sortedProducts.length)} of {sortedProducts.length} entries
-          </span>
-          <div className="flex items-center gap-1">
-            <button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => p - 1)}
-              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 cursor-pointer"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <span className="px-3 py-1 font-bold text-slate-800">
-              Page {currentPage} of {totalPages}
-            </span>
-            <button
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => p + 1)}
-              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 cursor-pointer"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* Add / Edit Product Modal Form */}
@@ -534,6 +532,7 @@ export const ProductListing = () => {
                   >
                     <option value="Active">Active</option>
                     <option value="Draft">Draft</option>
+                    <option value="Inactive">Inactive (Hidden)</option>
                     <option value="Out of Stock">Out of Stock</option>
                   </select>
                 </div>

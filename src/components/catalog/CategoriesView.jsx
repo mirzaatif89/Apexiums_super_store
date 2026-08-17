@@ -188,6 +188,20 @@ export const CategoriesView = () => {
               </div>
 
               <div>
+                <label className="block font-bold text-slate-700 mb-1">Category Belongs To</label>
+                <select
+                  value={formData.parent}
+                  onChange={(e) => setFormData({ ...formData, parent: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-xl font-semibold focus:outline-none focus:border-red-500 bg-white"
+                >
+                  <option value="">Main Category</option>
+                  {categories.filter((category) => category.id !== editingCategory?.id).map((category) => (
+                    <option key={category.id} value={category.name}>{category.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
                 <label className="block font-bold text-slate-700 mb-1">Subcategories (comma separated)</label>
                 <input
                   type="text"
@@ -199,23 +213,35 @@ export const CategoriesView = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Banner / Cover Image Upload</label>
+                <label className="block font-bold text-slate-700 mb-1">Category Image Upload *</label>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
+                    const maxWidth = 800;
+                    const maxHeight = 600;
                     const reader = new FileReader();
                     reader.onload = () => {
                       const result = String(reader.result || '');
-                      setUploadPreview(result);
-                      setFormData({ ...formData, image: result });
+                      const image = new Image();
+                      image.onload = () => {
+                        if (image.width > maxWidth || image.height > maxHeight) {
+                          window.alert('Image size must not exceed 800 × 600 pixels. Please choose a smaller image.');
+                          e.target.value = '';
+                          return;
+                        }
+                        setUploadPreview(result);
+                        setFormData({ ...formData, image: result });
+                      };
+                      image.src = result;
                     };
                     reader.readAsDataURL(file);
                   }}
                   className="w-full rounded-xl border px-3 py-2 font-semibold focus:outline-none"
                 />
+                <p className="mt-1 text-[10px] font-medium text-slate-500">Upload the image for this category. Maximum size: 800 × 600 pixels.</p>
                 {(uploadPreview || formData.image) && (
                   <img
                     src={uploadPreview || formData.image}

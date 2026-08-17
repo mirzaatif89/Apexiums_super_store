@@ -129,6 +129,9 @@ function filterProducts(list, query, cat) {
 export default function StorefrontHome({ onLogin, session, onLogout }) {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('All');
+  const [hiddenProductIds, setHiddenProductIds] = React.useState(() => {
+    try { return JSON.parse(localStorage.getItem('apexiums-hidden-products') || '[]'); } catch { return []; }
+  });
   const [cartItems, setCartItems] = React.useState([]);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [loginOpen, setLoginOpen] = React.useState(false);
@@ -183,10 +186,19 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
     };
   }, [mobileMenuOpen, selectedProduct, checkoutOpen, infoModal, chatOpen]);
 
-  const filteredFlashSale = filterProducts(flashSaleProducts, searchQuery, selectedCategory);
+  React.useEffect(() => {
+    const refreshVisibility = () => {
+      try { setHiddenProductIds(JSON.parse(localStorage.getItem('apexiums-hidden-products') || '[]')); } catch { setHiddenProductIds([]); }
+    };
+    window.addEventListener('apexiums-product-visibility-changed', refreshVisibility);
+    return () => window.removeEventListener('apexiums-product-visibility-changed', refreshVisibility);
+  }, []);
+
+  const visible = (list) => list.filter((p) => !hiddenProductIds.includes(p.id));
+  const filteredFlashSale = filterProducts(visible(flashSaleProducts), searchQuery, selectedCategory);
   const filteredSections = productSections.map((section) => ({
     ...section,
-    products: filterProducts(section.products, searchQuery, selectedCategory)
+    products: filterProducts(visible(section.products), searchQuery, selectedCategory)
   }));
 
   const allProductsList = React.useMemo(() => {

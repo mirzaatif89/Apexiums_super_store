@@ -90,17 +90,8 @@ export const DashboardView = () => {
   return (
     <div className="space-y-6">
       {/* Top Banner Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-red-950 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-transparent p-0 text-slate-800 shadow-none flex flex-col md:flex-row items-start md:items-center justify-end gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/20 text-red-300 text-xs font-bold border border-red-500/30 mb-2">
-            <TrendingUp size={14} /> Multi-Vendor Performance • Filter: {dateRange}
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
-            Marketplace Analytics Dashboard
-          </h2>
-          <p className="text-slate-300 text-xs sm:text-sm mt-1 max-w-xl">
-            Real-time multi-seller ecosystem metrics, gross revenue, net profit margins, order fulfillment, and low stock indicators.
-          </p>
         </div>
         <div className="flex items-center gap-3">
           <button
