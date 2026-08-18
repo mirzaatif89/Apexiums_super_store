@@ -28,6 +28,15 @@ export default function UserProfileView({
 
   const [profileName, setProfileName] = useState(session?.name || session?.username || 'Esther Howard');
   const [profileEmail, setProfileEmail] = useState(session?.email || 'esther.howard@example.com');
+  const [trackId, setTrackId] = useState('');
+  const [trackedOrder, setTrackedOrder] = useState(null);
+  const trackOrder = async (event) => {
+    event.preventDefault();
+    const id = trackId.trim().replace(/^ORD-/i, '');
+    if (!id) return;
+    const local = JSON.parse(localStorage.getItem('apexiums-my-orders') || '[]').find((order) => String(order.id) === id);
+    try { const response = await fetch(`/api/orders/${id}`); const data = response.ok ? await response.json() : null; setTrackedOrder({ id, status: data?.order_status || local?.status || 'Pending' }); } catch { setTrackedOrder({ id, status: local?.status || 'Pending' }); }
+  };
   const [profilePhone, setProfilePhone] = useState(session?.phone || '603.555.0123');
   const [avatarUrl, setAvatarUrl] = useState(() => {
     if (session?.avatar) return session.avatar;
@@ -202,6 +211,8 @@ export default function UserProfileView({
 
         <div className="w-6" /> {/* Spacer for symmetry */}
       </div>
+
+      <div className="mx-6 rounded-2xl border border-slate-200 bg-slate-50 p-4"><h3 className="text-sm font-black text-slate-900">Track Order</h3><form onSubmit={trackOrder} className="mt-3 flex gap-2"><input value={trackId} onChange={(e) => setTrackId(e.target.value)} placeholder="Enter Order ID e.g. ORD-12" className="min-w-0 flex-1 rounded-xl border bg-white px-3 py-2 text-xs outline-none" /><button className="rounded-xl bg-red-600 px-3 py-2 text-xs font-bold text-white">Track</button></form>{trackedOrder && <p className="mt-3 text-xs font-bold text-emerald-700">Order {trackedOrder.id}: {trackedOrder.status}</p>}</div>
 
       {/* User Avatar & Basic Info */}
       <div className="pt-6 pb-6 text-center px-4">

@@ -1434,11 +1434,17 @@ async function startServer() {
       appType: 'spa'
     });
     app.use(vite.middlewares);
-  } else if (existsSync(distPath)) {
+  } else if (existsSync(path.join(distPath, 'index.html'))) {
     app.use(express.static(distPath));
     app.use((req, res, next) => {
       if (req.method !== 'GET' || req.path.startsWith('/api/')) return next();
       return res.sendFile(path.join(distPath, 'index.html'));
+    });
+  } else {
+    // A missing build should produce a useful deployment error instead of a
+    // misleading browser-level "Not Found" response.
+    app.get('/', (_req, res) => {
+      res.status(503).send('Frontend build is missing. Run npm run build before starting the production app.');
     });
   }
 
