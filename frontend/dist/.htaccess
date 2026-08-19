@@ -1,4 +1,4 @@
-# SPA fallback when the contents of dist/ are uploaded directly to public_html.
+# SPA fallback when dist/ is uploaded directly to public_html.
 RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

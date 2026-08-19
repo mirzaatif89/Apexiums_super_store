@@ -1,7 +1,7 @@
 import React from 'react';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import StorefrontHome from './pages/storefront/StorefrontHome';
-import UserDashboard from './pages/storefront/UserDashboard';
+import AdminDashboard from './pages/admin/AdminDashboard.jsx';
+import StorefrontHome from './pages/storefront/StorefrontHome.jsx';
+import UserDashboard from './pages/storefront/UserDashboard.jsx';
 import { storeLogoSrc, storeName } from './data/storeData';
 import { isAdminRole, isSuperAdminRole } from './utils/roles';
 
