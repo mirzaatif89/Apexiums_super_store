@@ -1,0 +1,9 @@
+# Static fallback for Apache document roots (for example, public_html).
+# The recommended deployment is Hostinger Node.js with app.js; this rule
+# prevents a bare-repository deployment from returning 403 at `/`.
+DirectoryIndex frontend/dist/index.html
+
+RewriteEngine On
+RewriteRule ^$ frontend/dist/index.html [L]
+RewriteRule ^assets/(.*)$ frontend/dist/assets/$1 [L]
+RewriteRule ^(dashboard|products|categories|orders|customers|settings)\.html$ frontend/dist/$1.html [L]
