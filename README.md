@@ -20,7 +20,7 @@ This is a Node.js/React application, not a PHP/Laravel site. Do not deploy it as
 npm install
 ```
 
-Create local `.env`:
+Create local `.env` (do not commit it; use `.env.example` as the template):
 
 ```env
 DB_HOST=localhost
@@ -30,6 +30,8 @@ DB_USER=root
 DB_PASSWORD=your_password_here
 PORT=5000
 ```
+
+For Hostinger, set these variables in the Node.js application's environment settings. The production values must not be pushed to GitHub.
 
 ## Run
 
