@@ -7,3 +7,5 @@ RewriteEngine On
 RewriteRule ^$ frontend/dist/index.html [L]
 RewriteRule ^assets/(.*)$ frontend/dist/assets/$1 [L]
 RewriteRule ^(dashboard|products|categories|orders|customers|settings)\.html$ frontend/dist/$1.html [L]
+# React admin routes must be handled by the SPA entry point.
+RewriteRule ^(dashboard|products|categories|orders|customers|settings)/?$ frontend/dist/index.html [L]
