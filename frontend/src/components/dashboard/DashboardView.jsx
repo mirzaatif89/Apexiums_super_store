@@ -32,7 +32,7 @@ import {
   Cell
 } from 'recharts';
 
-export const DashboardView = () => {
+export const DashboardView = ({ selectedDate = '' }) => {
   const {
     products,
     orders,
@@ -63,10 +63,10 @@ export const DashboardView = () => {
   if (dateRange === 'This Year') multiplier = 2.8;
 
   // Key KPI Numbers
-  const totalRevenue = Number(liveSummary?.orders?.revenue ?? finance.summary?.totalRevenue ?? orders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0));
-  const totalExpenses = Number((finance.expensesList || []).reduce((sum, expense) => sum + Number(expense.amount || 0), 0));
+  const totalRevenue = Number(selectedDate ? orders.filter((order) => { const date = new Date(order.orderDate || order.created_at); return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === selectedDate; }).reduce((sum, order) => sum + Number(order.totalAmount || 0), 0) : (liveSummary?.orders?.revenue ?? finance.summary?.totalRevenue ?? orders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0)));
+  const totalExpenses = Number(selectedDate ? (finance.expensesList || []).filter((expense) => String(expense.date || '').startsWith(selectedDate)).reduce((sum, expense) => sum + Number(expense.amount || 0), 0) : (finance.expensesList || []).reduce((sum, expense) => sum + Number(expense.amount || 0), 0));
   const netProfit = totalRevenue - totalExpenses;
-  const totalOrders = Number(liveSummary?.orders?.total ?? orders.length);
+  const totalOrders = Number(selectedDate ? orders.filter((order) => { const date = new Date(order.orderDate || order.created_at); return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === selectedDate; }).length : (liveSummary?.orders?.total ?? orders.length));
   const totalCustomers = customers.length;
   const totalProducts = Number(liveSummary?.products?.total ?? products.length);
   const totalSellers = sellers.length;
@@ -74,6 +74,16 @@ export const DashboardView = () => {
   const pendingOrders = Number(liveSummary?.orders?.pending ?? orders.filter((order) => ['Pending', 'Processing'].includes(order.orderStatus)).length);
   const pendingSellers = sellers.filter((seller) => ['Pending', 'pending'].includes(seller.status)).length;
   const totalInvestment = investors.reduce((sum, investor) => sum + Number(investor.investmentAmount || investor.investment_amount || 0), 0);
+
+  const matchesSelectedDate = (value) => {
+    if (!selectedDate) return true;
+    const date = new Date(value);
+    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === selectedDate;
+  };
+  const filteredOrders = orders.filter((order) => matchesSelectedDate(order.orderDate || order.created_at));
+  const filteredExpenses = (finance.expensesList || []).filter((expense) => matchesSelectedDate(expense.date));
+  const filteredRevenue = filteredOrders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
+  const filteredExpenseTotal = filteredExpenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
 
   // Low stock products
   const lowStockItems = products.filter((p) => p.stock <= p.minStock);
@@ -89,8 +99,8 @@ export const DashboardView = () => {
   });
   const chartData = monthKeys.map(({ key, month }) => ({
     month,
-    revenue: orders.filter((order) => { const date = new Date(order.orderDate || order.created_at); return !Number.isNaN(date.getTime()) && `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}` === key; }).reduce((sum, order) => sum + Number(order.totalAmount || 0), 0),
-    expenses: (finance.expensesList || []).filter((expense) => String(expense.date || '').startsWith(key)).reduce((sum, expense) => sum + Number(expense.amount || 0), 0)
+    revenue: (selectedDate ? filteredOrders : orders).filter((order) => { const date = new Date(order.orderDate || order.created_at); return !Number.isNaN(date.getTime()) && `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}` === key; }).reduce((sum, order) => sum + Number(order.totalAmount || 0), 0),
+    expenses: (selectedDate ? filteredExpenses : (finance.expensesList || [])).filter((expense) => String(expense.date || '').startsWith(key)).reduce((sum, expense) => sum + Number(expense.amount || 0), 0)
   }));
 
   // Category share based on actual sold order items.

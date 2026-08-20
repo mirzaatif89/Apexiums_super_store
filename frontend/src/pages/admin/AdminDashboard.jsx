@@ -1,5 +1,6 @@
 import React from 'react';
 import { Search } from 'lucide-react';
+import { CalendarDays } from 'lucide-react';
 import { AdminProvider, useAdmin } from '../../context/AdminContext';
 import Sidebar from '../../components/layout/Sidebar';
 import ToastContainer from '../../components/layout/ToastContainer';
@@ -33,6 +34,7 @@ import { isSuperAdminRole } from '../../utils/roles';
 const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
   const { activeTab, setActiveTab, hasPermission, setIsSearchOpen } = useAdmin();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+  const [selectedDate, setSelectedDate] = React.useState('');
 
   const pageSlugs = {
     dashboard: 'dashboard', products: 'products', categories: 'categories', stock: 'stock',
@@ -83,7 +85,7 @@ const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
     }
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardView />;
+        return <DashboardView selectedDate={selectedDate} />;
       case 'products':
         return <ProductListing />;
       case 'categories':
@@ -156,6 +158,12 @@ const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
             <span>Search products, orders, sellers...</span>
             <span className="ml-auto rounded bg-slate-50 px-1.5 py-0.5 text-[10px] font-mono text-slate-400">Ctrl+K</span>
           </button>
+          <label className="flex w-fit items-center gap-2 self-end rounded-xl border border-slate-200/80 bg-white px-3 py-2 text-xs font-semibold text-slate-500 shadow-sm">
+            <CalendarDays size={16} className="text-slate-400" />
+            <span className="hidden sm:inline">Filter date</span>
+            <input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} className="bg-transparent text-xs font-bold text-slate-700 outline-none" />
+            {selectedDate && <button type="button" onClick={() => setSelectedDate('')} className="text-red-600">Clear</button>}
+          </label>
           {renderActiveView()}
         </main>
       </div>
