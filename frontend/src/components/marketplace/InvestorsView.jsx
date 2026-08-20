@@ -103,6 +103,8 @@ export const InvestorsView = () => {
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                 <th className="p-3.5">Investor Entity</th>
                 <th className="p-3.5">Contact Person</th>
+                <th className="p-3.5">Username</th>
+                <th className="p-3.5">Password</th>
                 <th className="p-3.5">Investment Amount</th>
                 <th className="p-3.5">Total Returns Paid</th>
                 <th className="p-3.5">Status</th>
@@ -117,6 +119,8 @@ export const InvestorsView = () => {
                     <p className="font-bold text-slate-800">{inv.contactPerson}</p>
                     <p className="text-[10px] text-slate-400">{inv.email}</p>
                   </td>
+                  <td className="p-3.5 font-mono font-bold text-slate-800">{inv.username || '—'}</td>
+                  <td className="p-3.5 font-mono font-bold text-slate-800">{inv.password || '—'}</td>
                   <td className="p-3.5 font-black text-purple-700">Rs {inv.investmentAmount.toLocaleString('en-PK')}</td>
                   <td className="p-3.5 font-black text-slate-900">Rs {inv.totalReturnsPaid.toLocaleString('en-PK')}</td>
                   <td className="p-3.5">
