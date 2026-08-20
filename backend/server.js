@@ -1449,10 +1449,17 @@ async function startServer() {
     });
   }
 
-  await initializeDatabase();
   httpServer = app.listen(port, host, () => {
     console.log(`API server running on http://${host}:${port}`);
   });
+
+  // Start accepting requests immediately. A database outage must not make
+  // Passenger consider the whole Node application dead or hang health checks.
+  try {
+    await initializeDatabase();
+  } catch (error) {
+    console.error('Database initialization failed:', error.message);
+  }
 }
 
 startServer().catch((error) => {
