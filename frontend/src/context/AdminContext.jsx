@@ -276,7 +276,7 @@ export const AdminProvider = ({ children, session }) => {
           status: Number(row.stock_qty ?? stockRows.find((stock) => String(stock.product_id) === String(row.id))?.quantity ?? 0) === 0 ? 'Out of Stock' : (row.status || 'Active'),
           image: row.image_url || '',
           subcategory: row.subcategory || '',
-          investorId: row.investor_id || '',
+          investorId: row.investor_id ?? row.investorId ?? '',
           images: (() => { try { return row.product_images ? JSON.parse(row.product_images) : []; } catch { return []; } })()
           ,colors: (() => { try { return JSON.parse(row.product_detail || '{}').colors || ''; } catch { return ''; } })()
           ,sizes: (() => { try { return JSON.parse(row.product_detail || '{}').sizes || ''; } catch { return ''; } })()
@@ -333,7 +333,10 @@ export const AdminProvider = ({ children, session }) => {
       prev.map((p) => (p.id === id ? { ...p, ...mergedFields, status: effectiveStatus } : p))
     );
     if (!String(id).startsWith('p-')) await fetch(`/api/products/${id}`, { method: 'PUT', headers: apiHeaders(), body: JSON.stringify({ name: mergedFields.name, sku: mergedFields.sku || null, category: mergedFields.category || null, description: mergedFields.description || null, investor_id: mergedFields.investorId || null, actual_price: Number(mergedFields.realPrice ?? mergedFields.price) || 0, base_price: Number(mergedFields.realPrice ?? mergedFields.price) || 0, discounted_price: Number(mergedFields.discountedPrice ?? mergedFields.price) || 0, stock_qty: Number(mergedFields.stock) || 0, image_url: mergedFields.image || null, status: effectiveStatus }) });
-    if (!String(id).startsWith('p-')) await fetch(`/api/products/${id}/investor`, { method: 'PUT', headers: apiHeaders(), body: JSON.stringify({ investor_id: mergedFields.investorId || null }) });
+    if (!String(id).startsWith('p-')) {
+      const ownershipResponse = await fetch(`/api/products/${id}/investor`, { method: 'PUT', headers: apiHeaders(), body: JSON.stringify({ investor_id: mergedFields.investorId ? Number(mergedFields.investorId) : null }) });
+      if (!ownershipResponse.ok) addToast('Investor assignment could not be saved.', 'error');
+    }
     addToast('Product details updated successfully!', 'success');
   };
 
