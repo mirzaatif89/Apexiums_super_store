@@ -8,19 +8,20 @@ export default function InvestorPortal({ session, onLogout }) {
   const [orders, setOrders] = React.useState([]);
 
   React.useEffect(() => {
-    const headers = { 'x-user-role': 'Investor', 'x-investor-id': String(session?.id || '') };
+    const investorId = session?.id || session?.investorId || session?.user?.id;
+    const headers = { 'x-user-role': 'Investor', 'x-investor-id': String(investorId || '') };
     Promise.all([
-      fetch(`/api/investors/${session?.id}`, { headers }).then((r) => r.ok ? r.json() : null),
+      fetch(`/api/investors/${investorId}`, { headers }).then((r) => r.ok ? r.json() : null),
       fetch('/api/stock?limit=500', { headers }).then((r) => r.ok ? r.json() : { rows: [] }),
       fetch('/api/orders?limit=500', { headers }).then((r) => r.ok ? r.json() : { rows: [] })
-      ,fetch(`/api/investors/${session?.id}/products`, { headers }).then((r) => r.ok ? r.json() : { rows: [] })
+      ,fetch(`/api/investors/${investorId}/products`, { headers }).then((r) => r.ok ? r.json() : { rows: [] })
     ]).then(([profile, stockData, orderData, productData]) => {
       if (profile) setInvestor(profile);
       setStock(stockData?.rows || []);
       setOrders(orderData?.rows || []);
       setProducts(productData?.rows || []);
     }).catch(() => {});
-  }, [session?.id]);
+  }, [session?.id, session?.investorId, session?.user?.id]);
 
   const investment = Number(investor.investment_amount || investor.investmentAmount || 0);
   const sales = orders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
