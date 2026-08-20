@@ -779,6 +779,7 @@ async function initializeDatabase() {
     for (const schema of schemas) await pool.query(schema);
   }
 
+  await pool.query(`CREATE TABLE IF NOT EXISTS site_visits (id INT AUTO_INCREMENT PRIMARY KEY, visitor_key VARCHAR(180) NOT NULL, visited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
   const businessTables = ['banners', 'promotions', 'coupons', 'categories', 'products', 'product_variants', 'stock', 'stock_history', 'orders', 'order_items', 'returns', 'staff', 'customers', 'expenses', 'wholesellers', 'notifications', 'investors', 'permissions', 'software_fees', 'staff_salaries', 'delivery_expenses', 'chats', 'seller_applications', 'investor_applications'];
   for (const table of businessTables) {
     await ensureColumn(table, 'business_id', 'INT DEFAULT 1');
@@ -1025,6 +1026,21 @@ function crudRoutes(resource, required = []) {
 
 app.get('/api/health', (req, res) => {
   res.json({ ok: true, app: 'Apexiums Super Store Admin', database: dbName });
+});
+
+app.post('/api/analytics/visit', async (req, res) => {
+  try {
+    const visitorKey = String(req.body?.visitorKey || '').trim();
+    if (!visitorKey) return res.status(400).json({ message: 'visitorKey required' });
+    const [[existing]] = await pool.query('SELECT id FROM site_visits WHERE visitor_key = ? LIMIT 1', [visitorKey]);
+    if (!existing) await pool.query('INSERT INTO site_visits (visitor_key) VALUES (?)', [visitorKey]);
+    res.json({ ok: true });
+  } catch (error) { res.status(500).json({ message: error.message }); }
+});
+
+app.get('/api/analytics/visitors', async (_req, res) => {
+  try { const [[row]] = await pool.query('SELECT COUNT(*) AS total FROM site_visits'); res.json({ total: Number(row?.total || 0) }); }
+  catch (error) { res.status(500).json({ message: error.message }); }
 });
 
 app.get('/api/db-check', async (req, res) => {

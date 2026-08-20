@@ -28,6 +28,16 @@ function saveSession(session) {
 export default function App() {
   const [session, setSession] = React.useState(() => readSession());
 
+  React.useEffect(() => {
+    const keyName = 'elistin-visitor-key';
+    let visitorKey = localStorage.getItem(keyName);
+    if (!visitorKey) {
+      visitorKey = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      localStorage.setItem(keyName, visitorKey);
+    }
+    fetch('/api/analytics/visit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ visitorKey }) }).catch(() => {});
+  }, []);
+
   function handleLogin(user) {
     const nextSession = {
       ...user,

@@ -11,6 +11,7 @@ import {
   TrendingUp,
   Receipt,
   PieChart as PieIcon,
+  Eye,
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
@@ -46,6 +47,7 @@ export const DashboardView = ({ selectedDate = '' }) => {
     setActiveTab
   } = useAdmin();
   const [liveSummary, setLiveSummary] = React.useState(null);
+  const [totalVisitors, setTotalVisitors] = React.useState(0);
 
   React.useEffect(() => {
     let active = true;
@@ -54,6 +56,10 @@ export const DashboardView = ({ selectedDate = '' }) => {
       .then((data) => { if (active && data) setLiveSummary(data); })
       .catch(() => {});
     return () => { active = false; };
+  }, []);
+
+  React.useEffect(() => {
+    fetch('/api/analytics/visitors').then((response) => response.ok ? response.json() : null).then((data) => { if (data) setTotalVisitors(Number(data.total || 0)); }).catch(() => {});
   }, []);
 
   // Date filtering logic multiplier for mock analytics simulation
@@ -157,6 +163,7 @@ export const DashboardView = ({ selectedDate = '' }) => {
           accentColor="indigo"
           onClick={() => setActiveTab('products')}
         />
+        <StatCard title="Total Visitors" value={totalVisitors.toLocaleString()} icon={Eye} accentColor="rose" />
 
         <StatCard
           title="Active Sellers"
