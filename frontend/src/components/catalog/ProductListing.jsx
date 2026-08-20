@@ -470,21 +470,14 @@ export const ProductListing = () => {
                 <input value={editingProduct?.id || 'Auto-generated on save'} readOnly className="w-56 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-mono font-bold text-slate-500" />
               </div>
               <div>
+                <label className="block font-bold text-slate-700 mb-1">Product Title *</label>
+                <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200" placeholder="e.g. Studio Pro Headphones" />
+              </div>
+              <div>
                 <label className="block font-bold text-slate-700 mb-1">Product Description</label>
                 <textarea rows={3} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold focus:outline-none focus:border-red-500" placeholder="Enter product description..." />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Product Title *</label>
-                  <input
-                  type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200"
-                    placeholder="e.g. Studio Pro Headphones"
-                  />
-                </div>
-
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Category *</label>
                   <select
