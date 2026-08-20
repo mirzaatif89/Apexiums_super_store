@@ -71,8 +71,8 @@ export const AdsView = () => {
                     </div>
                   </td>
                   <td className="p-3.5 font-semibold text-slate-700">{a.placement}</td>
-                  <td className="p-3.5 font-bold text-slate-900">${a.budget.toLocaleString()}</td>
-                  <td className="p-3.5 font-bold text-rose-600">${a.spent.toLocaleString()}</td>
+                  <td className="p-3.5 font-bold text-slate-900">Rs {a.budget.toLocaleString('en-PK')}</td>
+                  <td className="p-3.5 font-bold text-rose-600">Rs {a.spent.toLocaleString('en-PK')}</td>
                   <td className="p-3.5 font-bold text-slate-800">{a.impressions.toLocaleString()}</td>
                   <td className="p-3.5 font-bold text-slate-800">{a.clicks.toLocaleString()}</td>
                   <td className="p-3.5 font-black text-emerald-600">{a.ctr}</td>

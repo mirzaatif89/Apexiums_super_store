@@ -97,7 +97,7 @@ export const OrdersView = () => {
                       <p className="text-[10px] text-slate-400">{o.customerEmail}</p>
                     </td>
                     <td className="p-3.5 font-semibold text-slate-700">{o.sellerName}</td>
-                    <td className="p-3.5 font-black text-slate-900">${o.totalAmount}</td>
+                    <td className="p-3.5 font-black text-slate-900">Rs {o.totalAmount}</td>
                     <td className="p-3.5">
                       <Badge status={o.paymentStatus}>{o.paymentStatus}</Badge>
                     </td>
@@ -193,10 +193,10 @@ export const OrdersView = () => {
                         <img src={item.image} alt={item.name} className="w-10 h-10 rounded-lg object-cover border shrink-0" />
                         <div>
                           <p className="font-bold text-slate-900">{item.name}</p>
-                          <p className="text-[10px] text-slate-400">Qty: {item.qty} x ${item.price}</p>
+                          <p className="text-[10px] text-slate-400">Qty: {item.qty} x Rs {item.price}</p>
                         </div>
                       </div>
-                      <span className="font-black text-slate-900">${(item.qty * item.price).toFixed(2)}</span>
+                          <span className="font-black text-slate-900">Rs {(item.qty * item.price).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
@@ -210,7 +210,7 @@ export const OrdersView = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-[10px] text-slate-400 uppercase font-bold">Grand Total Paid</p>
-                  <p className="text-lg font-black text-emerald-400">${selectedOrder.totalAmount}</p>
+                  <p className="text-lg font-black text-emerald-400">Rs {selectedOrder.totalAmount}</p>
                 </div>
               </div>
             </div>

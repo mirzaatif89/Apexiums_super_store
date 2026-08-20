@@ -69,7 +69,7 @@ export const CustomersView = () => {
                       <td>${customer.email || 'Missing'}</td>
                       <td>${customer.phone || 'Missing'}</td>
                       <td>${customer.totalOrders}</td>
-                      <td>${customer.totalSpent}</td>
+                      <td>Rs {customer.totalSpent}</td>
                     </tr>
                   `
                 )
@@ -148,7 +148,7 @@ export const CustomersView = () => {
                     <p className="font-mono text-[10px] text-slate-500">{customer.password || 'Password not stored'}</p>
                   </td>
                   <td className="p-3.5 font-extrabold text-slate-900">{customer.totalOrders} purchases</td>
-                  <td className="p-3.5 font-black text-emerald-600">${customer.totalSpent.toLocaleString()}</td>
+                  <td className="p-3.5 font-black text-emerald-600">Rs {customer.totalSpent.toLocaleString('en-PK')}</td>
                   <td className="p-3.5 font-medium text-slate-500">{customer.lastOrderDate}</td>
                   <td className="p-3.5">
                     <Badge status={customer.status}>{customer.status}</Badge>
@@ -187,7 +187,7 @@ export const CustomersView = () => {
             <div className="grid grid-cols-2 gap-3 rounded-xl border bg-slate-50 p-3 text-xs">
               <div>
                 <p className="text-slate-400">Total Spent:</p>
-                <p className="text-base font-black text-emerald-600">${selectedCustomer.totalSpent}</p>
+                <p className="text-base font-black text-emerald-600">Rs {selectedCustomer.totalSpent}</p>
               </div>
               <div>
                 <p className="text-slate-400">Total Orders:</p>

@@ -100,7 +100,7 @@ export const ExpensesView = () => {
                   <tr key={t.id} className="hover:bg-slate-50 transition-colors">
                     <td className="p-3.5 font-extrabold text-slate-900">{t.title}</td>
                     <td className="p-3.5 font-semibold text-slate-700">{t.category}</td>
-                    <td className="p-3.5 font-black text-rose-600">-${t.amount.toLocaleString()}</td>
+                    <td className="p-3.5 font-black text-rose-600">-Rs {t.amount.toLocaleString('en-PK')}</td>
                     <td className="p-3.5 text-slate-500">{t.date}</td>
                     <td className="p-3.5"><Badge status={t.status}>{t.status}</Badge></td>
                   </tr>

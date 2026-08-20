@@ -367,7 +367,7 @@ export const ProductListing = () => {
                       </td>
                       <td className="p-2.5 font-mono text-[11px] font-bold text-slate-600 break-words">{p.sku}</td>
                       <td className="p-2.5 font-semibold text-slate-700 break-words">{p.category}</td>
-                      <td className="p-2.5 font-black text-slate-900">${p.price}</td>
+                      <td className="p-2.5 font-black text-slate-900">Rs {p.price}</td>
                       <td className="p-2.5">
                         <div className="flex items-center gap-1.5">
                           <span
@@ -636,7 +636,7 @@ export const ProductListing = () => {
               <p className="text-xs text-slate-600 mt-2">{viewingProduct.description}</p>
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs border-t pt-3">
-              <div><span className="text-slate-400">Price:</span> <strong className="text-slate-900">${viewingProduct.price}</strong></div>
+              <div><span className="text-slate-400">Price:</span> <strong className="text-slate-900">Rs {viewingProduct.price}</strong></div>
               <div><span className="text-slate-400">Stock:</span> <strong className="text-slate-900">{viewingProduct.stock} pcs</strong></div>
               <div><span className="text-slate-400">Status:</span> <Badge status={viewingProduct.status}>{viewingProduct.status}</Badge></div>
             </div>

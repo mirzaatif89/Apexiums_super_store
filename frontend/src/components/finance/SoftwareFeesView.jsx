@@ -17,17 +17,17 @@ export const SoftwareFeesView = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-1">
           <p className="text-[10px] uppercase font-bold text-slate-400">Monthly Cloud Infra</p>
-          <p className="text-xl font-black text-slate-900">$2,450.00</p>
+          <p className="text-xl font-black text-slate-900">Rs 2,450</p>
           <p className="text-[10px] text-emerald-600 font-bold">AWS & Cloudflare Edge</p>
         </div>
         <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-1">
           <p className="text-[10px] uppercase font-bold text-slate-400">SaaS Subscriptions</p>
-          <p className="text-xl font-black text-slate-900">$1,000.00</p>
+          <p className="text-xl font-black text-slate-900">Rs 1,000</p>
           <p className="text-[10px] text-blue-600 font-bold">Stripe, SendGrid, Twilio</p>
         </div>
         <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-1">
           <p className="text-[10px] uppercase font-bold text-slate-400">SSL & Security Audit</p>
-          <p className="text-xl font-black text-slate-900">$450.00</p>
+          <p className="text-xl font-black text-slate-900">Rs 450</p>
           <p className="text-[10px] text-purple-600 font-bold">Quarterly Pen-Test</p>
         </div>
       </div>
@@ -52,7 +52,7 @@ export const SoftwareFeesView = () => {
                   <tr key={t.id} className="hover:bg-slate-50 transition-colors">
                     <td className="p-3.5 font-extrabold text-slate-900">{t.title}</td>
                     <td className="p-3.5 font-semibold text-slate-700">{t.category}</td>
-                    <td className="p-3.5 font-black text-rose-600">-${t.amount.toLocaleString()}</td>
+                    <td className="p-3.5 font-black text-rose-600">-Rs {t.amount.toLocaleString('en-PK')}</td>
                     <td className="p-3.5 text-slate-500">{t.date}</td>
                     <td className="p-3.5"><Badge status={t.status}>{t.status}</Badge></td>
                   </tr>

@@ -151,7 +151,7 @@ export const GlobalSearchModal = () => {
                         <p className="text-[11px] text-slate-500">SKU: {p.sku} • {p.seller}</p>
                       </div>
                     </div>
-                    <span className="text-xs font-black text-slate-900">${p.price}</span>
+                    <span className="text-xs font-black text-slate-900">Rs {p.price}</span>
                   </div>
                 ))}
               </div>
@@ -178,7 +178,7 @@ export const GlobalSearchModal = () => {
                       <p className="text-xs font-bold text-slate-800">{o.id} - {o.customerName}</p>
                       <p className="text-[11px] text-slate-500">Seller: {o.sellerName} • Status: {o.orderStatus}</p>
                     </div>
-                    <span className="text-xs font-black text-slate-900">${o.totalAmount}</span>
+                    <span className="text-xs font-black text-slate-900">Rs {o.totalAmount}</span>
                   </div>
                 ))}
               </div>
@@ -205,7 +205,7 @@ export const GlobalSearchModal = () => {
                       <p className="text-xs font-bold text-slate-800">{s.storeName}</p>
                       <p className="text-[11px] text-slate-500">Owner: {s.sellerName} ({s.status})</p>
                     </div>
-                    <span className="text-xs font-semibold text-emerald-600">${s.revenue.toLocaleString()} Rev</span>
+                    <span className="text-xs font-semibold text-emerald-600">Rs {s.revenue.toLocaleString('en-PK')} Rev</span>
                   </div>
                 ))}
               </div>

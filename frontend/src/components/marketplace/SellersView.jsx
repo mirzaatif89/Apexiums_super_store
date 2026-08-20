@@ -95,7 +95,7 @@ export const SellersView = () => {
                     <p className="text-[10px] text-slate-400">{s.phone}</p>
                   </td>
                   <td className="p-3.5 font-bold text-slate-800">{s.productsCount} items</td>
-                  <td className="p-3.5 font-black text-emerald-600">${s.revenue.toLocaleString()}</td>
+                  <td className="p-3.5 font-black text-emerald-600">Rs {s.revenue.toLocaleString('en-PK')}</td>
                   <td className="p-3.5 font-bold text-slate-800">{s.commissionRate}%</td>
                   <td className="p-3.5 font-bold text-amber-600 flex items-center gap-1">
                     <Star size={12} className="fill-amber-400 text-amber-400" /> {s.ratings}
@@ -229,7 +229,7 @@ export const SellersView = () => {
               <p><span className="text-slate-400">Owner Name:</span> <strong>{selectedSeller.sellerName}</strong></p>
               <p><span className="text-slate-400">Email:</span> <strong>{selectedSeller.email}</strong></p>
               <p><span className="text-slate-400">Payout Account:</span> <strong>{selectedSeller.payoutMethod}</strong></p>
-              <p><span className="text-slate-400">Total Revenue:</span> <strong className="text-emerald-600">${selectedSeller.revenue.toLocaleString()}</strong></p>
+              <p><span className="text-slate-400">Total Revenue:</span> <strong className="text-emerald-600">Rs {selectedSeller.revenue.toLocaleString('en-PK')}</strong></p>
               <p><span className="text-slate-400">Platform Commission Rate:</span> <strong>{selectedSeller.commissionRate}%</strong></p>
             </div>
 

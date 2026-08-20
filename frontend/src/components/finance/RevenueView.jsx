@@ -48,7 +48,7 @@ export const RevenueView = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard
           title="Gross Merchandise Value (GMV)"
-          value={`$${finance.summary.totalRevenue.toLocaleString()}`}
+          value={`Rs ${finance.summary.totalRevenue.toLocaleString('en-PK')}`}
           trend="up"
           description="+14.2% from last month"
           icon={DollarSign}
@@ -119,7 +119,7 @@ export const RevenueView = () => {
                 <tr key={t.id} className="hover:bg-slate-50 transition-colors">
                   <td className="p-3.5 font-extrabold text-slate-900">{t.title}</td>
                   <td className="p-3.5 font-semibold text-slate-700">{t.category}</td>
-                  <td className="p-3.5 font-black text-emerald-600">+${t.amount.toLocaleString()}</td>
+                  <td className="p-3.5 font-black text-emerald-600">+Rs {t.amount.toLocaleString('en-PK')}</td>
                   <td className="p-3.5 text-slate-500">{t.date}</td>
                   <td className="p-3.5"><Badge status={t.status}>{t.status}</Badge></td>
                 </tr>

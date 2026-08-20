@@ -61,7 +61,7 @@ export const ReturnsView = () => {
                   <td className="p-3.5">{r.customerName}</td>
                   <td className="p-3.5 max-w-xs font-semibold truncate">{r.productName}</td>
                   <td className="p-3.5 font-semibold text-slate-700">{r.sellerName}</td>
-                  <td className="p-3.5 font-black text-slate-900">${r.amount}</td>
+                  <td className="p-3.5 font-black text-slate-900">Rs {r.amount}</td>
                   <td className="p-3.5">
                     <Badge status={r.status}>{r.status}</Badge>
                   </td>
@@ -115,7 +115,7 @@ export const ReturnsView = () => {
               <p><span className="text-slate-400">Customer:</span> <strong>{selectedReturn.customerName}</strong></p>
               <p><span className="text-slate-400">Product:</span> <strong>{selectedReturn.productName}</strong></p>
               <p><span className="text-slate-400">Reason:</span> <strong className="text-rose-600">{selectedReturn.reason}</strong></p>
-              <p><span className="text-slate-400">Refund Amount:</span> <strong className="text-emerald-600">${selectedReturn.amount}</strong></p>
+              <p><span className="text-slate-400">Refund Amount:</span> <strong className="text-emerald-600">Rs {selectedReturn.amount}</strong></p>
             </div>
 
             <div className="flex items-center justify-between pt-3 border-t">

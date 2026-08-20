@@ -32,7 +32,7 @@ export const StaffSalariesView = () => {
         </div>
         <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-1">
           <p className="text-[10px] uppercase font-bold text-slate-400">Monthly Payroll Obligation</p>
-          <p className="text-xl font-black text-slate-900">${totalMonthlyPayroll.toLocaleString()}</p>
+          <p className="text-xl font-black text-slate-900">Rs {totalMonthlyPayroll.toLocaleString('en-PK')}</p>
           <p className="text-[10px] text-blue-600 font-bold">Auto-disbursed on 1st</p>
         </div>
         <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-1">
@@ -63,7 +63,7 @@ export const StaffSalariesView = () => {
                   </td>
                   <td className="p-3.5 font-bold text-slate-800">{s.role}</td>
                   <td className="p-3.5 font-semibold text-slate-700">{s.department}</td>
-                  <td className="p-3.5 font-black text-slate-900">${(4000 + (idx + 1) * 500).toLocaleString()}</td>
+                  <td className="p-3.5 font-black text-slate-900">Rs {(4000 + (idx + 1) * 500).toLocaleString('en-PK')}</td>
                   <td className="p-3.5">
                     <Badge status="Active">Paid / Disbursed</Badge>
                   </td>
