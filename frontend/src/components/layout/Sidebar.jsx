@@ -148,7 +148,7 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
       )}
 
       <aside
-        className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-72 bg-slate-900 text-slate-300 border-r border-slate-800 flex flex-col transition-transform duration-300 ease-in-out ${
+        className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-72 bg-[#0b1224] text-slate-300 border-r border-white/5 flex flex-col transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
@@ -196,8 +196,8 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
                   onClick={() => handleNav(item.id)}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 cursor-pointer ${
                     isActive
-                      ? 'bg-red-600 text-white shadow-md shadow-red-600/20'
-                      : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
+                      ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-lg shadow-red-900/30'
+                      : 'text-slate-400 hover:text-white hover:bg-white/[0.06]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -225,8 +225,8 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
                   onClick={() => toggleSection(item.id)}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 cursor-pointer ${
                     isGroupActive
-                      ? 'bg-slate-800/90 text-white'
-                      : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
+                      ? 'bg-white/[0.08] text-white'
+                      : 'text-slate-400 hover:text-white hover:bg-white/[0.06]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -253,8 +253,8 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
                           onClick={() => handleNav(child.id, child.id)}
                           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg font-medium text-[11px] transition-colors cursor-pointer ${
                             isChildActive
-                              ? 'bg-red-600/15 text-red-400 font-bold border-l-2 border-red-500'
-                              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                              ? 'bg-red-500/15 text-red-300 font-bold border-l-2 border-red-400'
+                              : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
                           }`}
                         >
                           <ChildIcon size={14} className={isChildActive ? 'text-red-400' : 'text-slate-500'} />
@@ -282,8 +282,8 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
             onClick={() => handleNav('profile')}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 cursor-pointer ${
               activeTab === 'profile'
-                ? 'bg-red-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
+                ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-lg shadow-red-900/30'
+                : 'text-slate-400 hover:text-white hover:bg-white/[0.06]'
             }`}
           >
             <User size={18} />
@@ -295,8 +295,8 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
             onClick={() => handleNav('settings')}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 cursor-pointer ${
               activeTab === 'settings'
-                ? 'bg-red-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
+                ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-lg shadow-red-900/30'
+                : 'text-slate-400 hover:text-white hover:bg-white/[0.06]'
             }`}
           >
             <Settings size={18} />
