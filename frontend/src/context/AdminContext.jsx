@@ -104,7 +104,7 @@ export const AdminProvider = ({ children, session }) => {
       return initialRolesPermissions;
     }
   });
-  const [finance, setFinance] = useState({ summary: { totalRevenue: 0, grossSales: 0, sellerRevenue: 0, platformCommission: 0, netRevenue: 0 }, expensesList: [], softwareFees: [], staffSalaries: [], deliveryExpenses: [] });
+  const [finance, setFinance] = useState({ summary: { totalRevenue: 0, commissionEarnings: 0, netProfit: 0, totalExpenses: 0 }, transactions: [], revenueTrend: [] });
   const [notifications, setNotifications] = useState([]);
   const [stockRecords, setStockRecords] = useState([]);
   const [chats, setChats] = useState(() => {
@@ -131,6 +131,49 @@ export const AdminProvider = ({ children, session }) => {
       .catch(() => { if (active) setInvestors([]); });
     return () => { active = false; };
   }, [session]);
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/staff?limit=500', { headers: apiHeaders() })
+      .then((response) => response.ok ? response.json() : { rows: [] })
+      .then((data) => {
+        if (!active) return;
+        setStaff((data.rows || []).map((row) => ({
+          ...row,
+          joinedDate: row.created_at ? String(row.created_at).slice(0, 10) : '-',
+          department: row.department || 'General Operations'
+        })));
+      })
+      .catch(() => { if (active) setStaff([]); });
+    return () => { active = false; };
+  }, [session?.role, session?.businessId]);
+
+  useEffect(() => {
+    let active = true;
+    const loadFinance = async () => {
+      try {
+        const headers = apiHeaders();
+        const [ordersResponse, expensesResponse, ledgerResponse, chartResponse] = await Promise.all([
+          fetch('/api/orders?limit=500', { headers }), fetch('/api/expenses?limit=500', { headers }),
+          fetch('/api/finance_transactions?limit=500', { headers }), fetch('/api/revenue/chart', { headers })
+        ]);
+        const [ordersData, expensesData, ledgerData, chartData] = await Promise.all([
+          ordersResponse.ok ? ordersResponse.json() : { rows: [] }, expensesResponse.ok ? expensesResponse.json() : { rows: [] },
+          ledgerResponse.ok ? ledgerResponse.json() : { rows: [] }, chartResponse.ok ? chartResponse.json() : { rows: [] }
+        ]);
+        if (!active) return;
+        const orderRevenue = (ordersData.rows || []).filter((order) => ['Shipped', 'Delivered', 'Received'].includes(order.order_status)).reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
+        const expenseRows = (expensesData.rows || []).map((row) => ({ id: `expense-${row.id}`, title: row.title, type: 'Expense', category: row.category || 'General', amount: Number(row.amount || 0), date: row.date || row.created_at?.slice(0, 10), status: 'Completed' }));
+        const ledgerRows = (ledgerData.rows || []).map((row) => ({ id: `ledger-${row.id}`, title: row.title, type: row.type, category: row.category || 'General', amount: Number(row.amount || 0), date: row.transaction_date || row.created_at?.slice(0, 10), status: row.status || 'Completed' }));
+        const manualRevenue = ledgerRows.filter((row) => row.type === 'Revenue').reduce((sum, row) => sum + row.amount, 0);
+        const totalExpenses = [...expenseRows, ...ledgerRows.filter((row) => row.type === 'Expense')].reduce((sum, row) => sum + row.amount, 0);
+        const totalRevenue = orderRevenue + manualRevenue;
+        setFinance({ summary: { totalRevenue, commissionEarnings: orderRevenue * 0.10, netProfit: totalRevenue - totalExpenses, totalExpenses }, transactions: [...ledgerRows, ...expenseRows].sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))), revenueTrend: (chartData.rows || []).map((row) => ({ month: row.date, grossSales: Number(row.revenue || 0), commissions: Number(row.revenue || 0) * 0.10 })) });
+      } catch { if (active) setFinance((current) => current); }
+    };
+    loadFinance();
+    return () => { active = false; };
+  }, [session?.role, session?.businessId]);
 
   useEffect(() => {
     const syncChats = () => {
@@ -318,7 +361,7 @@ export const AdminProvider = ({ children, session }) => {
       price: Number(newProd.price) || 0,
       discount: Number(newProd.discount) || 0
     };
-    const response = await fetch('/api/products', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ name: product.name, sku: product.sku || null, category: product.category || null, subcategory: product.subcategory || null, investor_id: product.investorId || null, product_images: JSON.stringify(product.images || []), product_detail: JSON.stringify({ colors: product.colors || '', sizes: product.sizes || '' }), description: product.description || null, actual_price: Number(product.realPrice || product.price) || 0, base_price: Number(product.realPrice || product.price) || 0, discounted_price: Number(product.discountedPrice || product.price) || 0, stock_qty: Number(product.stock) || 0, image_url: product.image || null, status: product.status || 'Active', slug: product.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-') }) });
+    const response = await fetch('/api/products', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ name: product.name, sku: product.sku || null, category: product.category || null, subcategory: product.subcategory || null, investor_id: product.investorId ? Number(product.investorId) : null, product_images: JSON.stringify(product.images || []), product_detail: JSON.stringify({ colors: product.colors || '', sizes: product.sizes || '' }), description: product.description || null, actual_price: Number(product.realPrice || product.price) || 0, base_price: Number(product.realPrice || product.price) || 0, discounted_price: Number(product.discountedPrice || product.price) || 0, stock_qty: Number(product.stock) || 0, image_url: product.image || null, status: product.status || 'Active', slug: product.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-') }) });
     if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Product could not be saved to the database.');
     const saved = await response.json();
     setProducts((prev) => [{ ...product, ...saved, id: saved.id, dateAdded: new Date().toISOString().split('T')[0] }, ...prev]);
@@ -332,7 +375,10 @@ export const AdminProvider = ({ children, session }) => {
     setProducts((prev) =>
       prev.map((p) => (p.id === id ? { ...p, ...mergedFields, status: effectiveStatus } : p))
     );
-    if (!String(id).startsWith('p-')) await fetch(`/api/products/${id}`, { method: 'PUT', headers: apiHeaders(), body: JSON.stringify({ name: mergedFields.name, sku: mergedFields.sku || null, category: mergedFields.category || null, description: mergedFields.description || null, investor_id: mergedFields.investorId || null, actual_price: Number(mergedFields.realPrice ?? mergedFields.price) || 0, base_price: Number(mergedFields.realPrice ?? mergedFields.price) || 0, discounted_price: Number(mergedFields.discountedPrice ?? mergedFields.price) || 0, stock_qty: Number(mergedFields.stock) || 0, image_url: mergedFields.image || null, status: effectiveStatus }) });
+    if (!String(id).startsWith('p-')) {
+      const response = await fetch(`/api/products/${id}`, { method: 'PUT', headers: apiHeaders(), body: JSON.stringify({ name: mergedFields.name, sku: mergedFields.sku || null, category: mergedFields.category || null, subcategory: mergedFields.subcategory || null, description: mergedFields.description || null, investor_id: mergedFields.investorId ? Number(mergedFields.investorId) : null, product_images: JSON.stringify(mergedFields.images || []), product_detail: JSON.stringify({ colors: mergedFields.colors || '', sizes: mergedFields.sizes || '' }), actual_price: Number(mergedFields.realPrice ?? mergedFields.price) || 0, base_price: Number(mergedFields.realPrice ?? mergedFields.price) || 0, discounted_price: Number(mergedFields.discountedPrice ?? mergedFields.price) || 0, stock_qty: Number(mergedFields.stock) || 0, image_url: mergedFields.image || null, status: effectiveStatus }) });
+      if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Product could not be updated in the database.');
+    }
     addToast('Product details updated successfully!', 'success');
   };
 
@@ -556,24 +602,41 @@ export const AdminProvider = ({ children, session }) => {
   };
 
   // Staff
-  const addStaffMember = (staffData) => {
+  const addStaffMember = async (staffData) => {
     const newStaff = {
       ...staffData,
       id: `st-${Date.now()}`,
       joinedDate: new Date().toISOString().split('T')[0]
     };
-    setStaff((prev) => [newStaff, ...prev]);
+    const response = await fetch('/api/staff', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({
+      name: staffData.name, email: staffData.email, phone: staffData.phone || null,
+      role: staffData.role, department: staffData.department || null,
+      photo_url: staffData.photoUrl || null, password_hash: staffData.password || null,
+      status: staffData.status || 'Active'
+    }) });
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Staff member could not be saved.');
+    const saved = await response.json();
+    setStaff((prev) => [{ ...newStaff, ...saved, id: saved.id, joinedDate: saved.created_at ? String(saved.created_at).slice(0, 10) : newStaff.joinedDate }, ...prev]);
     addToast(`Staff member "${newStaff.name}" created.`, 'success');
   };
 
-  const updateStaffMember = (id, staffData) => {
+  const updateStaffMember = async (id, staffData) => {
+    const response = await fetch(`/api/staff/${id}`, { method: 'PUT', headers: apiHeaders(), body: JSON.stringify({
+      name: staffData.name, email: staffData.email, phone: staffData.phone || null,
+      role: staffData.role, department: staffData.department || null,
+      photo_url: staffData.photoUrl || null, password_hash: staffData.password || undefined,
+      status: staffData.status || 'Active'
+    }) });
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Staff member could not be updated.');
     setStaff((prev) =>
       prev.map((s) => (s.id === id ? { ...s, ...staffData } : s))
     );
     addToast('Staff details updated.', 'success');
   };
 
-  const deleteStaffMember = (id) => {
+  const deleteStaffMember = async (id) => {
+    const response = await fetch(`/api/staff/${id}`, { method: 'DELETE', headers: apiHeaders() });
+    if (!response.ok) throw new Error('Staff member could not be deleted.');
     setStaff((prev) => prev.filter((s) => s.id !== id));
     addToast('Staff member deleted.', 'info');
   };
@@ -629,6 +692,20 @@ export const AdminProvider = ({ children, session }) => {
   const toggleAd = (id) => setAds((prev) => prev.map((ad) => ad.id === id ? { ...ad, visible: ad.visible === false } : ad));
 
   // Finance
+  const addTransaction = async (transaction) => {
+    const response = await fetch('/api/finance_transactions', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ title: transaction.title, type: transaction.type, category: transaction.category, amount: Number(transaction.amount || 0), transaction_date: transaction.date || new Date().toISOString().slice(0, 10), status: transaction.status || 'Completed' }) });
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Transaction could not be saved.');
+    const saved = await response.json();
+    const entry = { id: `ledger-${saved.id}`, title: saved.title, type: saved.type, category: saved.category, amount: Number(saved.amount || 0), date: saved.transaction_date, status: saved.status || 'Completed' };
+    setFinance((previous) => {
+      const transactions = [entry, ...previous.transactions];
+      const revenue = transactions.filter((item) => item.type === 'Revenue').reduce((sum, item) => sum + item.amount, 0);
+      const expenses = transactions.filter((item) => item.type === 'Expense').reduce((sum, item) => sum + item.amount, 0);
+      return { ...previous, transactions, summary: { ...previous.summary, totalRevenue: previous.summary.totalRevenue + (entry.type === 'Revenue' ? entry.amount : 0), totalExpenses: previous.summary.totalExpenses + (entry.type === 'Expense' ? entry.amount : 0), netProfit: previous.summary.netProfit + (entry.type === 'Revenue' ? entry.amount : -entry.amount) } };
+    });
+    addToast(`${transaction.type} entry saved.`, 'success');
+  };
+
   const addExpense = (expData) => {
     const newExp = {
       ...expData,
@@ -738,6 +815,7 @@ export const AdminProvider = ({ children, session }) => {
         updateStaffMember,
         deleteStaffMember,
         updateRolePermission,
+        addTransaction,
         addBanner,
         toggleBanner,
         deleteBanner,

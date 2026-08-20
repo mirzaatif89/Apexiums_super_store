@@ -32,6 +32,10 @@ export const ProductListing = () => {
     bulkDeleteProducts,
     bulkUpdateProductStatus
   } = useAdmin();
+  const categoryOptions = Array.from(new Set([
+    ...categories.map((category) => category.name).filter(Boolean),
+    ...products.map((product) => product.category).filter(Boolean)
+  ])).map((name) => categories.find((category) => category.name === name) || { id: `product-category-${name}`, name, subcategories: [] });
 
   // Filter & Search states
   const [searchTerm, setSearchTerm] = useState('');
@@ -135,7 +139,7 @@ export const ProductListing = () => {
     setFormData({
       name: '',
       sku: `SKU-${Math.floor(1000 + Math.random() * 9000)}`,
-      category: categories[0]?.name || 'Electronics & Tech',
+      category: categoryOptions[0]?.name || 'Electronics & Tech',
       subcategory: '',
       images: [],
       price: '',
@@ -248,7 +252,7 @@ export const ProductListing = () => {
             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none"
           >
             <option value="">All Categories</option>
-            {categories.map((c) => (
+            {categoryOptions.map((c) => (
               <option key={c.id} value={c.name}>{c.name}</option>
             ))}
           </select>
@@ -481,7 +485,7 @@ export const ProductListing = () => {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Product Belongs To</label>
+                  <label className="block font-bold text-slate-700 mb-1">Select Investor</label>
                   <select value={formData.investorId} onChange={(e) => setFormData({ ...formData, investorId: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none">
                     <option value="">Admin / General Inventory</option>
                     {investors.map((investor) => <option key={investor.id} value={investor.id}>{investor.name}</option>)}
@@ -494,7 +498,7 @@ export const ProductListing = () => {
                   onChange={(e) => setFormData({ ...formData, category: e.target.value, subcategory: categories.find((c) => c.name === e.target.value)?.subcategories?.[0] || '' })}
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none"
                   >
-                    {categories.map((c) => (
+                    {categoryOptions.map((c) => (
                       <option key={c.id} value={c.name}>{c.name}</option>
                     ))}
                   </select>

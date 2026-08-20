@@ -70,6 +70,29 @@ Backend health check: `http://localhost:5000/api/health`
 
 Database check: `http://localhost:5000/api/db-check`
 
+## Investor mobile API
+
+Investor login returns a signed bearer token. Store it securely in the mobile app
+and send it in the `Authorization` header; do not send an investor ID from the
+client to choose the account.
+
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{ "username": "Investor", "password": "your-password" }
+```
+
+```http
+GET /api/investor/me/dashboard
+Authorization: Bearer <token>
+```
+
+The dashboard response includes the authenticated investor's `profile`,
+`summary`, assigned `products`, `stock`, and `orders`. A product-only endpoint
+is also available at `GET /api/investor/me/products` with the same bearer token.
+The backend derives the investor and business scopes from the signed token.
+
 ## Admin Modules
 
 Dashboard, Banners, Adds, Categories, Stock, Orders, Returns, Staff, Customers, Product Listing, Expense, Whole Sellers, Revenue, and Notifications are included with reusable tables, filters, stats, modals, pagination, loading states, empty states, status badges, and toast notifications.

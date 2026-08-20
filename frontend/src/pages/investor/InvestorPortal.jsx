@@ -6,22 +6,33 @@ export default function InvestorPortal({ session, onLogout }) {
   const [stock, setStock] = React.useState([]);
   const [products, setProducts] = React.useState([]);
   const [orders, setOrders] = React.useState([]);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    const investorId = session?.id || session?.investorId || session?.user?.id;
-    const headers = { 'x-user-role': 'Investor', 'x-investor-id': String(investorId || '') };
-    Promise.all([
-      fetch(`/api/investors/${investorId}`, { headers }).then((r) => r.ok ? r.json() : null),
-      fetch('/api/stock?limit=500', { headers }).then((r) => r.ok ? r.json() : { rows: [] }),
-      fetch('/api/orders?limit=500', { headers }).then((r) => r.ok ? r.json() : { rows: [] })
-      ,fetch(`/api/investors/${investorId}/products`, { headers }).then((r) => r.ok ? r.json() : { rows: [] })
-    ]).then(([profile, stockData, orderData, productData]) => {
-      if (profile) setInvestor(profile);
-      setStock(stockData?.rows || []);
-      setOrders(orderData?.rows || []);
-      setProducts(productData?.rows || []);
-    }).catch(() => {});
-  }, [session?.id, session?.investorId, session?.user?.id]);
+    if (!session?.token) {
+      setIsLoading(false);
+      return undefined;
+    }
+    const headers = { Authorization: `Bearer ${session.token}` };
+    let active = true;
+    const loadInvestorData = () => fetch('/api/investor/me/dashboard', { headers })
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error('Could not load investor dashboard.')))
+      .then((data) => {
+      if (!active) return;
+      if (data.profile) setInvestor(data.profile);
+      const assignedProducts = data.products || [];
+      setProducts(assignedProducts);
+      setStock((data.stock || []).length ? data.stock : assignedProducts.map((product) => ({
+        product_name: product.name,
+        quantity: product.stock_qty,
+        warehouse: 'Main Warehouse'
+      })));
+      setOrders(data.orders || []);
+    }).catch(() => {}).finally(() => { if (active) setIsLoading(false); });
+    loadInvestorData();
+    const refreshInterval = window.setInterval(loadInvestorData, 10000);
+    return () => { active = false; window.clearInterval(refreshInterval); };
+  }, [session?.token]);
 
   const investment = Number(investor.investment_amount || investor.investmentAmount || 0);
   const sales = orders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
@@ -42,7 +53,7 @@ export default function InvestorPortal({ session, onLogout }) {
       </div>
       <section className="rounded-2xl bg-white p-5 shadow-sm"><h2 className="mb-4 text-lg font-black">My Investment Details</h2><div className="grid gap-3 text-sm md:grid-cols-3"><p><span className="text-slate-500">Username:</span> {investor.username || '-'}</p><p><span className="text-slate-500">Email:</span> {investor.email || '-'}</p><p><span className="text-slate-500">Status:</span> {investor.status || '-'}</p><p><span className="text-slate-500">Investment date:</span> {investor.investment_date || '-'}</p><p><span className="text-slate-500">Return rate:</span> {investor.return_rate || 0}%</p><p><span className="text-slate-500">Equity share:</span> {investor.equity_share || '0%'}</p></div></section>
       <div className="grid gap-6 lg:grid-cols-2"><DataTable title="My Stock" columns={['Product','Quantity','Warehouse']} rows={stock.map((x) => [x.product_name || '-', x.quantity || 0, x.warehouse || '-'])}/><DataTable title="My Sales" columns={['Order','Customer','Amount']} rows={orders.map((x) => [x.id, x.customer_name || '-', `Rs ${Number(x.total_amount || 0).toLocaleString('en-PK')}`])}/></div>
-      <DataTable title="My Assigned Products" columns={['Product','Category','Price (PKR)','Stock','Status']} rows={products.map((x) => [x.name || '-', x.category || '-', `Rs ${Number(x.discounted_price || x.base_price || 0).toLocaleString('en-PK')}`, x.stock_qty || 0, x.status || '-'])}/>
+      <DataTable title={isLoading ? 'My Assigned Products (Loading...)' : 'My Assigned Products'} columns={['Product','Category','Price (PKR)','Stock','Status']} rows={products.map((x) => [x.name || '-', x.category || '-', `Rs ${Number(x.discounted_price || x.base_price || 0).toLocaleString('en-PK')}`, x.stock_qty || 0, x.status || '-'])}/>
     </main>
   </div>;
 }

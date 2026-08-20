@@ -2,16 +2,20 @@ import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import Badge from '../common/Badge';
 import ActionMenu from '../common/ActionMenu';
-import { UserCheck, Plus, Trash2, Edit2, X } from 'lucide-react';
+import { UserCheck, Plus, Trash2, Edit2, X, UserRound, Mail, Phone, BriefcaseBusiness, LockKeyhole } from 'lucide-react';
 
 export const StaffView = () => {
   const { staff, addStaffMember, updateStaffMember, deleteStaffMember } = useAdmin();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [formError, setFormError] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
+    password: '',
     role: 'Staff',
     department: 'Customer Support & Returns',
     status: 'Active'
@@ -19,9 +23,11 @@ export const StaffView = () => {
 
   const handleOpenAdd = () => {
     setEditingStaff(null);
+    setFormError('');
     setFormData({
       name: '',
       email: '',
+      phone: '', password: '',
       role: 'Staff',
       department: 'Customer Support & Returns',
       status: 'Active'
@@ -31,9 +37,11 @@ export const StaffView = () => {
 
   const handleOpenEdit = (s) => {
     setEditingStaff(s);
+    setFormError('');
     setFormData({
       name: s.name,
       email: s.email,
+      phone: s.phone || '', password: '',
       role: s.role,
       department: s.department,
       status: s.status
@@ -41,16 +49,17 @@ export const StaffView = () => {
     setIsModalOpen(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.email) return;
-
-    if (editingStaff) {
-      updateStaffMember(editingStaff.id, formData);
-    } else {
-      addStaffMember(formData);
-    }
-    setIsModalOpen(false);
+    if (!formData.name || !formData.email) return setFormError('Full name and email are required.');
+    if (!editingStaff && !formData.password) return setFormError('Set a temporary password for the new staff member.');
+    setIsSaving(true); setFormError('');
+    try {
+      if (editingStaff) await updateStaffMember(editingStaff.id, formData);
+      else await addStaffMember(formData);
+      setIsModalOpen(false);
+    } catch (error) { setFormError(error.message || 'Unable to save staff member.'); }
+    finally { setIsSaving(false); }
   };
 
   return (
@@ -82,7 +91,7 @@ export const StaffView = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-              {staff.map((s) => (
+              {!staff.length ? <tr><td colSpan={6} className="p-10 text-center text-slate-400">No staff members added yet. Click <strong>Add Staff Member</strong> to create your first team account.</td></tr> : staff.map((s) => (
                 <tr key={s.id} className="hover:bg-slate-50 transition-colors">
                   <td className="p-3.5">
                     <p className="font-bold text-slate-900">{s.name}</p>
@@ -113,36 +122,39 @@ export const StaffView = () => {
       {/* Staff Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-5 space-y-4">
-            <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="text-sm font-extrabold text-slate-900">{editingStaff ? 'Edit Staff' : 'Add Staff Member'}</h3>
+          <div className="bg-white rounded-3xl shadow-2xl border border-red-100 max-w-xl w-full overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-5 bg-gradient-to-r from-red-50 to-white border-b border-red-100">
+              <div><h3 className="text-base font-black text-slate-900">{editingStaff ? 'Edit Staff Member' : 'Add Staff Member'}</h3><p className="text-[11px] mt-1 text-slate-500">Create a team profile and control their access.</p></div>
               <button onClick={() => setIsModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-800">
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-3 text-xs">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs">
+              {formError && <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-red-700 font-semibold">{formError}</div>}
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Full Name *</label>
-                <input
+                <div className="relative"><UserRound size={15} className="absolute left-3 top-2.5 text-slate-400"/><input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-xl font-semibold"
-                />
+                  className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:border-red-500"
+                /></div>
               </div>
 
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Email Address *</label>
-                <input
+                <div className="relative"><Mail size={15} className="absolute left-3 top-2.5 text-slate-400"/><input
                   type="email"
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-xl font-semibold"
-                />
+                  className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:border-red-500"
+                /></div>
               </div>
+
+              <div className="grid grid-cols-2 gap-3"><div><label className="block font-bold text-slate-700 mb-1">Phone Number</label><div className="relative"><Phone size={15} className="absolute left-3 top-2.5 text-slate-400"/><input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="0300 0000000" className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:border-red-500"/></div></div><div><label className="block font-bold text-slate-700 mb-1">{editingStaff ? 'New Password' : 'Temporary Password *'}</label><div className="relative"><LockKeyhole size={15} className="absolute left-3 top-2.5 text-slate-400"/><input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder={editingStaff ? 'Leave blank to keep current' : 'Set password'} className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:border-red-500"/></div></div></div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -161,14 +173,16 @@ export const StaffView = () => {
 
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Department</label>
-                  <input
+                  <div className="relative"><BriefcaseBusiness size={15} className="absolute left-3 top-2.5 text-slate-400"/><input
                     type="text"
                     value={formData.department}
                     onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-xl font-semibold"
-                  />
+                    className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:border-red-500"
+                  /></div>
                 </div>
               </div>
+
+              <div><label className="block font-bold text-slate-700 mb-1">Account Status</label><select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:border-red-500"><option>Active</option><option>Inactive</option></select></div>
 
               <div className="flex justify-end gap-2 pt-3 border-t">
                 <button
@@ -180,9 +194,9 @@ export const StaffView = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-red-600 text-white text-xs font-bold shadow-md cursor-pointer"
+                  disabled={isSaving} className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md cursor-pointer disabled:opacity-60"
                 >
-                  Save Staff Member
+                  {isSaving ? 'Saving...' : 'Save Staff Member'}
                 </button>
               </div>
             </form>

@@ -1,7 +1,7 @@
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import crypto from 'crypto';
 import mysql from 'mysql2/promise';
 import path from 'path';
@@ -17,6 +17,7 @@ const __dirname = path.dirname(__filename);
 const frontendPath = path.join(__dirname, '../frontend');
 const distPath = path.join(frontendPath, 'dist');
 const uploadsPath = path.join(__dirname, 'uploads');
+const mockDatabasePath = path.join(__dirname, 'data', 'mock-database.json');
 mkdirSync(path.join(uploadsPath, 'categories'), { recursive: true });
 
 const dbName = process.env.DB_NAME || 'apexiums-ecommerce';
@@ -35,6 +36,7 @@ const businessScopedTables = new Set([
   'categories',
   'coupons',
   'expenses',
+  'finance_transactions',
   'investors',
   'permissions',
   'software_fees',
@@ -65,6 +67,23 @@ class MockPool {
   constructor() {
     this.tables = new Map();
     this.autoIncrement = new Map();
+    try {
+      if (existsSync(mockDatabasePath)) {
+        const saved = JSON.parse(readFileSync(mockDatabasePath, 'utf8'));
+        Object.entries(saved.tables || {}).forEach(([name, rows]) => this.tables.set(name, rows));
+        Object.entries(saved.autoIncrement || {}).forEach(([name, value]) => this.autoIncrement.set(name, value));
+      }
+    } catch (error) {
+      console.warn('[AI Studio] Could not read the local fallback database:', error.message);
+    }
+  }
+
+  persist() {
+    mkdirSync(path.dirname(mockDatabasePath), { recursive: true });
+    writeFileSync(mockDatabasePath, JSON.stringify({
+      tables: Object.fromEntries(this.tables),
+      autoIncrement: Object.fromEntries(this.autoIncrement)
+    }, null, 2));
   }
 
   getTable(name) {
@@ -124,6 +143,7 @@ class MockPool {
         }
 
         rows.push(newRow);
+        this.persist();
         return [{ insertId: newRow.id, affectedRows: 1 }];
       }
     }
@@ -165,6 +185,7 @@ class MockPool {
             updatedCount++;
           }
         });
+        if (updatedCount) this.persist();
         return [{ affectedRows: updatedCount }];
       }
     }
@@ -183,6 +204,7 @@ class MockPool {
         } else {
           this.tables.set(tableName, []);
         }
+        if (initialLength !== rows.length) this.persist();
         return [{ affectedRows: initialLength - rows.length }];
       }
     }
@@ -214,6 +236,10 @@ class MockPool {
           if (queryStr.includes('customer_id = ?')) {
             const targetCustId = params[paramIdx++];
             rows = rows.filter(r => r.customer_id == targetCustId);
+          }
+          if (queryStr.includes('investor_id = ?')) {
+            const targetInvestorId = params[paramIdx++];
+            rows = rows.filter(r => r.investor_id == targetInvestorId);
           }
           if (queryStr.includes('business_id = ?')) {
             const targetBusId = params[paramIdx++];
@@ -429,6 +455,7 @@ const schemas = [
     email VARCHAR(180),
     phone VARCHAR(60),
     role VARCHAR(80),
+    department VARCHAR(120),
     password_hash VARCHAR(255),
     status VARCHAR(40) DEFAULT 'Active',
     last_login DATETIME
@@ -462,6 +489,17 @@ const schemas = [
     receipt_url VARCHAR(500),
     added_by VARCHAR(120),
     notes TEXT
+  )`,
+  `CREATE TABLE IF NOT EXISTS finance_transactions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    business_id INT DEFAULT 1,
+    title VARCHAR(180) NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    category VARCHAR(100),
+    amount DECIMAL(12,2) DEFAULT 0,
+    transaction_date DATE,
+    status VARCHAR(40) DEFAULT 'Completed',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`,
   `CREATE TABLE IF NOT EXISTS wholesellers (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -631,8 +669,9 @@ const resources = {
   orders: ['customer_id', 'customer_name', 'customer_email', 'customer_phone', 'items_count', 'total_amount', 'payment_method', 'payment_status', 'order_status', 'shipping_address', 'created_at'],
   returns: ['order_id', 'product_id', 'customer_id', 'customer', 'product', 'reason', 'status', 'refund_amount', 'refund_method', 'created_at'],
   expenses: ['title', 'category', 'amount', 'payment_method', 'date', 'receipt_url', 'added_by', 'notes'],
+  finance_transactions: ['title', 'type', 'category', 'amount', 'transaction_date', 'status', 'created_at'],
   wholesellers: ['name', 'business_name', 'contact_person', 'phone', 'email', 'address', 'description', 'seller_image', 'stock_seller_sell', 'username', 'password', 'products_supplied', 'total_purchases', 'payment_due', 'status'],
-  staff: ['photo_url', 'name', 'email', 'phone', 'role', 'password_hash', 'status', 'last_login'],
+  staff: ['photo_url', 'name', 'email', 'phone', 'role', 'department', 'password_hash', 'status', 'last_login'],
   customers: ['avatar_url', 'name', 'username', 'password_hash', 'plain_password', 'email', 'phone', 'total_orders', 'total_spent', 'status', 'created_at'],
   notifications: ['type', 'title', 'message', 'is_read', 'created_at'],
   coupons: ['code', 'title', 'description', 'discount_type', 'discount_value', 'min_order_amount', 'use_for', 'usage_limit', 'used_count', 'valid_from', 'valid_till', 'status'],
@@ -673,6 +712,36 @@ function getContext(req) {
   return { role, businessId };
 }
 
+const TOKEN_SECRET = process.env.JWT_SECRET || 'local-development-secret-change-me';
+const INVESTOR_TOKEN_TTL_MS = 1000 * 60 * 60 * 24 * 7;
+
+function createInvestorToken(investor) {
+  const payload = Buffer.from(JSON.stringify({
+    sub: Number(investor.id), role: 'Investor', businessId: Number(investor.business_id || DEFAULT_BUSINESS_ID), exp: Date.now() + INVESTOR_TOKEN_TTL_MS
+  })).toString('base64url');
+  const signature = crypto.createHmac('sha256', TOKEN_SECRET).update(payload).digest('base64url');
+  return `${payload}.${signature}`;
+}
+
+function readInvestorToken(req) {
+  const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
+  const [payload, signature] = token.split('.');
+  if (!payload || !signature) return null;
+  const expected = crypto.createHmac('sha256', TOKEN_SECRET).update(payload).digest('base64url');
+  if (signature.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
+  try {
+    const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    return data.role === 'Investor' && Number(data.sub) && Number(data.exp) > Date.now() ? data : null;
+  } catch { return null; }
+}
+
+function requireInvestor(req, res, next) {
+  const investor = readInvestorToken(req);
+  if (!investor) return res.status(401).json({ message: 'A valid investor bearer token is required.' });
+  req.investorAuth = investor;
+  next();
+}
+
 function persistImageDataUrl(dataUrl, folder = 'categories') {
   if (!String(dataUrl || '').startsWith('data:image/')) return dataUrl || null;
   const match = String(dataUrl).match(/^data:image\/(png|jpeg|jpg|webp|gif);base64,(.+)$/);
@@ -697,6 +766,21 @@ function businessScope(table, req, alias = '') {
   }
   const column = `${alias ? `${alias}.` : ''}business_id`;
   return { clause: `${column} = ?`, params: [businessId] };
+}
+
+async function normalizeProductInvestor(data, businessId) {
+  if (!Object.prototype.hasOwnProperty.call(data, 'investor_id')) return;
+  const investorId = Number(data.investor_id || 0);
+  if (!investorId) {
+    data.investor_id = null;
+    return;
+  }
+  const [investors] = await pool.query(
+    'SELECT id FROM investors WHERE id = ? AND business_id = ? LIMIT 1',
+    [investorId, businessId || DEFAULT_BUSINESS_ID]
+  );
+  if (!investors.length) throw new Error('Selected investor was not found for this business.');
+  data.investor_id = investorId;
 }
 
 async function ensureColumn(table, columnName, columnDefinition, afterInsertUpdate = null) {
@@ -780,7 +864,7 @@ async function initializeDatabase() {
   }
 
   await pool.query(`CREATE TABLE IF NOT EXISTS site_visits (id INT AUTO_INCREMENT PRIMARY KEY, visitor_key VARCHAR(180) NOT NULL, visited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
-  const businessTables = ['banners', 'promotions', 'coupons', 'categories', 'products', 'product_variants', 'stock', 'stock_history', 'orders', 'order_items', 'returns', 'staff', 'customers', 'expenses', 'wholesellers', 'notifications', 'investors', 'permissions', 'software_fees', 'staff_salaries', 'delivery_expenses', 'chats', 'seller_applications', 'investor_applications'];
+  const businessTables = ['banners', 'promotions', 'coupons', 'categories', 'products', 'product_variants', 'stock', 'stock_history', 'orders', 'order_items', 'returns', 'staff', 'customers', 'expenses', 'finance_transactions', 'wholesellers', 'notifications', 'investors', 'permissions', 'software_fees', 'staff_salaries', 'delivery_expenses', 'chats', 'seller_applications', 'investor_applications'];
   for (const table of businessTables) {
     await ensureColumn(table, 'business_id', 'INT DEFAULT 1');
     await pool.query(`UPDATE ${backtick(table)} SET business_id = ${DEFAULT_BUSINESS_ID} WHERE business_id IS NULL`);
@@ -823,6 +907,7 @@ async function initializeDatabase() {
   await ensureColumn('stock', 'investor_id', 'INT NULL');
   await ensureColumn('orders', 'investor_id', 'INT NULL');
   await ensureColumn('investors', 'description', 'TEXT');
+  await ensureColumn('staff', 'department', 'VARCHAR(120)');
   await ensureColumn('permissions', 'role', "VARCHAR(40) DEFAULT 'Staff'");
   await ensureColumn('permissions', 'can_create', "VARCHAR(10) DEFAULT 'No'");
   await ensureColumn('permissions', 'can_delete', "VARCHAR(10) DEFAULT 'No'");
@@ -912,6 +997,7 @@ function crudRoutes(resource, required = []) {
       if (businessScopedTables.has(resource) && !Object.prototype.hasOwnProperty.call(data, 'business_id')) {
         data.business_id = role === 'SuperAdmin' && businessId ? businessId : businessId || DEFAULT_BUSINESS_ID;
       }
+      if (resource === 'products') await normalizeProductInvestor(data, data.business_id);
       const columns = Object.keys(data);
       const placeholders = columns.map(() => '?').join(', ');
       const [result] = await pool.query(
@@ -920,8 +1006,8 @@ function crudRoutes(resource, required = []) {
       );
       if (resource === 'products') {
         await pool.query(
-          'INSERT INTO stock (business_id, product_id, product_name, sku, category, quantity, reorder_level, warehouse) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-          [data.business_id || DEFAULT_BUSINESS_ID, result.insertId, data.name, data.sku || null, data.category || null, Number(data.stock_qty || 0), 10, 'Main Warehouse']
+          'INSERT INTO stock (business_id, product_id, product_name, sku, category, quantity, reorder_level, warehouse, investor_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [data.business_id || DEFAULT_BUSINESS_ID, result.insertId, data.name, data.sku || null, data.category || null, Number(data.stock_qty || 0), 10, 'Main Warehouse', data.investor_id || null]
         );
       }
       if (resource === 'orders') {
@@ -989,6 +1075,7 @@ function crudRoutes(resource, required = []) {
         data.business_id = businessId || DEFAULT_BUSINESS_ID;
         columns.push('business_id');
       }
+      if (resource === 'products') await normalizeProductInvestor(data, data.business_id);
       const scope = businessScope(resource, req);
       const where = scope.clause ? `AND ${scope.clause}` : '';
       await pool.query(
@@ -997,8 +1084,8 @@ function crudRoutes(resource, required = []) {
       );
       if (resource === 'products') {
         await pool.query(
-          'UPDATE stock SET product_name = COALESCE(?, product_name), sku = COALESCE(?, sku), category = COALESCE(?, category) WHERE product_id = ? AND business_id = ?',
-          [data.name || null, data.sku || null, data.category || null, req.params.id, data.business_id || DEFAULT_BUSINESS_ID]
+          'UPDATE stock SET product_name = COALESCE(?, product_name), sku = COALESCE(?, sku), category = COALESCE(?, category), investor_id = CASE WHEN ? THEN ? ELSE investor_id END WHERE product_id = ? AND business_id = ?',
+          [data.name || null, data.sku || null, data.category || null, Object.prototype.hasOwnProperty.call(data, 'investor_id'), data.investor_id, req.params.id, data.business_id || DEFAULT_BUSINESS_ID]
         );
       }
       const responseData = { id: Number(req.params.id), ...data };
@@ -1073,7 +1160,7 @@ app.post('/api/auth/login', async (req, res) => {
         : String(investor.password || '') === password;
       if (!validInvestorPassword) return res.status(401).json({ message: 'Invalid credentials' });
       const { password: _password, password_hash: _hash, ...safeInvestor } = investor;
-      return res.json({ user: { ...safeInvestor, role: 'Investor', name: investor.name, businessId: investor.business_id }, businessId: investor.business_id || DEFAULT_BUSINESS_ID, role: 'Investor', token: `investor-${investor.id}` });
+      return res.json({ user: { ...safeInvestor, role: 'Investor', name: investor.name, businessId: investor.business_id, investorId: investor.id }, businessId: investor.business_id || DEFAULT_BUSINESS_ID, role: 'Investor', token: createInvestorToken(investor) });
     }
     if (account.status === 'Inactive') return res.status(401).json({ message: 'Invalid credentials' });
     if (!verifyPassword(password, account.password_hash)) return res.status(401).json({ message: 'Invalid credentials' });
@@ -1236,6 +1323,7 @@ Object.entries({
   expenses: ['title'],
   wholesellers: ['business_name'],
   staff: ['name'],
+  finance_transactions: ['title'],
   coupons: ['code'],
   investors: ['name'],
   permissions: ['staff_id', 'module'],
@@ -1378,28 +1466,27 @@ app.get('/api/revenue/summary', async (req, res) => {
   try {
     const orderScope = businessScope('orders', req);
     const expenseScope = businessScope('expenses', req);
-    const orderWhere = orderScope.clause ? `WHERE ${orderScope.clause} AND order_status IN ('Shipped', 'Delivered', 'Received')` : "WHERE order_status IN ('Shipped', 'Delivered', 'Received')";
+    const ledgerScope = businessScope('finance_transactions', req);
+    const orderWhere = orderScope.clause ? `WHERE ${orderScope.clause}` : '';
     const expenseWhere = expenseScope.clause ? `WHERE ${expenseScope.clause}` : '';
-    const [ordersSummaryRows] = await pool.query(`SELECT COALESCE(SUM(total_amount), 0) AS total_revenue, COALESCE(AVG(total_amount), 0) AS avg_order_value FROM orders ${orderWhere}`, orderScope.params);
-    const [expenseSummaryRows] = await pool.query(`SELECT COALESCE(SUM(amount), 0) AS total_expense FROM expenses ${expenseWhere}`, expenseScope.params);
-    const [payments] = await pool.query(`SELECT payment_method, SUM(total_amount) AS amount FROM orders ${orderWhere} GROUP BY payment_method`, orderScope.params);
-    const scopeClause = orderScope.clause ? `${orderScope.clause} AND ` : '';
-    const [monthlyRows] = await pool.query(
-      `SELECT
-        COALESCE(SUM(CASE WHEN created_at >= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01') THEN total_amount ELSE 0 END), 0) AS current_month,
-        COALESCE(SUM(CASE WHEN created_at >= DATE_FORMAT(CURRENT_DATE - INTERVAL 1 MONTH, '%Y-%m-01') AND created_at < DATE_FORMAT(CURRENT_DATE, '%Y-%m-01') THEN total_amount ELSE 0 END), 0) AS previous_month
-       FROM orders WHERE ${scopeClause}order_status IN ('Shipped', 'Delivered', 'Received')`,
-      orderScope.params
-    );
-    const currentMonth = Number(monthlyRows[0].current_month);
-    const previousMonth = Number(monthlyRows[0].previous_month);
-    const growth = previousMonth ? ((currentMonth - previousMonth) / previousMonth) * 100 : (currentMonth ? 100 : 0);
+    const ledgerWhere = ledgerScope.clause ? `WHERE ${ledgerScope.clause}` : '';
+    const [[orderResult], [expenseResult], [ledgerResult]] = await Promise.all([
+      pool.query(`SELECT * FROM orders ${orderWhere}`, orderScope.params),
+      pool.query(`SELECT * FROM expenses ${expenseWhere}`, expenseScope.params),
+      pool.query(`SELECT * FROM finance_transactions ${ledgerWhere}`, ledgerScope.params)
+    ]);
+    const completedOrders = orderResult.filter((order) => ['Shipped', 'Delivered', 'Received'].includes(order.order_status));
+    const orderRevenue = completedOrders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
+    const manualRevenue = ledgerResult.filter((row) => row.type === 'Revenue').reduce((sum, row) => sum + Number(row.amount || 0), 0);
+    const totalExpense = expenseResult.reduce((sum, row) => sum + Number(row.amount || 0), 0) + ledgerResult.filter((row) => row.type === 'Expense').reduce((sum, row) => sum + Number(row.amount || 0), 0);
+    const paymentTotals = completedOrders.reduce((groups, order) => { const method = order.payment_method || 'Other'; groups[method] = (groups[method] || 0) + Number(order.total_amount || 0); return groups; }, {});
+    const payments = Object.entries(paymentTotals).map(([payment_method, amount]) => ({ payment_method, amount }));
+    const totalRevenue = orderRevenue + manualRevenue;
     res.json({
-      totalRevenue: Number(ordersSummaryRows[0].total_revenue),
-      netProfit: Number(ordersSummaryRows[0].total_revenue) - Number(expenseSummaryRows[0].total_expense),
-      avgOrderValue: Number(ordersSummaryRows[0].avg_order_value),
-      growth: Number(growth.toFixed(1)),
-      payments
+      totalRevenue, orderRevenue, manualRevenue, totalExpense,
+      netProfit: totalRevenue - totalExpense,
+      avgOrderValue: completedOrders.length ? orderRevenue / completedOrders.length : 0,
+      growth: 0, payments
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -1514,6 +1601,19 @@ app.put('/api/products/:id/investor', async (req, res) => {
   } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
+app.get('/api/investors/:id', async (req, res) => {
+  try {
+    const investorId = Number(req.params.id);
+    if (!investorId) return res.status(400).json({ message: 'Investor ID required' });
+    const scope = businessScope('investors', req);
+    const where = scope.clause ? `AND ${scope.clause}` : '';
+    const [rows] = await pool.query(`SELECT * FROM investors WHERE id = ? ${where} LIMIT 1`, [investorId, ...scope.params]);
+    if (!rows.length) return res.status(404).json({ message: 'Investor not found' });
+    const { password, password_hash, ...safeInvestor } = rows[0];
+    res.json(safeInvestor);
+  } catch (error) { res.status(500).json({ message: error.message }); }
+});
+
 app.get('/api/investors/:id/products', async (req, res) => {
   try {
     const investorId = Number(req.params.id);
@@ -1523,6 +1623,43 @@ app.get('/api/investors/:id/products', async (req, res) => {
     const params = [investorId];
     if (scope.clause) { filters.push(scope.clause); params.push(...scope.params); }
     const [rows] = await pool.query(`SELECT * FROM products WHERE ${filters.join(' AND ')} ORDER BY created_at DESC`, params);
+    res.json({ rows, total: rows.length });
+  } catch (error) { res.status(500).json({ message: error.message }); }
+});
+
+// Mobile-app ready investor API. The signed token, rather than a client-supplied
+// investor id, decides which records can be accessed.
+app.get('/api/investor/me/dashboard', requireInvestor, async (req, res) => {
+  try {
+    const investorId = req.investorAuth.sub;
+    const businessId = req.investorAuth.businessId || DEFAULT_BUSINESS_ID;
+    const [[investor]] = await pool.query('SELECT * FROM investors WHERE id = ? AND business_id = ? LIMIT 1', [investorId, businessId]);
+    if (!investor) return res.status(404).json({ message: 'Investor account not found.' });
+    const [products] = await pool.query('SELECT * FROM products WHERE investor_id = ? AND business_id = ? ORDER BY created_at DESC', [investorId, businessId]);
+    const [stock] = await pool.query("SELECT *, CASE WHEN quantity <= 0 THEN 'Out' WHEN quantity <= reorder_level THEN 'Low' ELSE 'In Stock' END AS status FROM stock WHERE investor_id = ? AND business_id = ? ORDER BY product_name ASC", [investorId, businessId]);
+    const [orders] = await pool.query('SELECT * FROM orders WHERE investor_id = ? AND business_id = ? ORDER BY created_at DESC LIMIT 100', [investorId, businessId]);
+    const stockUnits = stock.reduce((sum, row) => sum + Number(row.quantity || 0), 0);
+    const sales = orders.reduce((sum, row) => sum + Number(row.total_amount || 0), 0);
+    const { password, password_hash, ...profile } = investor;
+    res.json({
+      profile,
+      summary: {
+        assignedProducts: products.length,
+        stockUnits,
+        sales,
+        investment: Number(investor.investment_amount || 0),
+        profitLoss: sales - Number(investor.investment_amount || 0)
+      },
+      products,
+      stock,
+      orders
+    });
+  } catch (error) { res.status(500).json({ message: error.message }); }
+});
+
+app.get('/api/investor/me/products', requireInvestor, async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM products WHERE investor_id = ? AND business_id = ? ORDER BY created_at DESC', [req.investorAuth.sub, req.investorAuth.businessId || DEFAULT_BUSINESS_ID]);
     res.json({ rows, total: rows.length });
   } catch (error) { res.status(500).json({ message: error.message }); }
 });

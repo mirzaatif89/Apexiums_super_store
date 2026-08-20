@@ -20,17 +20,17 @@ export const ExpensesView = () => {
 
   const expenses = finance.transactions.filter((t) => t.type === 'Expense');
 
-  const expenseBreakdownData = [
-    { name: 'Staff Salaries', value: 16500, color: '#f43f5e' },
-    { name: 'Software & Hosting Fees', value: 3450, color: '#3b82f6' },
-    { name: 'Delivery Expenses', value: 2850, color: '#f59e0b' },
-    { name: 'Ad Marketing Costs', value: 4200, color: '#8b5cf6' }
-  ];
+  const expenseBreakdownData = Object.values(expenses.reduce((groups, item) => {
+    const name = item.category || 'General';
+    groups[name] = groups[name] || { name, value: 0, color: ['#f43f5e', '#3b82f6', '#f59e0b', '#8b5cf6'][Object.keys(groups).length % 4] };
+    groups[name].value += Number(item.amount || 0);
+    return groups;
+  }, {}));
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.amount) return;
-    addTransaction({
+    await addTransaction({
       ...formData,
       amount: Number(formData.amount)
     });
@@ -56,7 +56,7 @@ export const ExpensesView = () => {
         <div className="lg:col-span-1 space-y-4">
           <StatCard
             title="Total Monthly Operating Expenses"
-            value={`$${finance.summary.totalExpenses.toLocaleString()}`}
+            value={`Rs ${finance.summary.totalExpenses.toLocaleString('en-PK')}`}
             trend="down"
             description="Under monthly budget cap"
             icon={DollarSign}
@@ -96,7 +96,7 @@ export const ExpensesView = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                {expenses.map((t) => (
+                {!expenses.length ? <tr><td colSpan={5} className="p-6 text-center text-slate-400">No expense entries recorded yet.</td></tr> : expenses.map((t) => (
                   <tr key={t.id} className="hover:bg-slate-50 transition-colors">
                     <td className="p-3.5 font-extrabold text-slate-900">{t.title}</td>
                     <td className="p-3.5 font-semibold text-slate-700">{t.category}</td>

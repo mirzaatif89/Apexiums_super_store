@@ -1,0 +1,152 @@
+{
+  "tables": {
+    "banners": [],
+    "promotions": [],
+    "coupons": [],
+    "categories": [
+      {
+        "id": 1,
+        "created_at": "2026-08-20T18:57:47.721Z",
+        "name": "Books",
+        "description": "Restored product category",
+        "status": "Active"
+      }
+    ],
+    "products": [
+      {
+        "id": 1,
+        "created_at": "2026-08-20T18:54:52.923Z",
+        "image_url": "/uploads/products/products-1787251792296-c048f2943f.jpg",
+        "product_images": "[]",
+        "name": "Sahi Bukhari",
+        "description": "sdfhsdkf",
+        "product_detail": "{\"colors\":\"\",\"sizes\":\"\"}",
+        "category": "Books",
+        "actual_price": 46476,
+        "base_price": 46476,
+        "discounted_price": 476,
+        "sku": "SKU-8544",
+        "stock_qty": 55,
+        "slug": "sahi-bukhari",
+        "status": "Active",
+        "investor_id": 1,
+        "subcategory": null
+      }
+    ],
+    "product_variants": [],
+    "stock": [
+      {
+        "id": 1,
+        "created_at": "2026-08-20T18:54:52.924Z",
+        "product_id": 1,
+        "product_name": "Sahi Bukhari",
+        "sku": "SKU-8544",
+        "category": "Books",
+        "quantity": 55,
+        "reorder_level": 10,
+        "warehouse": "Main Warehouse",
+        "investor_id": 1
+      }
+    ],
+    "stock_history": [],
+    "orders": [],
+    "order_items": [],
+    "returns": [],
+    "staff": [],
+    "staff_permissions": [],
+    "customers": [],
+    "expenses": [],
+    "wholesellers": [],
+    "purchase_orders": [],
+    "notifications": [
+      {
+        "id": 1,
+        "created_at": "2026-08-20T18:55:25.240Z",
+        "type": "Stock Alerts",
+        "title": "Low stock: Sahi Bukhari",
+        "message": "Sahi Bukhari (SKU-8544) is at 55 units. Reorder level is 10.",
+        "entity_type": "stock",
+        "entity_id": 1,
+        "alert_key": "stock-1-1",
+        "severity": "Warning",
+        "is_read": null
+      }
+    ],
+    "investors": [
+      {
+        "id": 1,
+        "created_at": "2026-08-20T18:54:52.859Z",
+        "name": "AASR technologies",
+        "email": "aasrtech91@gmail.com",
+        "phone": "03236150006",
+        "address": "islamabad",
+        "username": "Investor",
+        "password": "666666",
+        "investment_amount": 100000,
+        "investment_date": "2026-08-20",
+        "status": "Active",
+        "description": "Saller"
+      }
+    ],
+    "permissions": [],
+    "software_fees": [],
+    "staff_salaries": [],
+    "delivery_expenses": [],
+    "chats": [],
+    "seller_applications": [],
+    "investor_applications": [],
+    "business_accounts": [
+      {
+        "id": 1,
+        "created_at": "2026-08-20T18:54:20.770Z",
+        "business_name": "Apexiums HQ",
+        "username": "Superadmin",
+        "password_hash": "0dc717ca300af08ca37af63595cc2add:efa59ecf2b7584ef4e8218f3732fe1d5c32f081cf6c82eecc64741837e9789de4a105fbd2cc20e901b7ed85da2ad419eaec28d7544d116ee05a45e43c0ef8a5c",
+        "owner_name": "Super Admin",
+        "email": "admin@apexiums.com",
+        "phone": "03000000000",
+        "role": "SuperAdmin",
+        "status": "Active"
+      }
+    ],
+    "site_visits": [
+      {
+        "id": 1,
+        "created_at": "2026-08-20T18:55:45.445Z",
+        "visitor_key": "1787234494400-zt2hdr428zm"
+      }
+    ],
+    "finance_transactions": []
+  },
+  "autoIncrement": {
+    "banners": 1,
+    "promotions": 1,
+    "coupons": 1,
+    "categories": 2,
+    "products": 2,
+    "product_variants": 1,
+    "stock": 2,
+    "stock_history": 1,
+    "orders": 1,
+    "order_items": 1,
+    "returns": 1,
+    "staff": 1,
+    "staff_permissions": 1,
+    "customers": 1,
+    "expenses": 1,
+    "wholesellers": 1,
+    "purchase_orders": 1,
+    "notifications": 2,
+    "investors": 2,
+    "permissions": 1,
+    "software_fees": 1,
+    "staff_salaries": 1,
+    "delivery_expenses": 1,
+    "chats": 1,
+    "seller_applications": 1,
+    "investor_applications": 1,
+    "business_accounts": 2,
+    "site_visits": 2,
+    "finance_transactions": 1
+  }
+}

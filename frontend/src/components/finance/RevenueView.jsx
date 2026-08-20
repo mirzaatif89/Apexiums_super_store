@@ -20,10 +20,10 @@ export const RevenueView = () => {
 
   const revenues = finance.transactions.filter((t) => t.type === 'Revenue');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.amount) return;
-    addTransaction({
+    await addTransaction({
       ...formData,
       amount: Number(formData.amount)
     });
@@ -56,7 +56,7 @@ export const RevenueView = () => {
         />
         <StatCard
           title="Platform Takeaway Commission"
-          value={`$${finance.summary.commissionEarnings.toLocaleString()}`}
+          value={`Rs ${finance.summary.commissionEarnings.toLocaleString('en-PK')}`}
           trend="up"
           description="Average 10% commission rate"
           icon={Percent}
@@ -64,7 +64,7 @@ export const RevenueView = () => {
         />
         <StatCard
           title="Net Profit Margin"
-          value={`$${finance.summary.netProfit.toLocaleString()}`}
+          value={`Rs ${finance.summary.netProfit.toLocaleString('en-PK')}`}
           trend="up"
           description="Post-expense operational net"
           icon={TrendingUp}
@@ -115,7 +115,7 @@ export const RevenueView = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-              {revenues.map((t) => (
+              {!revenues.length ? <tr><td colSpan={5} className="p-6 text-center text-slate-400">No revenue entries recorded yet.</td></tr> : revenues.map((t) => (
                 <tr key={t.id} className="hover:bg-slate-50 transition-colors">
                   <td className="p-3.5 font-extrabold text-slate-900">{t.title}</td>
                   <td className="p-3.5 font-semibold text-slate-700">{t.category}</td>

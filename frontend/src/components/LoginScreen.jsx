@@ -67,6 +67,7 @@ export default function LoginScreen({ logoSrc, storeName, onLogin }) {
       const userRole = data.user?.role || data.role || 'User';
       onLogin({
         ...data.user,
+        token: data.token || null,
         role: userRole,
         businessId: userRole === 'SuperAdmin' ? null : data.businessId || data.user?.businessId || data.user?.id,
         loginType: userRole !== 'User' ? 'admin' : 'user'
