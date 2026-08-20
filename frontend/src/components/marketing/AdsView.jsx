@@ -40,19 +40,6 @@ export const AdsView = () => {
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
-                <th className="p-3.5">Campaign Name</th>
-                <th className="p-3.5">Placement</th>
-                <th className="p-3.5">Budget</th>
-                <th className="p-3.5">Spent</th>
-                <th className="p-3.5">Impressions</th>
-                <th className="p-3.5">Clicks</th>
-                <th className="p-3.5">CTR</th>
-                <th className="p-3.5">Status</th>
-                <th className="p-3.5 text-right">Actions</th>
-              </tr>
-            </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
               {ads.map((a) => (
                 <tr key={a.id} className="hover:bg-slate-50 transition-colors">
