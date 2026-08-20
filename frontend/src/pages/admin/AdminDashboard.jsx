@@ -150,20 +150,20 @@ const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Scrollable View Canvas */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
-          <button
-            onClick={() => setIsSearchOpen(true)}
-            className="flex w-full max-w-xs items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white px-3.5 py-2.5 text-left text-xs font-semibold text-slate-500 shadow-sm hover:border-slate-300 hover:bg-slate-50"
-          >
-            <Search size={16} className="shrink-0 text-slate-400" />
-            <span>Search products, orders, sellers...</span>
-            <span className="ml-auto rounded bg-slate-50 px-1.5 py-0.5 text-[10px] font-mono text-slate-400">Ctrl+K</span>
-          </button>
-          <label className="flex w-fit items-center gap-2 self-end rounded-xl border border-slate-200/80 bg-white px-3 py-2 text-xs font-semibold text-slate-500 shadow-sm">
-            <CalendarDays size={16} className="text-slate-400" />
-            <span className="hidden sm:inline">Filter date</span>
-            <input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} className="bg-transparent text-xs font-bold text-slate-700 outline-none" />
-            {selectedDate && <button type="button" onClick={() => setSelectedDate('')} className="text-red-600">Clear</button>}
-          </label>
+          <div className="flex items-center justify-between gap-4">
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className="flex w-full max-w-xs items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white px-3.5 py-2.5 text-left text-xs font-semibold text-slate-500 shadow-sm hover:border-slate-300 hover:bg-slate-50"
+            >
+              <Search size={16} className="shrink-0 text-slate-400" />
+              <span>Search products, orders, sellers...</span>
+              <span className="ml-auto rounded bg-slate-50 px-1.5 py-0.5 text-[10px] font-mono text-slate-400">Ctrl+K</span>
+            </button>
+            <label title="Filter by date" className="relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-500 shadow-sm hover:border-slate-300 hover:bg-slate-50">
+              <CalendarDays size={18} className="text-slate-500" />
+              <input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} className="absolute inset-0 cursor-pointer opacity-0" aria-label="Filter by date" />
+            </label>
+          </div>
           {renderActiveView()}
         </main>
       </div>
