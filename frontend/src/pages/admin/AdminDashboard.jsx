@@ -1,7 +1,6 @@
 import React from 'react';
 import { AdminProvider, useAdmin } from '../../context/AdminContext';
 import Sidebar from '../../components/layout/Sidebar';
-import Header from '../../components/layout/Header';
 import ToastContainer from '../../components/layout/ToastContainer';
 import GlobalSearchModal from '../../components/layout/GlobalSearchModal';
 
@@ -146,13 +145,6 @@ const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Header */}
-        <Header
-          session={session}
-          onLogout={onLogout}
-          onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
-        />
-
         {/* Scrollable View Canvas */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
           {renderActiveView()}
