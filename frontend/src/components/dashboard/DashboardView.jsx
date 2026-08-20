@@ -119,8 +119,6 @@ export const DashboardView = () => {
           title="Total Revenue"
           value={`Rs ${totalRevenue.toLocaleString('en-PK')}`}
           trend="up"
-          trendValue={totalRevenue ? 'Live' : 'No sales'}
-          description="From saved orders"
           icon={DollarSign}
           accentColor="emerald"
           onClick={() => setActiveTab('revenue')}
@@ -129,8 +127,6 @@ export const DashboardView = () => {
           title="Total Orders"
           value={totalOrders.toLocaleString()}
           trend="up"
-          trendValue={`${pendingOrders} pending`}
-          description="From saved orders"
           icon={ShoppingCart}
           accentColor="blue"
           onClick={() => setActiveTab('orders')}
@@ -139,8 +135,6 @@ export const DashboardView = () => {
           title="Total Customers"
           value={totalCustomers.toLocaleString()}
           trend="up"
-          trendValue="Live"
-          description="From customer records"
           icon={Users}
           accentColor="purple"
           onClick={() => setActiveTab('customers')}
@@ -149,8 +143,6 @@ export const DashboardView = () => {
           title="Total Products"
           value={totalProducts.toString()}
           trend="up"
-          trendValue={`${categories.length} categories`}
-          description="From catalog database"
           icon={Package}
           accentColor="indigo"
           onClick={() => setActiveTab('products')}
@@ -160,8 +152,6 @@ export const DashboardView = () => {
           title="Active Sellers"
           value={totalSellers.toString()}
           trend="up"
-          trendValue={`${pendingSellers} pending`}
-          description="From seller records"
           icon={Store}
           accentColor="amber"
           onClick={() => setActiveTab('sellers')}
@@ -170,8 +160,6 @@ export const DashboardView = () => {
           title="Total Investors"
           value={totalInvestors.toString()}
           trend="up"
-          trendValue={`$${totalInvestment.toLocaleString()}`}
-          description="Saved investment total"
           icon={TrendingUp}
           accentColor="purple"
           onClick={() => setActiveTab('investors')}
@@ -180,8 +168,6 @@ export const DashboardView = () => {
           title="Total Expenses"
           value={`Rs ${totalExpenses.toLocaleString('en-PK')}`}
           trend="down"
-          trendValue="Live"
-          description="Saved expenses"
           icon={Receipt}
           accentColor="rose"
           onClick={() => setActiveTab('expenses')}
@@ -190,8 +176,6 @@ export const DashboardView = () => {
           title="Net Profit"
           value={`Rs ${netProfit.toLocaleString('en-PK')}`}
           trend="up"
-          trendValue={totalRevenue ? 'Live' : 'No revenue'}
-          description="Revenue minus expenses"
           icon={DollarSign}
           accentColor="emerald"
           onClick={() => setActiveTab('revenue')}
