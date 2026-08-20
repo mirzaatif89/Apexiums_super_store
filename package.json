@@ -8,10 +8,10 @@
   },
   "scripts": {
     "dev": "node backend/server.js",
-    "build": "node scripts/vite.mjs build",
+    "build": "node --input-type=module -e \"import {existsSync} from 'node:fs'; import('vite').then(({build}) => { const root = process.env.PROJECT_ROOT || process.env.DEPLOY_ROOT || (existsSync('/home/apexium2/elistin.com') ? '/home/apexium2/elistin.com' : process.cwd()); return build({configFile: root + '/frontend/vite.config.js'}); })\"",
     "postinstall": "npm run build",
     "start": "node backend/server.js",
-    "preview": "node scripts/vite.mjs preview"
+    "preview": "node --input-type=module -e \"import {existsSync} from 'node:fs'; import('vite').then(async ({preview}) => { const root = process.env.PROJECT_ROOT || process.env.DEPLOY_ROOT || (existsSync('/home/apexium2/elistin.com') ? '/home/apexium2/elistin.com' : process.cwd()); const server = await preview({configFile: root + '/frontend/vite.config.js', preview: {host: '0.0.0.0', port: 3000}}); server.printUrls(); })\""
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
