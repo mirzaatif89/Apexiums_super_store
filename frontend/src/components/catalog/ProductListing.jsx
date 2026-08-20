@@ -437,8 +437,8 @@ export const ProductListing = () => {
       {/* Add / Edit Product Modal Form */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full sm:w-[50vw] max-w-[50vw] min-w-0 sm:min-w-[520px] overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-white text-slate-900">
+          <div className="bg-white rounded-3xl shadow-2xl border border-red-100 w-full sm:w-[72vw] max-w-[72vw] min-w-0 sm:min-w-[680px] overflow-hidden flex flex-col max-h-[88vh]">
+            <div className="flex items-center justify-between px-7 py-5 border-b border-red-100 bg-gradient-to-r from-red-50 to-white text-slate-900">
               <h3 className="text-sm font-extrabold">
                 {editingProduct ? 'Edit Catalog Product' : 'Add New Marketplace Product'}
               </h3>
@@ -450,7 +450,7 @@ export const ProductListing = () => {
               </button>
             </div>
 
-            <form noValidate onSubmit={handleSaveProduct} className="p-5 overflow-y-auto space-y-4">
+            <form noValidate onSubmit={handleSaveProduct} className="px-7 py-6 overflow-y-auto space-y-5">
               {saveError && <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{saveError}</p>}
               <div>
                 <label className="block font-bold text-slate-700 text-xs mb-1">Upload Product Main Image *</label>
