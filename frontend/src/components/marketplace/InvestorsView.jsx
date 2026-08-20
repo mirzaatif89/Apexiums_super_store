@@ -63,7 +63,7 @@ export const InvestorsView = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Capital Raised"
-          value={`Rs ${(totalInvestment / 1000000).toFixed(2)}M`}
+          value={`Rs ${totalInvestment.toLocaleString('en-PK')}`}
           trend="up"
           description="Equity & convertible notes"
           icon={DollarSign}
