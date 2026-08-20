@@ -104,8 +104,6 @@ export const InvestorsView = () => {
                 <th className="p-3.5">Investor Entity</th>
                 <th className="p-3.5">Contact Person</th>
                 <th className="p-3.5">Investment Amount</th>
-                <th className="p-3.5">Equity Share</th>
-                <th className="p-3.5">Return Rate</th>
                 <th className="p-3.5">Total Returns Paid</th>
                 <th className="p-3.5">Status</th>
                 <th className="p-3.5 text-right">Actions</th>
@@ -120,8 +118,6 @@ export const InvestorsView = () => {
                     <p className="text-[10px] text-slate-400">{inv.email}</p>
                   </td>
                   <td className="p-3.5 font-black text-purple-700">Rs {inv.investmentAmount.toLocaleString('en-PK')}</td>
-                  <td className="p-3.5 font-bold text-slate-800">{inv.equityShare}</td>
-                  <td className="p-3.5 font-bold text-emerald-600">{inv.returnRate}% per annum</td>
                   <td className="p-3.5 font-black text-slate-900">Rs {inv.totalReturnsPaid.toLocaleString('en-PK')}</td>
                   <td className="p-3.5">
                     <Badge status={inv.status}>{inv.status}</Badge>
@@ -239,8 +235,6 @@ export const InvestorsView = () => {
             <div className="space-y-2 text-xs bg-slate-50 p-3 rounded-xl border">
               <p><span className="text-slate-400">Contact:</span> <strong>{selectedInvestor.contactPerson} ({selectedInvestor.email})</strong></p>
               <p><span className="text-slate-400">Total Investment:</span> <strong className="text-purple-700">Rs {selectedInvestor.investmentAmount.toLocaleString('en-PK')}</strong></p>
-              <p><span className="text-slate-400">Equity Share:</span> <strong>{selectedInvestor.equityShare}</strong></p>
-              <p><span className="text-slate-400">Target Return Rate:</span> <strong className="text-emerald-600">{selectedInvestor.returnRate}%</strong></p>
               <p><span className="text-slate-400">Notes:</span> <strong>{selectedInvestor.notes || 'N/A'}</strong></p>
             </div>
 
