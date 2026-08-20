@@ -89,20 +89,6 @@ export const DashboardView = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top Banner Header */}
-      <div className="bg-transparent p-0 text-slate-800 shadow-none flex flex-col md:flex-row items-start md:items-center justify-end gap-4">
-        <div>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setActiveTab('products')}
-            className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-lg shadow-red-600/30 transition-all cursor-pointer"
-          >
-            + Add New Product
-          </button>
-        </div>
-      </div>
-
       {/* 8 Primary KPI Stat Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
