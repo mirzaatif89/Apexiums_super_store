@@ -171,15 +171,15 @@ export const CategoriesView = () => {
       {/* Category Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b bg-slate-900 text-white">
+          <div className="bg-white rounded-3xl shadow-2xl border border-red-100 w-full sm:w-[50vw] max-w-[50vw] min-w-0 sm:min-w-[520px] overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-red-100 bg-gradient-to-r from-red-50 to-white text-slate-900">
               <h3 className="text-sm font-extrabold">{editingCategory ? 'Edit Category' : 'Add Category'}</h3>
-              <button onClick={() => setIsModalOpen(false)} className="p-1 text-slate-400 hover:text-white">
+              <button onClick={() => setIsModalOpen(false)} className="p-1 text-slate-400 hover:text-red-600">
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col p-5 space-y-3 text-xs">
+            <form onSubmit={handleSubmit} className="flex flex-col px-6 py-6 space-y-4 text-xs">
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Category Name *</label>
                 <input
@@ -243,7 +243,7 @@ export const CategoriesView = () => {
                     };
                     reader.readAsDataURL(file);
                   }}
-                  className="w-full cursor-pointer rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-3 py-4 font-semibold text-slate-700 transition hover:border-red-500 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200"
+                  className="w-full cursor-pointer rounded-2xl border-2 border-dashed border-red-200 bg-red-50/40 px-3 py-4 font-semibold text-slate-700 transition hover:border-red-500 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200"
                 />
                 <p className="mt-1 text-[10px] font-medium text-slate-500">Upload the image for this category. Maximum size: 800 × 600 pixels.</p>
                 {(uploadPreview || formData.image) && (
