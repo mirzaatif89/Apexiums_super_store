@@ -12,9 +12,9 @@ import {
   Watch,
   Zap
 } from 'lucide-react';
-import storeLogo from '../../images/logo.png';
+import storeLogo from '../../images/logo.jpg';
 
-export const storeName = 'Apexiums';
+export const storeName = 'Elistin';
 export const storeLogoSrc = storeLogo;
 
 export const customerAccounts = [
