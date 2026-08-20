@@ -203,15 +203,6 @@ export const InvestorsView = () => {
                     className="w-full px-3 py-2 border rounded-xl font-semibold"
                   />
                 </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Equity Share (%)</label>
-                  <input
-                    type="text"
-                    value={formData.equityShare}
-                    onChange={(e) => setFormData({ ...formData, equityShare: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-xl font-semibold"
-                  />
-                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t">
