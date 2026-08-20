@@ -13,6 +13,7 @@ export const InvestorsView = () => {
   const totalInvestment = investors.reduce((sum, i) => sum + i.investmentAmount, 0);
   const totalReturns = investors.reduce((sum, i) => sum + i.totalReturnsPaid, 0);
   const activeInvestorsCount = investors.filter((i) => i.status === 'Active').length;
+  const pendingInvestorsCount = investors.filter((i) => i.status === 'Pending' || i.status === 'Pending Approval').length;
 
   const [formData, setFormData] = useState({
     name: '',
@@ -86,7 +87,7 @@ export const InvestorsView = () => {
         />
         <StatCard
           title="Pending Applications"
-          value="1 Pending"
+          value={`${pendingInvestorsCount} Pending`}
           trend="down"
           description="Awaiting board review"
           icon={CheckCircle2}

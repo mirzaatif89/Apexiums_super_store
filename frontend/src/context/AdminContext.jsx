@@ -8,7 +8,6 @@ import {
   initialCustomers,
   initialBanners,
   initialAds,
-  initialInvestors,
   initialStaff,
   initialRolesPermissions,
   initialFinanceData,
@@ -113,6 +112,25 @@ export const AdminProvider = ({ children, session }) => {
     try { return [...JSON.parse(localStorage.getItem('apexiums-support-chats') || '[]'), ...defaultChats]; } catch { return defaultChats; }
   });
   const [settings, setSettings] = useState(initialSettings);
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/investors?limit=500', { headers: apiHeaders() })
+      .then((response) => response.ok ? response.json() : { rows: [] })
+      .then((data) => {
+        if (!active) return;
+        setInvestors((data.rows || []).map((row) => ({
+          ...row,
+          investmentAmount: Number(row.investment_amount || 0),
+          totalReturnsPaid: Number(row.total_returns_paid || 0),
+          contactPerson: row.contact_person || row.name || '',
+          returnRate: Number(row.return_rate || 0),
+          equityShare: row.equity_share || '0%'
+        })));
+      })
+      .catch(() => { if (active) setInvestors([]); });
+    return () => { active = false; };
+  }, [session]);
 
   useEffect(() => {
     const syncChats = () => {
