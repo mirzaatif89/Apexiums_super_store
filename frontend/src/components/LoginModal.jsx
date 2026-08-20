@@ -186,8 +186,7 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
           loginType: 'user'
         };
 
-        onLogin(userObj);
-        onClose();
+        setError(err.message || 'Login service is unavailable. Please try again after the server is restarted.');
         return;
       }
       setError(err.message || 'Login failed. Please check your credentials.');

@@ -6,7 +6,6 @@ import crypto from 'crypto';
 import mysql from 'mysql2/promise';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createServer as createViteServer } from 'vite';
 
 dotenv.config({ quiet: true });
 
@@ -1428,6 +1427,7 @@ let httpServer;
 async function startServer() {
   // Vite dev middleware or static serving for production
   if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       root: frontendPath,
       server: { middlewareMode: true },
