@@ -69,7 +69,8 @@ export const DashboardView = ({ selectedDate = '' }) => {
   if (dateRange === 'This Year') multiplier = 2.8;
 
   // Key KPI Numbers
-  const totalRevenue = Number(selectedDate ? orders.filter((order) => { const date = new Date(order.orderDate || order.created_at); return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === selectedDate; }).reduce((sum, order) => sum + Number(order.totalAmount || 0), 0) : (liveSummary?.orders?.revenue ?? finance.summary?.totalRevenue ?? orders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0)));
+  const revenueStatuses = ['Shipped', 'Delivered', 'Received'];
+  const totalRevenue = Number(selectedDate ? orders.filter((order) => { const date = new Date(order.orderDate || order.created_at); return revenueStatuses.includes(order.orderStatus) && !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === selectedDate; }).reduce((sum, order) => sum + Number(order.totalAmount || 0), 0) : (liveSummary?.orders?.revenue ?? finance.summary?.totalRevenue ?? orders.filter((order) => revenueStatuses.includes(order.orderStatus)).reduce((sum, order) => sum + Number(order.totalAmount || 0), 0)));
   const totalExpenses = Number(selectedDate ? (finance.expensesList || []).filter((expense) => String(expense.date || '').startsWith(selectedDate)).reduce((sum, expense) => sum + Number(expense.amount || 0), 0) : (finance.expensesList || []).reduce((sum, expense) => sum + Number(expense.amount || 0), 0));
   const netProfit = totalRevenue - totalExpenses;
   const totalOrders = Number(selectedDate ? orders.filter((order) => { const date = new Date(order.orderDate || order.created_at); return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === selectedDate; }).length : (liveSummary?.orders?.total ?? orders.length));

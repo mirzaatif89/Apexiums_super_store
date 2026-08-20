@@ -1200,7 +1200,7 @@ app.get('/api/dashboard/summary', async (req, res) => {
     const couponWhere = scopeCoupons.clause ? `WHERE ${scopeCoupons.clause}` : '';
     const notificationWhere = scopeNotifications.clause ? `WHERE ${scopeNotifications.clause}` : '';
     const [products] = await pool.query(`SELECT COUNT(*) AS total, SUM(status = 'Live') AS active FROM products ${productWhere}`, scopeProducts.params);
-    const [orders] = await pool.query(`SELECT COUNT(*) AS total, COALESCE(SUM(total_amount), 0) AS revenue, SUM(order_status = 'Pending') AS pending FROM orders ${orderWhere}`, scopeOrders.params);
+      const [orders] = await pool.query(`SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN order_status IN ('Shipped', 'Delivered', 'Received') THEN total_amount ELSE 0 END), 0) AS revenue, SUM(order_status = 'Pending') AS pending FROM orders ${orderWhere}`, scopeOrders.params);
     const [stock] = await pool.query(`SELECT COUNT(*) AS total, SUM(quantity <= reorder_level AND quantity > 0) AS low, SUM(quantity <= 0) AS out_of_stock FROM stock ${stockWhere}`, scopeStock.params);
     const [coupons] = await pool.query(`SELECT COUNT(*) AS total, SUM(status = 'Active') AS active FROM coupons ${couponWhere}`, scopeCoupons.params);
     const [notifications] = await pool.query(`SELECT COUNT(*) AS total, SUM(is_read = 0) AS unread FROM notifications ${notificationWhere}`, scopeNotifications.params);
@@ -1377,7 +1377,7 @@ app.get('/api/revenue/summary', async (req, res) => {
   try {
     const orderScope = businessScope('orders', req);
     const expenseScope = businessScope('expenses', req);
-    const orderWhere = orderScope.clause ? `WHERE ${orderScope.clause} AND order_status != 'Cancelled'` : "WHERE order_status != 'Cancelled'";
+    const orderWhere = orderScope.clause ? `WHERE ${orderScope.clause} AND order_status IN ('Shipped', 'Delivered', 'Received')` : "WHERE order_status IN ('Shipped', 'Delivered', 'Received')";
     const expenseWhere = expenseScope.clause ? `WHERE ${expenseScope.clause}` : '';
     const [ordersSummaryRows] = await pool.query(`SELECT COALESCE(SUM(total_amount), 0) AS total_revenue, COALESCE(AVG(total_amount), 0) AS avg_order_value FROM orders ${orderWhere}`, orderScope.params);
     const [expenseSummaryRows] = await pool.query(`SELECT COALESCE(SUM(amount), 0) AS total_expense FROM expenses ${expenseWhere}`, expenseScope.params);
@@ -1387,7 +1387,7 @@ app.get('/api/revenue/summary', async (req, res) => {
       `SELECT
         COALESCE(SUM(CASE WHEN created_at >= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01') THEN total_amount ELSE 0 END), 0) AS current_month,
         COALESCE(SUM(CASE WHEN created_at >= DATE_FORMAT(CURRENT_DATE - INTERVAL 1 MONTH, '%Y-%m-01') AND created_at < DATE_FORMAT(CURRENT_DATE, '%Y-%m-01') THEN total_amount ELSE 0 END), 0) AS previous_month
-       FROM orders WHERE ${scopeClause}order_status != 'Cancelled'`,
+       FROM orders WHERE ${scopeClause}order_status IN ('Shipped', 'Delivered', 'Received')`,
       orderScope.params
     );
     const currentMonth = Number(monthlyRows[0].current_month);
@@ -1408,7 +1408,7 @@ app.get('/api/revenue/summary', async (req, res) => {
 app.get('/api/revenue/chart', async (req, res) => {
   try {
     const orderScope = businessScope('orders', req);
-    const where = orderScope.clause ? `WHERE ${orderScope.clause} AND order_status != 'Cancelled'` : "WHERE order_status != 'Cancelled'";
+    const where = orderScope.clause ? `WHERE ${orderScope.clause} AND order_status IN ('Shipped', 'Delivered', 'Received')` : "WHERE order_status IN ('Shipped', 'Delivered', 'Received')";
     const [rows] = await pool.query(`SELECT DATE(created_at) AS date, SUM(total_amount) AS revenue FROM orders ${where} GROUP BY DATE(created_at) ORDER BY date ASC LIMIT 30`, orderScope.params);
     res.json({ rows: rows || [] });
   } catch (error) {

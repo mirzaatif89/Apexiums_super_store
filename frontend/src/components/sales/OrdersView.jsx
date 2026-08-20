@@ -60,8 +60,10 @@ export const OrdersView = () => {
         >
           <option value="">All Order Statuses</option>
           <option value="Pending">Pending</option>
-          <option value="To Ship">To Ship</option>
-          <option value="Received">Received</option>
+          <option value="Dispatched">Dispatched</option>
+          <option value="On the Way">On the Way</option>
+          <option value="Shipped">Shipped</option>
+          <option value="Cancelled">Cancelled</option>
         </select>
       </div>
 
@@ -103,13 +105,15 @@ export const OrdersView = () => {
                     </td>
                     <td className="p-3.5">
                       <select
-                        value={o.orderStatus === 'Delivered' || o.orderStatus === 'Received' ? 'Received' : o.orderStatus === 'Pending' ? 'Pending' : 'To Ship'}
+                        value={['Pending', 'Dispatched', 'On the Way', 'Shipped', 'Cancelled'].includes(o.orderStatus) ? o.orderStatus : 'Pending'}
                         onChange={(e) => updateOrderStatus(o.id, e.target.value)}
                         className="px-2 py-1 bg-slate-100 border rounded-lg text-[11px] font-bold text-slate-800 focus:outline-none cursor-pointer"
                       >
                         <option value="Pending">Pending</option>
-                        <option value="To Ship">To Ship</option>
-                        <option value="Received">Received</option>
+                        <option value="Dispatched">Dispatched</option>
+                        <option value="On the Way">On the Way</option>
+                        <option value="Shipped">Shipped</option>
+                        <option value="Cancelled">Cancelled</option>
                       </select>
                     </td>
                     <td className="p-3.5 text-slate-500 font-medium">{o.orderDate}</td>
