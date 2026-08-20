@@ -13,7 +13,7 @@ export default function InvestorPortal({ session, onLogout }) {
       fetch(`/api/investors/${session?.id}`, { headers }).then((r) => r.ok ? r.json() : null),
       fetch('/api/stock?limit=500', { headers }).then((r) => r.ok ? r.json() : { rows: [] }),
       fetch('/api/orders?limit=500', { headers }).then((r) => r.ok ? r.json() : { rows: [] })
-      ,fetch('/api/products?limit=500', { headers }).then((r) => r.ok ? r.json() : { rows: [] })
+      ,fetch(`/api/investors/${session?.id}/products`, { headers }).then((r) => r.ok ? r.json() : { rows: [] })
     ]).then(([profile, stockData, orderData, productData]) => {
       if (profile) setInvestor(profile);
       setStock(stockData?.rows || []);

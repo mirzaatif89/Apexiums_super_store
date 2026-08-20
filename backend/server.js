@@ -1504,6 +1504,19 @@ startServer().catch((error) => {
   process.exit(1);
 });
 
+app.get('/api/investors/:id/products', async (req, res) => {
+  try {
+    const investorId = Number(req.params.id);
+    if (!investorId) return res.status(400).json({ message: 'Investor ID required' });
+    const scope = businessScope('products', req);
+    const filters = ['investor_id = ?'];
+    const params = [investorId];
+    if (scope.clause) { filters.push(scope.clause); params.push(...scope.params); }
+    const [rows] = await pool.query(`SELECT * FROM products WHERE ${filters.join(' AND ')} ORDER BY created_at DESC`, params);
+    res.json({ rows, total: rows.length });
+  } catch (error) { res.status(500).json({ message: error.message }); }
+});
+
 app.post('/api/customers/register', async (req, res) => {
   try {
     const required = requireFields(req.body, ['name', 'username', 'password']);
