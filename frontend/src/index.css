@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+table thead.bg-slate-900 {
+  background-color: #fff1f2 !important;
+  color: #be123c !important;
+}
+
 .custom-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
