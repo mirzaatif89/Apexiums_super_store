@@ -66,7 +66,7 @@ export const OrdersView = () => {
       </div>
 
       {/* Orders Table */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-visible">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>

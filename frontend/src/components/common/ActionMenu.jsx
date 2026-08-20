@@ -36,7 +36,7 @@ export default function ActionMenu({ actions = [], buttonTitle = 'Actions' }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-[100] mt-2 w-44 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl">
+        <div className="absolute bottom-full right-0 z-[100] mb-2 w-44 overflow-hidden rounded-2xl border border-rose-100 bg-white p-1.5 shadow-2xl">
           {actions.map((action) => {
             const Icon = action.icon;
             const isDanger = action.variant === 'danger';
