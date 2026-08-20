@@ -3,7 +3,8 @@ import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import StorefrontHome from './pages/storefront/StorefrontHome.jsx';
 import UserDashboard from './pages/storefront/UserDashboard.jsx';
 import { storeLogoSrc, storeName } from './data/storeData';
-import { isAdminRole, isSuperAdminRole } from './utils/roles';
+import { isAdminRole, isSuperAdminRole, roleKey } from './utils/roles';
+import InvestorPortal from './pages/investor/InvestorPortal.jsx';
 
 const AUTH_KEY = 'apexiums-auth-session';
 
@@ -71,6 +72,10 @@ export default function App() {
 
   const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
   const isAdminPage = currentPath !== '/' && currentPath !== '/index.html';
+
+  if (roleKey(session.role) === 'investor') {
+    return <InvestorPortal session={session} onLogout={handleLogout} />;
+  }
 
   // Admin panel is available only on an explicit admin URL. Root is always the storefront.
   if (isAdminPage && (isAdminRole(session.role) || session.loginType === 'admin')) {

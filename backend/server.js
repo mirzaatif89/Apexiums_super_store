@@ -686,7 +686,12 @@ function persistImageDataUrl(dataUrl, folder = 'categories') {
 }
 
 function businessScope(table, req, alias = '') {
-  const { businessId } = getContext(req);
+  const { businessId, role } = getContext(req);
+  const investorId = Number(req.headers['x-investor-id'] || 0) || null;
+  if (String(role || '').replace(/[\s_-]+/g, '').toLowerCase() === 'investor' && investorId && ['stock', 'orders'].includes(table)) {
+    const column = `${alias ? `${alias}.` : ''}investor_id`;
+    return { clause: `${column} = ?`, params: [investorId] };
+  }
   if (!businessScopedTables.has(table) || !businessId) {
     return { clause: '', params: [] };
   }
@@ -810,6 +815,11 @@ async function initializeDatabase() {
   await ensureColumn('investors', 'address', 'TEXT');
   await ensureColumn('investors', 'username', 'VARCHAR(120)');
   await ensureColumn('investors', 'password', 'VARCHAR(255)');
+  await ensureColumn('investors', 'password_hash', 'VARCHAR(255)');
+  await ensureColumn('investors', 'return_rate', 'DECIMAL(8,2) DEFAULT 0');
+  await ensureColumn('investors', 'equity_share', 'VARCHAR(40)');
+  await ensureColumn('stock', 'investor_id', 'INT NULL');
+  await ensureColumn('orders', 'investor_id', 'INT NULL');
   await ensureColumn('investors', 'description', 'TEXT');
   await ensureColumn('permissions', 'role', "VARCHAR(40) DEFAULT 'Staff'");
   await ensureColumn('permissions', 'can_create', "VARCHAR(10) DEFAULT 'No'");
@@ -1038,7 +1048,17 @@ app.post('/api/auth/login', async (req, res) => {
     const password = String(req.body.password || '');
     if (!username || !password) return res.status(400).json({ message: 'Username and password required' });
     const [[account]] = await pool.query('SELECT * FROM business_accounts WHERE username = ? LIMIT 1', [username]);
-    if (!account || account.status === 'Inactive') return res.status(401).json({ message: 'Invalid credentials' });
+    if (!account) {
+      const [[investor]] = await pool.query('SELECT * FROM investors WHERE username = ? LIMIT 1', [username]);
+      if (!investor || investor.status === 'Inactive' || investor.status === 'Pending Approval') return res.status(401).json({ message: 'Invalid credentials or account is awaiting approval' });
+      const validInvestorPassword = investor.password_hash
+        ? verifyPassword(password, investor.password_hash)
+        : String(investor.password || '') === password;
+      if (!validInvestorPassword) return res.status(401).json({ message: 'Invalid credentials' });
+      const { password: _password, password_hash: _hash, ...safeInvestor } = investor;
+      return res.json({ user: { ...safeInvestor, role: 'Investor', name: investor.name, businessId: investor.business_id }, businessId: investor.business_id || DEFAULT_BUSINESS_ID, role: 'Investor', token: `investor-${investor.id}` });
+    }
+    if (account.status === 'Inactive') return res.status(401).json({ message: 'Invalid credentials' });
     if (!verifyPassword(password, account.password_hash)) return res.status(401).json({ message: 'Invalid credentials' });
     await pool.query('UPDATE business_accounts SET last_login = NOW() WHERE id = ?', [account.id]);
     res.json({
