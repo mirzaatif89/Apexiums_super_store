@@ -1504,6 +1504,16 @@ startServer().catch((error) => {
   process.exit(1);
 });
 
+app.put('/api/products/:id/investor', async (req, res) => {
+  try {
+    const productId = Number(req.params.id);
+    const investorId = req.body.investor_id ? Number(req.body.investor_id) : null;
+    if (!productId) return res.status(400).json({ message: 'Product ID required' });
+    await pool.query('UPDATE products SET investor_id = ? WHERE id = ?', [investorId, productId]);
+    res.json({ ok: true, investor_id: investorId });
+  } catch (error) { res.status(500).json({ message: error.message }); }
+});
+
 app.get('/api/investors/:id/products', async (req, res) => {
   try {
     const investorId = Number(req.params.id);
