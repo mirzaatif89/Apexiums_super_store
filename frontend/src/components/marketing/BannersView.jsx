@@ -78,8 +78,8 @@ export const BannersView = () => {
 
       {/* Add Banner Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-5 space-y-4">
+        <div className="w-full rounded-2xl border border-rose-100 bg-white p-5 shadow-sm sm:p-7">
+          <div className="mx-auto w-full max-w-5xl space-y-4">
             <div className="flex items-center justify-between border-b pb-3">
               <h3 className="text-sm font-extrabold text-slate-900">Add Website Banner</h3>
               <button onClick={() => setIsModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-800">
