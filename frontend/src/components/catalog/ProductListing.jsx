@@ -437,14 +437,14 @@ export const ProductListing = () => {
       {/* Add / Edit Product Modal Form */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-900 text-white">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full sm:w-[50vw] max-w-[50vw] min-w-0 sm:min-w-[520px] overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-white text-slate-900">
               <h3 className="text-sm font-extrabold">
                 {editingProduct ? 'Edit Catalog Product' : 'Add New Marketplace Product'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer"
+                className="p-1 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 cursor-pointer"
               >
                 <X size={18} />
               </button>
