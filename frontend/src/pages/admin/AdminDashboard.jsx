@@ -150,7 +150,7 @@ const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
           <button
             onClick={() => setIsSearchOpen(true)}
-            className="flex w-full max-w-md items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white px-3.5 py-2.5 text-left text-xs font-semibold text-slate-500 shadow-sm hover:border-slate-300 hover:bg-slate-50"
+            className="flex w-full max-w-xs items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white px-3.5 py-2.5 text-left text-xs font-semibold text-slate-500 shadow-sm hover:border-slate-300 hover:bg-slate-50"
           >
             <Search size={16} className="shrink-0 text-slate-400" />
             <span>Search products, orders, sellers...</span>
