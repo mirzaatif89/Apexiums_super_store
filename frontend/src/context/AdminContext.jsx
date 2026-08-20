@@ -604,7 +604,7 @@ export const AdminProvider = ({ children, session }) => {
 
   // Banners & Ads
   const addBanner = (bannerData) => {
-    const newBan = { ...bannerData, id: `ban-${Date.now()}` };
+    const newBan = { ...bannerData, id: `ban-${Date.now()}`, visible: bannerData.visible !== false, device: 'desktop' };
     setBanners((prev) => [newBan, ...prev]);
     addToast('New marketing banner published.', 'success');
   };
@@ -613,9 +613,10 @@ export const AdminProvider = ({ children, session }) => {
     setBanners((prev) => prev.filter((b) => b.id !== id));
     addToast('Banner removed.', 'info');
   };
+  const toggleBanner = (id) => setBanners((prev) => prev.map((banner) => banner.id === id ? { ...banner, visible: banner.visible === false } : banner));
 
   const addAd = (adData) => {
-    const newAd = { ...adData, id: `ad-${Date.now()}`, spent: 0, impressions: 0, clicks: 0, ctr: '0.00%' };
+    const newAd = { ...adData, id: `ad-${Date.now()}`, visible: adData.visible !== false, device: 'mobile', spent: 0, impressions: 0, clicks: 0, ctr: '0.00%' };
     setAds((prev) => [newAd, ...prev]);
     addToast('New ad campaign initialized.', 'success');
   };
@@ -624,6 +625,7 @@ export const AdminProvider = ({ children, session }) => {
     setAds((prev) => prev.filter((a) => a.id !== id));
     addToast('Ad campaign deleted.', 'info');
   };
+  const toggleAd = (id) => setAds((prev) => prev.map((ad) => ad.id === id ? { ...ad, visible: ad.visible === false } : ad));
 
   // Finance
   const addExpense = (expData) => {
@@ -736,8 +738,10 @@ export const AdminProvider = ({ children, session }) => {
         deleteStaffMember,
         updateRolePermission,
         addBanner,
+        toggleBanner,
         deleteBanner,
         addAd,
+        toggleAd,
         deleteAd,
         addExpense,
         markNotificationRead,

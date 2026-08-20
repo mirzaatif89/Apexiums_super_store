@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import Badge from '../common/Badge';
 import ActionMenu from '../common/ActionMenu';
-import { Radio, Plus, Trash2, Eye, MousePointer, DollarSign, X } from 'lucide-react';
+import { Radio, Plus, Trash2, Eye, EyeOff, MousePointer, DollarSign, X } from 'lucide-react';
 
 export const AdsView = () => {
-  const { ads, addAd, deleteAd } = useAdmin();
+  const { ads, addAd, deleteAd, toggleAd } = useAdmin();
   const [isModalOpen, setIsModalOpen] = useState(true);
   const [uploadPreview, setUploadPreview] = useState('');
 
@@ -78,6 +78,7 @@ export const AdsView = () => {
                     <ActionMenu
                       buttonTitle="Ad actions"
                       actions={[
+                        { label: a.visible === false ? 'Show on mobile app' : 'Hide from mobile app', icon: a.visible === false ? Eye : EyeOff, onClick: () => toggleAd(a.id) },
                         { label: 'Delete campaign', icon: Trash2, variant: 'danger', onClick: () => deleteAd(a.id) }
                       ]}
                     />

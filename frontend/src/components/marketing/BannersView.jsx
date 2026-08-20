@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import Badge from '../common/Badge';
-import { Megaphone, Plus, Trash2, Calendar, Link2, X } from 'lucide-react';
+import { Megaphone, Plus, Trash2, Calendar, Link2, X, Eye, EyeOff } from 'lucide-react';
 
 export const BannersView = () => {
-  const { banners, addBanner, deleteBanner } = useAdmin();
+  const { banners, addBanner, deleteBanner, toggleBanner } = useAdmin();
   const [isModalOpen, setIsModalOpen] = useState(true);
   const [uploadPreview, setUploadPreview] = useState('');
 
@@ -65,7 +65,9 @@ export const BannersView = () => {
             </div>
 
             <div className="p-3 bg-slate-50 border-t border-slate-100 flex justify-end">
-              <button
+              <button onClick={() => toggleBanner(b.id)} className={`mr-2 px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1 cursor-pointer ${b.visible === false ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-700'}`}>
+                {b.visible === false ? <EyeOff size={12} /> : <Eye size={12} />} {b.visible === false ? 'Hidden' : 'Shown'}
+              </button><button
                 onClick={() => deleteBanner(b.id)}
                 className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold text-xs flex items-center gap-1 cursor-pointer"
               >
