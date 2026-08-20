@@ -81,11 +81,31 @@ export const DashboardView = () => {
   // Recent orders slice
   const recentOrders = orders.slice(0, 5);
 
-  // Revenue vs Expense chart data
-  const chartData = [];
+  // Revenue vs expense data from saved orders and expenses.
+  const monthKeys = Array.from({ length: 6 }, (_, index) => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - (5 - index), 1);
+    return { key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`, month: date.toLocaleString('en-US', { month: 'short' }) };
+  });
+  const chartData = monthKeys.map(({ key, month }) => ({
+    month,
+    revenue: orders.filter((order) => { const date = new Date(order.orderDate || order.created_at); return !Number.isNaN(date.getTime()) && `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}` === key; }).reduce((sum, order) => sum + Number(order.totalAmount || 0), 0),
+    expenses: (finance.expensesList || []).filter((expense) => String(expense.date || '').startsWith(key)).reduce((sum, expense) => sum + Number(expense.amount || 0), 0)
+  }));
 
-  // Category sales pie data
-  const categoryPieData = [];
+  // Category share based on current product catalog quantities.
+  const categoryTotals = products.reduce((result, product) => {
+    const name = product.category || 'Uncategorized';
+    result[name] = (result[name] || 0) + Math.max(0, Number(product.stock || product.stock_qty || 0));
+    return result;
+  }, {});
+  const categoryColors = ['#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#EC4899'];
+  const categoryTotal = Object.values(categoryTotals).reduce((sum, value) => sum + value, 0);
+  const categoryPieData = Object.entries(categoryTotals).map(([name, value], index) => ({
+    name,
+    value: categoryTotal ? Math.round((value / categoryTotal) * 100) : 0,
+    color: categoryColors[index % categoryColors.length]
+  })).filter((item) => item.value > 0).sort((a, b) => b.value - a.value).slice(0, 6);
 
   return (
     <div className="space-y-6">
@@ -204,7 +224,7 @@ export const DashboardView = () => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748B' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: '#64748B' }} axisLine={false} tickLine={false} />
-                <Tooltip formatter={(val) => [`$${val.toLocaleString()}`, '']} />
+                <Tooltip formatter={(val) => [`Rs ${Number(val).toLocaleString('en-PK')}`, '']} />
                 <Area type="monotone" dataKey="revenue" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
                 <Area type="monotone" dataKey="expenses" stroke="#F43F5E" strokeWidth={3} fillOpacity={1} fill="url(#colorExp)" />
               </AreaChart>
