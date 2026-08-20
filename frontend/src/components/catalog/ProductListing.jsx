@@ -463,7 +463,7 @@ export const ProductListing = () => {
                     Promise.all(files.map((file) => new Promise((resolve) => { const reader = new FileReader(); reader.onload = () => resolve({ url: String(reader.result || ''), style: file.name.replace(/\.[^.]+$/, '') }); reader.readAsDataURL(file); }))).then((images) => setFormData({ ...formData, image: images[0]?.url || formData.image, images: images.slice(1) }));
                   }} />
                 </label>
-                {(formData.image || formData.images?.length) && <div className="mt-3 flex flex-wrap gap-2">
+                {Boolean(formData.image || formData.images?.length) && <div className="mt-3 flex flex-wrap gap-2">
                   {[formData.image, ...(formData.images || []).map((item) => item.url)].filter(Boolean).slice(0, 5).map((src, index) => <img key={`${src}-${index}`} src={src} alt={`Product ${index + 1}`} className="h-16 w-16 rounded-xl border border-red-100 object-cover shadow-sm" />)}
                 </div>}
               </div>
