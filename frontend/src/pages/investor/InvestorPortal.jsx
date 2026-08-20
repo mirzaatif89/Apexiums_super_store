@@ -31,13 +31,13 @@ export default function InvestorPortal({ session, onLogout }) {
     </header>
     <main className="mx-auto max-w-7xl space-y-6 p-6">
       <div className="grid gap-4 md:grid-cols-4">
-        <Card icon={Wallet} title="My Investment" value={`$${investment.toLocaleString()}`} />
+        <Card icon={Wallet} title="My Investment" value={`Rs ${investment.toLocaleString('en-PK')}`} />
         <Card icon={Boxes} title="My Stock Units" value={stockValue.toLocaleString()} />
-        <Card icon={BarChart3} title="Sales" value={`$${sales.toLocaleString()}`} />
-        <Card icon={profit >= 0 ? TrendingUp : TrendingDown} title="Profit / Loss" value={`$${profit.toLocaleString()}`} />
+        <Card icon={BarChart3} title="Sales" value={`Rs ${sales.toLocaleString('en-PK')}`} />
+        <Card icon={profit >= 0 ? TrendingUp : TrendingDown} title="Profit / Loss" value={`Rs ${profit.toLocaleString('en-PK')}`} />
       </div>
       <section className="rounded-2xl bg-white p-5 shadow-sm"><h2 className="mb-4 text-lg font-black">My Investment Details</h2><div className="grid gap-3 text-sm md:grid-cols-3"><p><span className="text-slate-500">Username:</span> {investor.username || '-'}</p><p><span className="text-slate-500">Email:</span> {investor.email || '-'}</p><p><span className="text-slate-500">Status:</span> {investor.status || '-'}</p><p><span className="text-slate-500">Investment date:</span> {investor.investment_date || '-'}</p><p><span className="text-slate-500">Return rate:</span> {investor.return_rate || 0}%</p><p><span className="text-slate-500">Equity share:</span> {investor.equity_share || '0%'}</p></div></section>
-      <div className="grid gap-6 lg:grid-cols-2"><DataTable title="My Stock" columns={['Product','Quantity','Warehouse']} rows={stock.map((x) => [x.product_name || '-', x.quantity || 0, x.warehouse || '-'])}/><DataTable title="My Sales" columns={['Order','Customer','Amount']} rows={orders.map((x) => [x.id, x.customer_name || '-', `$${Number(x.total_amount || 0).toLocaleString()}`])}/></div>
+      <div className="grid gap-6 lg:grid-cols-2"><DataTable title="My Stock" columns={['Product','Quantity','Warehouse']} rows={stock.map((x) => [x.product_name || '-', x.quantity || 0, x.warehouse || '-'])}/><DataTable title="My Sales" columns={['Order','Customer','Amount']} rows={orders.map((x) => [x.id, x.customer_name || '-', `Rs ${Number(x.total_amount || 0).toLocaleString('en-PK')}`])}/></div>
     </main>
   </div>;
 }

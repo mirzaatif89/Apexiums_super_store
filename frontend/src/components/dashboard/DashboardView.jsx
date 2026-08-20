@@ -93,7 +93,7 @@ export const DashboardView = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Revenue"
-          value={`$${totalRevenue.toLocaleString()}`}
+          value={`Rs ${totalRevenue.toLocaleString('en-PK')}`}
           trend="up"
           trendValue={totalRevenue ? 'Live' : 'No sales'}
           description="From saved orders"
@@ -154,7 +154,7 @@ export const DashboardView = () => {
         />
         <StatCard
           title="Total Expenses"
-          value={`$${totalExpenses.toLocaleString()}`}
+          value={`Rs ${totalExpenses.toLocaleString('en-PK')}`}
           trend="down"
           trendValue="Live"
           description="Saved expenses"
@@ -164,7 +164,7 @@ export const DashboardView = () => {
         />
         <StatCard
           title="Net Profit"
-          value={`$${netProfit.toLocaleString()}`}
+          value={`Rs ${netProfit.toLocaleString('en-PK')}`}
           trend="up"
           trendValue={totalRevenue ? 'Live' : 'No revenue'}
           description="Revenue minus expenses"

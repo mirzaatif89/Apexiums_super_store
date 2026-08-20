@@ -505,7 +505,7 @@ export const ProductListing = () => {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Sales Price ($) *</label>
+                  <label className="block font-bold text-slate-700 mb-1">Sales Price (PKR) *</label>
                   <input
                     type="number"
                     step="0.01"
@@ -516,7 +516,7 @@ export const ProductListing = () => {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Discounted Price ($) *</label>
+                  <label className="block font-bold text-slate-700 mb-1">Discounted Price (PKR) *</label>
                   <input type="number" step="0.01" value={formData.discountedPrice} onChange={(e) => setFormData({ ...formData, discountedPrice: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200" />
                 </div>
 

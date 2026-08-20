@@ -866,7 +866,7 @@ export const initialSettings = {
   storeName: 'Apexiums Marketplace',
   supportEmail: 'support@apexiums.com',
   contactPhone: '+1 (800) 555-APEX',
-  currency: 'USD ($)',
+  currency: 'PKR (Rs)',
   defaultCommissionRate: 10, // %
   autoApproveSellers: false,
   enableTaxCalculation: true,
