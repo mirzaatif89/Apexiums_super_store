@@ -1,4 +1,5 @@
 import React from 'react';
+import { Search } from 'lucide-react';
 import { AdminProvider, useAdmin } from '../../context/AdminContext';
 import Sidebar from '../../components/layout/Sidebar';
 import ToastContainer from '../../components/layout/ToastContainer';
@@ -30,7 +31,7 @@ import SettingsView from '../../components/common/SettingsView';
 import { isSuperAdminRole } from '../../utils/roles';
 
 const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
-  const { activeTab, setActiveTab, hasPermission } = useAdmin();
+  const { activeTab, setActiveTab, hasPermission, setIsSearchOpen } = useAdmin();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
   const pageSlugs = {
@@ -147,6 +148,14 @@ const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Scrollable View Canvas */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            className="flex w-full max-w-md items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white px-3.5 py-2.5 text-left text-xs font-semibold text-slate-500 shadow-sm hover:border-slate-300 hover:bg-slate-50"
+          >
+            <Search size={16} className="shrink-0 text-slate-400" />
+            <span>Search products, orders, sellers...</span>
+            <span className="ml-auto rounded bg-slate-50 px-1.5 py-0.5 text-[10px] font-mono text-slate-400">Ctrl+K</span>
+          </button>
           {renderActiveView()}
         </main>
       </div>
