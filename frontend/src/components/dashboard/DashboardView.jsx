@@ -93,10 +93,14 @@ export const DashboardView = () => {
     expenses: (finance.expensesList || []).filter((expense) => String(expense.date || '').startsWith(key)).reduce((sum, expense) => sum + Number(expense.amount || 0), 0)
   }));
 
-  // Category share based on current product catalog quantities.
-  const categoryTotals = products.reduce((result, product) => {
-    const name = product.category || 'Uncategorized';
-    result[name] = (result[name] || 0) + Math.max(0, Number(product.stock || product.stock_qty || 0));
+  // Category share based on actual sold order items.
+  const productById = new Map(products.map((product) => [String(product.id), product]));
+  const categoryTotals = orders.reduce((result, order) => {
+    (order.products || []).forEach((item) => {
+      const product = productById.get(String(item.id));
+      const name = product?.category || item.category || 'Uncategorized';
+      result[name] = (result[name] || 0) + (Number(item.qty || 1) * Number(item.price || 0));
+    });
     return result;
   }, {});
   const categoryColors = ['#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#EC4899'];
