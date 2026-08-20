@@ -4,6 +4,7 @@ import { BarChart3, Boxes, LogOut, TrendingDown, TrendingUp, Wallet } from 'luci
 export default function InvestorPortal({ session, onLogout }) {
   const [investor, setInvestor] = React.useState(session || {});
   const [stock, setStock] = React.useState([]);
+  const [products, setProducts] = React.useState([]);
   const [orders, setOrders] = React.useState([]);
 
   React.useEffect(() => {
@@ -12,10 +13,12 @@ export default function InvestorPortal({ session, onLogout }) {
       fetch(`/api/investors/${session?.id}`, { headers }).then((r) => r.ok ? r.json() : null),
       fetch('/api/stock?limit=500', { headers }).then((r) => r.ok ? r.json() : { rows: [] }),
       fetch('/api/orders?limit=500', { headers }).then((r) => r.ok ? r.json() : { rows: [] })
-    ]).then(([profile, stockData, orderData]) => {
+      ,fetch('/api/products?limit=500', { headers }).then((r) => r.ok ? r.json() : { rows: [] })
+    ]).then(([profile, stockData, orderData, productData]) => {
       if (profile) setInvestor(profile);
       setStock(stockData?.rows || []);
       setOrders(orderData?.rows || []);
+      setProducts(productData?.rows || []);
     }).catch(() => {});
   }, [session?.id]);
 
@@ -38,6 +41,7 @@ export default function InvestorPortal({ session, onLogout }) {
       </div>
       <section className="rounded-2xl bg-white p-5 shadow-sm"><h2 className="mb-4 text-lg font-black">My Investment Details</h2><div className="grid gap-3 text-sm md:grid-cols-3"><p><span className="text-slate-500">Username:</span> {investor.username || '-'}</p><p><span className="text-slate-500">Email:</span> {investor.email || '-'}</p><p><span className="text-slate-500">Status:</span> {investor.status || '-'}</p><p><span className="text-slate-500">Investment date:</span> {investor.investment_date || '-'}</p><p><span className="text-slate-500">Return rate:</span> {investor.return_rate || 0}%</p><p><span className="text-slate-500">Equity share:</span> {investor.equity_share || '0%'}</p></div></section>
       <div className="grid gap-6 lg:grid-cols-2"><DataTable title="My Stock" columns={['Product','Quantity','Warehouse']} rows={stock.map((x) => [x.product_name || '-', x.quantity || 0, x.warehouse || '-'])}/><DataTable title="My Sales" columns={['Order','Customer','Amount']} rows={orders.map((x) => [x.id, x.customer_name || '-', `Rs ${Number(x.total_amount || 0).toLocaleString('en-PK')}`])}/></div>
+      <DataTable title="My Assigned Products" columns={['Product','Category','Price (PKR)','Stock','Status']} rows={products.map((x) => [x.name || '-', x.category || '-', `Rs ${Number(x.discounted_price || x.base_price || 0).toLocaleString('en-PK')}`, x.stock_qty || 0, x.status || '-'])}/>
     </main>
   </div>;
 }
