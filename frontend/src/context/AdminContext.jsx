@@ -276,6 +276,7 @@ export const AdminProvider = ({ children, session }) => {
           status: Number(row.stock_qty ?? stockRows.find((stock) => String(stock.product_id) === String(row.id))?.quantity ?? 0) === 0 ? 'Out of Stock' : (row.status || 'Active'),
           image: row.image_url || '',
           subcategory: row.subcategory || '',
+          investorId: row.investor_id || '',
           images: (() => { try { return row.product_images ? JSON.parse(row.product_images) : []; } catch { return []; } })()
           ,colors: (() => { try { return JSON.parse(row.product_detail || '{}').colors || ''; } catch { return ''; } })()
           ,sizes: (() => { try { return JSON.parse(row.product_detail || '{}').sizes || ''; } catch { return ''; } })()

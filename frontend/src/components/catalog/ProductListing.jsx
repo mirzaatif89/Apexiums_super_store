@@ -148,7 +148,7 @@ export const ProductListing = () => {
       brand: 'Apexium',
       image: '',
       description: ''
-      ,colors: '', sizes: ''
+      ,colors: '', sizes: '', investorId: ''
     });
     setUploadPreview('');
     setIsModalOpen(true);
@@ -173,7 +173,7 @@ export const ProductListing = () => {
       image: p.image,
       images: Array.isArray(p.images) ? p.images : (p.image ? [{ url: p.image, style: 'Default' }] : []),
       description: p.description || ''
-      ,colors: p.colors || '', sizes: p.sizes || ''
+      ,colors: p.colors || '', sizes: p.sizes || '', investorId: p.investorId || p.investor_id || ''
     });
     setUploadPreview(p.image || '');
     setIsModalOpen(true);
