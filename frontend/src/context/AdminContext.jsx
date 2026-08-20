@@ -398,6 +398,11 @@ export const AdminProvider = ({ children, session }) => {
     fetch('/api/stock', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ product_id: record.productId, product_name: product?.name || '', total_items: Number(record.totalItems) || quantity, stock_belong_to: record.stockBelongTo, quantity, description: record.description }) }).catch(() => {});
     addToast('Stock entry added successfully.', 'success');
   };
+  const deleteStockRecord = (record) => {
+    setStockRecords((current) => current.filter((item) => item.id !== record.id));
+    if (record.productId) updateProductStock(record.productId, 0);
+    addToast('Stock removed successfully.', 'info');
+  };
 
   // Categories
   const addCategory = async (cat) => {
@@ -708,6 +713,7 @@ export const AdminProvider = ({ children, session }) => {
         bulkDeleteProducts,
         bulkUpdateProductStatus,
         addStockRecord,
+        deleteStockRecord,
         addCategory,
         updateCategory,
         deleteCategory,
