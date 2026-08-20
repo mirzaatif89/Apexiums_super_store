@@ -5,7 +5,7 @@ import { Megaphone, Plus, Trash2, Calendar, Link2, X } from 'lucide-react';
 
 export const BannersView = () => {
   const { banners, addBanner, deleteBanner } = useAdmin();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(true);
   const [uploadPreview, setUploadPreview] = useState('');
 
   const [formData, setFormData] = useState({
@@ -33,12 +33,7 @@ export const BannersView = () => {
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">Website Banner</h2>
           <p className="text-xs text-slate-500 font-medium">Manage homepage promotional banners, hero sliders, and category sales graphics.</p>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md shadow-red-600/20 cursor-pointer"
-        >
-          <Plus size={16} /> Create Banner Campaign
-        </button>
+        <div className="rounded-xl border border-rose-100 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-700">Banner Manager</div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -86,7 +81,7 @@ export const BannersView = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-5 space-y-4">
             <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="text-sm font-extrabold text-slate-900">New Banner Campaign</h3>
+              <h3 className="text-sm font-extrabold text-slate-900">Add Website Banner</h3>
               <button onClick={() => setIsModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-800">
                 <X size={18} />
               </button>
@@ -163,6 +158,16 @@ export const BannersView = () => {
                     <option value="Inactive">Inactive</option>
                   </select>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block font-bold text-slate-700">Start Date<input type="date" value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} className="mt-1 w-full rounded-xl border px-3 py-2 font-semibold" /></label>
+                <label className="block font-bold text-slate-700">End Date<input type="date" value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} className="mt-1 w-full rounded-xl border px-3 py-2 font-semibold" /></label>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block font-bold text-slate-700">Button Link<input type="text" value={formData.ctaUrl} onChange={(e) => setFormData({ ...formData, ctaUrl: e.target.value })} className="mt-1 w-full rounded-xl border px-3 py-2 font-semibold" /></label>
+                <label className="block font-bold text-slate-700">Placement<select value={formData.placement || 'Homepage Hero'} onChange={(e) => setFormData({ ...formData, placement: e.target.value })} className="mt-1 w-full rounded-xl border px-3 py-2 font-semibold"><option>Homepage Hero</option><option>Category Banner</option><option>Promotional Slider</option></select></label>
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t">
