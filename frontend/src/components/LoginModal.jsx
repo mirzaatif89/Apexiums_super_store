@@ -16,6 +16,16 @@ import {
   X
 } from 'lucide-react';
 
+async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
 export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc, initialTab = 'login' }) {
   const [tab, setTab] = React.useState(initialTab); // 'login' | 'signup'
 
@@ -113,7 +123,7 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetchWithTimeout('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: 'superadmin', password: 'Admin@12345' })
@@ -151,7 +161,7 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
     setError('');
     setSuccessMsg('');
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetchWithTimeout('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
@@ -241,7 +251,7 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
       } catch (e) {}
 
       try {
-        const response = await fetch('/api/auth/login', {
+        const response = await fetchWithTimeout('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: signupEmail.trim(), password: signupPassword })
