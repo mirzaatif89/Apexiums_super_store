@@ -63,7 +63,7 @@ export const InvestorsView = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Capital Raised"
-          value={`$${(totalInvestment / 1000000).toFixed(2)}M`}
+          value={`Rs ${(totalInvestment / 1000000).toFixed(2)}M`}
           trend="up"
           description="Equity & convertible notes"
           icon={DollarSign}
@@ -79,7 +79,7 @@ export const InvestorsView = () => {
         />
         <StatCard
           title="Returns Distributed"
-          value={`$${totalReturns.toLocaleString()}`}
+          value={`Rs ${totalReturns.toLocaleString('en-PK')}`}
           trend="up"
           description="Quarterly payouts"
           icon={TrendingUp}
@@ -195,7 +195,7 @@ export const InvestorsView = () => {
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Investment Amount ($)</label>
+                  <label className="block font-bold text-slate-700 mb-1">Investment Amount (PKR)</label>
                   <input
                     type="number"
                     value={formData.investmentAmount}
