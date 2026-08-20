@@ -143,17 +143,17 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
       {isOpen && (
         <div
           onClick={onClose}
-          className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xs lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-xs lg:hidden"
         />
       )}
 
       <aside
-        className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-72 bg-[#0b1224] text-slate-300 border-r border-white/5 flex flex-col transition-transform duration-300 ease-in-out ${
+        className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-72 bg-white text-slate-700 border-r border-slate-200 flex flex-col transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
         {/* Brand Logo & Mobile Close */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-800/80 shrink-0">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200 shrink-0">
           <div className="flex items-center gap-3">
             {logoSrc ? (
               <img src={logoSrc} alt={storeName} className="w-10 h-10 rounded-xl bg-white object-contain" />
@@ -163,7 +163,7 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
               </div>
             )}
             <div>
-              <h1 className="text-base font-black tracking-tight text-white leading-tight">
+              <h1 className="text-base font-black tracking-tight text-slate-900 leading-tight">
                 {storeName}
               </h1>
               <p className="text-[10px] font-bold tracking-widest text-red-500 uppercase">
@@ -173,7 +173,7 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
           </div>
           <button
             onClick={onClose}
-            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
+            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-red-50 cursor-pointer"
           >
             <X size={20} />
           </button>
@@ -181,7 +181,7 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
 
         {/* Sidebar Nav Items */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1.5 custom-scrollbar">
-          <div className="px-3 pb-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+          <div className="px-3 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
             Main Menu
           </div>
 
@@ -197,11 +197,11 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 cursor-pointer ${
                     isActive
                       ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-lg shadow-red-900/30'
-                      : 'text-slate-400 hover:text-white hover:bg-white/[0.06]'
+                      : 'text-slate-600 hover:text-red-600 hover:bg-red-50'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon size={18} className={isActive ? 'text-white' : 'text-slate-400'} />
+                    <Icon size={18} className={isActive ? 'text-white' : 'text-slate-500'} />
                     <span>{item.label}</span>
                   </div>
                   {item.badge && (
@@ -225,8 +225,8 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
                   onClick={() => toggleSection(item.id)}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 cursor-pointer ${
                     isGroupActive
-                      ? 'bg-white/[0.08] text-white'
-                      : 'text-slate-400 hover:text-white hover:bg-white/[0.06]'
+                      ? 'bg-red-50 text-red-700'
+                      : 'text-slate-600 hover:text-red-600 hover:bg-red-50'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -254,7 +254,7 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
                           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg font-medium text-[11px] transition-colors cursor-pointer ${
                             isChildActive
                               ? 'bg-red-500/15 text-red-300 font-bold border-l-2 border-red-400'
-                              : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
+                              : 'text-slate-500 hover:text-red-600 hover:bg-red-50'
                           }`}
                         >
                           <ChildIcon size={14} className={isChildActive ? 'text-red-400' : 'text-slate-500'} />
@@ -273,7 +273,7 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
             );
           })}
 
-          <div className="pt-4 px-3 pb-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+          <div className="pt-4 px-3 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
             System & Account
           </div>
 
@@ -283,7 +283,7 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 cursor-pointer ${
               activeTab === 'profile'
                 ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-lg shadow-red-900/30'
-                : 'text-slate-400 hover:text-white hover:bg-white/[0.06]'
+                : 'text-slate-600 hover:text-red-600 hover:bg-red-50'
             }`}
           >
             <User size={18} />
@@ -296,7 +296,7 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 cursor-pointer ${
               activeTab === 'settings'
                 ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-lg shadow-red-900/30'
-                : 'text-slate-400 hover:text-white hover:bg-white/[0.06]'
+                : 'text-slate-600 hover:text-red-600 hover:bg-red-50'
             }`}
           >
             <Settings size={18} />
@@ -305,7 +305,7 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
         </div>
 
         {/* Footer User Avatar Profile */}
-        <div className="p-4 border-t border-slate-800/80 bg-slate-950/40 shrink-0">
+        <div className="p-4 border-t border-slate-200 bg-red-50/40 shrink-0">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               {currentUser.avatar ? (
@@ -316,7 +316,7 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
                 </div>
               )}
               <div className="min-w-0">
-                <p className="text-xs font-bold text-white truncate leading-tight">
+                <p className="text-xs font-bold text-slate-900 truncate leading-tight">
                   {currentUser.name}
                 </p>
                 <p className="text-[10px] font-medium text-slate-400 truncate">
@@ -327,7 +327,7 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
             <button
               onClick={onLogout}
               title="Logout"
-              className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors cursor-pointer"
+              className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-100 transition-colors cursor-pointer"
             >
               <LogOut size={16} />
             </button>
