@@ -478,6 +478,11 @@ export const AdminProvider = ({ children, session }) => {
     };
     setReturns((current) => current.some((item) => item.orderId === order.id) ? current : [newReturn, ...current]);
     updateOrderStatus(order.id, 'Returned');
+    (order.products || []).forEach((product) => {
+      const quantity = Number(product.qty || 1);
+      if (product.id) addStockRecord({ productId: product.id, totalItems: quantity, stockBelongTo: order.sellerName || 'Returned customer stock', quantity, description: `Returned from order ${order.id}` });
+    });
+    addToast('Returned items added back to stock.', 'success');
     setNotifications((current) => [{ id: `notif-${Date.now()}`, title: `Return created (${order.id})`, message: `${order.customerName}'s order was moved to Returns.`, type: 'Return Request', date: new Date().toLocaleString(), read: false, actionUrl: 'returns' }, ...current]);
     fetch('/api/returns', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ order_id: Number(String(order.id).replace(/\D/g, '')) || null, product_id: item.id || null, customer: order.customerName, product: item.name || 'Order items', reason: newReturn.reason, status: 'Requested', refund_amount: newReturn.amount }) }).catch(() => {});
     addToast(`${order.id} moved to Returns.`, 'success');

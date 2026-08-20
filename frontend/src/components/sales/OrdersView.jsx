@@ -105,7 +105,7 @@ export const OrdersView = () => {
                     </td>
                     <td className="p-3.5">
                       <select
-                        value={['Pending', 'Dispatched', 'On the Way', 'Shipped', 'Cancelled'].includes(o.orderStatus) ? o.orderStatus : 'Pending'}
+                        value={['Pending', 'Dispatched', 'On the Way', 'Shipped', 'Cancelled', 'Returned'].includes(o.orderStatus) ? o.orderStatus : 'Pending'}
                         onChange={(e) => updateOrderStatus(o.id, e.target.value)}
                         className="px-2 py-1 bg-slate-100 border rounded-lg text-[11px] font-bold text-slate-800 focus:outline-none cursor-pointer"
                       >
@@ -114,6 +114,7 @@ export const OrdersView = () => {
                         <option value="On the Way">On the Way</option>
                         <option value="Shipped">Shipped</option>
                         <option value="Cancelled">Cancelled</option>
+                        <option value="Returned">Returned</option>
                       </select>
                     </td>
                     <td className="p-3.5 text-slate-500 font-medium">{o.orderDate}</td>
