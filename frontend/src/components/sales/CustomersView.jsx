@@ -13,15 +13,20 @@ export const CustomersView = () => {
       (order) => order.customerEmail === customer.email || order.customerName === customer.name
     );
 
+    if (!customerOrders.length) return null;
+    const lastOrder = customerOrders[0];
     return {
       ...customer,
+      phone: customer.phone || lastOrder.customerPhone || '',
+      city: customer.city || String(lastOrder.shippingAddress || '').split(',').pop()?.trim() || '—',
+      lastOrderDate: lastOrder.orderDate || customer.lastOrderDate || '—',
       totalOrders: Math.max(Number(customer.totalOrders) || 0, customerOrders.length),
       totalSpent: Math.max(
         Number(customer.totalSpent) || 0,
         customerOrders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0)
       )
     };
-  });
+  }).filter(Boolean);
 
   const filteredCustomers = customersWithRevenue.filter((customer) =>
     String(customer.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -69,7 +74,7 @@ export const CustomersView = () => {
                       <td>${customer.email || 'Missing'}</td>
                       <td>${customer.phone || 'Missing'}</td>
                       <td>${customer.totalOrders}</td>
-                      <td>Rs {customer.totalSpent}</td>
+                      <td>Rs ${customer.totalSpent}</td>
                     </tr>
                   `
                 )
@@ -117,7 +122,6 @@ export const CustomersView = () => {
               <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-500">
                 <th className="p-3.5">Customer</th>
                 <th className="p-3.5">Contact & City</th>
-                <th className="p-3.5">Login ID / Password</th>
                 <th className="p-3.5">Total Orders</th>
                 <th className="p-3.5">Total Spent</th>
                 <th className="p-3.5">Last Order</th>
@@ -142,10 +146,6 @@ export const CustomersView = () => {
                     <p className="text-[10px] text-slate-400">
                       {customer.phone || 'Phone missing'} · {customer.city}
                     </p>
-                  </td>
-                  <td className="p-3.5">
-                    <p className="font-mono font-bold">{customer.username || customer.id}</p>
-                    <p className="font-mono text-[10px] text-slate-500">{customer.password || 'Password not stored'}</p>
                   </td>
                   <td className="p-3.5 font-extrabold text-slate-900">{customer.totalOrders} purchases</td>
                   <td className="p-3.5 font-black text-emerald-600">Rs {customer.totalSpent.toLocaleString('en-PK')}</td>
@@ -200,14 +200,6 @@ export const CustomersView = () => {
               <div>
                 <p className="text-slate-400">Joined Date:</p>
                 <p className="font-bold text-slate-800">{selectedCustomer.joinDate}</p>
-              </div>
-              <div>
-                <p className="text-slate-400">Login ID:</p>
-                <p className="font-bold text-slate-800">{selectedCustomer.username || selectedCustomer.id}</p>
-              </div>
-              <div>
-                <p className="text-slate-400">Password:</p>
-                <p className="font-mono font-bold text-slate-800">{selectedCustomer.password || 'Not available'}</p>
               </div>
             </div>
 
