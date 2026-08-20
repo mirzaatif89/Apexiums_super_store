@@ -334,7 +334,7 @@ export const ProductListing = () => {
                   const isChecked = selectedProductIds.includes(p.id);
                   const isLow = p.stock <= p.minStock && p.stock > 0;
                   const isOut = p.stock === 0;
-                  const isHidden = (() => { try { return JSON.parse(localStorage.getItem('apexiums-hidden-products') || '[]').includes(p.id); } catch { return false; } })();
+                  const isHidden = p.status === 'Inactive' || (() => { try { return JSON.parse(localStorage.getItem('apexiums-hidden-products') || '[]').includes(p.id); } catch { return false; } })();
 
                   return (
                     <tr
@@ -404,6 +404,7 @@ export const ProductListing = () => {
                               const hidden = JSON.parse(localStorage.getItem('apexiums-hidden-products') || '[]');
                               const ids = isHidden ? hidden.filter((id) => id !== p.id) : [...new Set([...hidden, p.id])];
                               localStorage.setItem('apexiums-hidden-products', JSON.stringify(ids));
+                              updateProduct(p.id, { ...p, status: isHidden ? 'Active' : 'Inactive' });
                               window.dispatchEvent(new Event('apexiums-product-visibility-changed'));
                             }}
                             title={isHidden ? 'Show on website' : 'Hide from website'}
