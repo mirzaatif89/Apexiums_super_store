@@ -82,9 +82,9 @@ export const DashboardView = () => {
   const recentOrders = orders.slice(0, 5);
 
   // Revenue vs expense data from saved orders and expenses.
-  const monthKeys = Array.from({ length: 6 }, (_, index) => {
+  const monthKeys = Array.from({ length: 12 }, (_, index) => {
     const date = new Date();
-    date.setMonth(date.getMonth() - (5 - index), 1);
+    date.setMonth(index, 1);
     return { key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`, month: date.toLocaleString('en-US', { month: 'short' }) };
   });
   const chartData = monthKeys.map(({ key, month }) => ({
