@@ -23,6 +23,7 @@ export const ProductListing = () => {
   const {
     products,
     categories,
+    investors,
     addProduct,
     updateProduct,
     deleteProduct,
@@ -72,7 +73,7 @@ export const ProductListing = () => {
     status: 'Active',
     brand: '',
     image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80',
-    description: ''
+    description: '', investorId: ''
     ,colors: '', sizes: ''
   });
 
@@ -479,6 +480,13 @@ export const ProductListing = () => {
                 <textarea rows={3} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold focus:outline-none focus:border-red-500" placeholder="Enter product description..." />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Product Belongs To</label>
+                  <select value={formData.investorId} onChange={(e) => setFormData({ ...formData, investorId: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none">
+                    <option value="">Admin / General Inventory</option>
+                    {investors.map((investor) => <option key={investor.id} value={investor.id}>{investor.name}</option>)}
+                  </select>
+                </div>
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Category *</label>
                   <select

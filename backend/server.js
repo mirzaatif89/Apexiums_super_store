@@ -626,7 +626,7 @@ const resources = {
   banners: ['image_url', 'title', 'link', 'position', 'status', 'start_date', 'end_date', 'click_count'],
   promotions: ['name', 'image_url', 'valid_from', 'valid_till', 'show_on_website', 'status', 'created_at'],
   categories: ['name', 'parent_id', 'image_url', 'description', 'subcategories', 'status'],
-  products: ['image_url', 'product_images', 'name', 'description', 'product_detail', 'category', 'subcategory', 'actual_price', 'base_price', 'discounted_price', 'sku', 'stock_qty', 'slug', 'meta_title', 'meta_desc', 'status'],
+  products: ['image_url', 'product_images', 'name', 'description', 'product_detail', 'category', 'subcategory', 'actual_price', 'base_price', 'discounted_price', 'sku', 'stock_qty', 'slug', 'meta_title', 'meta_desc', 'status', 'investor_id'],
   stock: ['product_id', 'product_name', 'total_items', 'stock_belong_to', 'investor_id', 'sku', 'category', 'quantity', 'reorder_level', 'description', 'warehouse'],
   orders: ['customer_id', 'customer_name', 'customer_email', 'customer_phone', 'items_count', 'total_amount', 'payment_method', 'payment_status', 'order_status', 'shipping_address', 'created_at'],
   returns: ['order_id', 'product_id', 'customer_id', 'customer', 'product', 'reason', 'status', 'refund_amount', 'refund_method', 'created_at'],
@@ -688,7 +688,7 @@ function persistImageDataUrl(dataUrl, folder = 'categories') {
 function businessScope(table, req, alias = '') {
   const { businessId, role } = getContext(req);
   const investorId = Number(req.headers['x-investor-id'] || 0) || null;
-  if (String(role || '').replace(/[\s_-]+/g, '').toLowerCase() === 'investor' && investorId && ['stock', 'orders'].includes(table)) {
+  if (String(role || '').replace(/[\s_-]+/g, '').toLowerCase() === 'investor' && investorId && ['stock', 'orders', 'products'].includes(table)) {
     const column = `${alias ? `${alias}.` : ''}investor_id`;
     return { clause: `${column} = ?`, params: [investorId] };
   }
@@ -799,6 +799,7 @@ async function initializeDatabase() {
   await ensureColumn('products', 'product_detail', 'TEXT');
   await ensureColumn('products', 'actual_price', 'DECIMAL(12,2) DEFAULT 0');
   await ensureColumn('products', 'subcategory', 'VARCHAR(160)');
+  await ensureColumn('products', 'investor_id', 'INT NULL');
   await ensureColumn('orders', 'customer_email', 'VARCHAR(180)');
   await ensureColumn('orders', 'customer_phone', 'VARCHAR(60)');
   await ensureColumn('customers', 'username', 'VARCHAR(120)');
