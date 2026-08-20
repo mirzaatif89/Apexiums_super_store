@@ -454,10 +454,8 @@ export const ProductListing = () => {
               {saveError && <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{saveError}</p>}
               <div>
                 <label className="block font-bold text-slate-700 text-xs mb-1">Product Images (up to 5) *</label>
-                <label className="relative flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-red-200 bg-red-50/40 px-4 py-4 text-center transition hover:border-red-400 hover:bg-red-50">
-                  <ImageIcon size={30} className="mb-2 text-red-500" />
-                  <span className="text-xs font-black text-slate-700">Click to upload product images</span>
-                  <span className="mt-1 text-[11px] text-slate-500">First image becomes the main image • Maximum 5 images</span>
+                <label title="Upload up to 5 product images" className="relative flex h-28 w-28 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-red-200 bg-red-50/40 text-center transition hover:border-red-400 hover:bg-red-50">
+                  <ImageIcon size={34} className="text-red-500" />
                   <input type="file" accept="image/*" multiple required={!editingProduct && !formData.image} className="absolute inset-0 cursor-pointer opacity-0" onChange={(e) => {
                     const files = Array.from(e.target.files || []).slice(0, 5);
                     Promise.all(files.map((file) => new Promise((resolve) => { const reader = new FileReader(); reader.onload = () => resolve({ url: String(reader.result || ''), style: file.name.replace(/\.[^.]+$/, '') }); reader.readAsDataURL(file); }))).then((images) => setFormData({ ...formData, image: images[0]?.url || formData.image, images: images.slice(1) }));
