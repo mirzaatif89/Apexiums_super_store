@@ -6,7 +6,7 @@ import { Radio, Plus, Trash2, Eye, MousePointer, DollarSign, X } from 'lucide-re
 
 export const AdsView = () => {
   const { ads, addAd, deleteAd } = useAdmin();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(true);
   const [uploadPreview, setUploadPreview] = useState('');
 
   const [formData, setFormData] = useState({
@@ -34,12 +34,7 @@ export const AdsView = () => {
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">APP Banner</h2>
           <p className="text-xs text-slate-500 font-medium">Track paid acquisition campaigns across Google, Meta, TikTok, and Affiliate channels.</p>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md shadow-red-600/20 cursor-pointer"
-        >
-          <Plus size={16} /> Launch Ad Campaign
-        </button>
+        <div className="rounded-xl border border-rose-100 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-700">App Banner Manager</div>
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
@@ -96,10 +91,10 @@ export const AdsView = () => {
 
       {/* Add Ad Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-5 space-y-4">
+        <div className="w-full rounded-2xl border border-rose-100 bg-white p-5 shadow-sm sm:p-7">
+          <div className="mx-auto w-full max-w-5xl space-y-4">
             <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="text-sm font-extrabold text-slate-900">New Ad Campaign</h3>
+              <h3 className="text-sm font-extrabold text-slate-900">Add App Banner</h3>
               <button onClick={() => setIsModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-800">
                 <X size={18} />
               </button>
@@ -161,7 +156,7 @@ export const AdsView = () => {
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Total Budget ($)</label>
+                  <label className="block font-bold text-slate-700 mb-1">Total Budget (PKR)</label>
                   <input
                     type="number"
                     value={formData.budget}
