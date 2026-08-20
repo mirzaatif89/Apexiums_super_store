@@ -4,7 +4,7 @@ import Badge from '../common/Badge';
 import { Layers, Plus, Search, Edit2, Trash2, X } from 'lucide-react';
 
 export const CategoriesView = () => {
-  const { categories, addCategory, updateCategory, deleteCategory } = useAdmin();
+  const { categories, investors, addCategory, updateCategory, deleteCategory } = useAdmin();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -199,13 +199,15 @@ export const CategoriesView = () => {
                   onChange={(e) => setFormData({ ...formData, parent: e.target.value })}
                   className="w-full px-3 py-2 border rounded-xl font-semibold focus:outline-none focus:border-red-500 bg-white"
                 >
-                  <option value="">Main Category</option>
-                  {categories.filter((category) => category.id !== editingCategory?.id).map((category) => (
-                    <option key={category.id} value={category.name}>{category.name}</option>
+                  <option value="">Select Investor</option>
+                  {investors.map((investor) => (
+                    <option key={investor.id} value={investor.name}>{investor.name}</option>
                   ))}
                 </select>
               </div>
 
+              {/* Subcategory management is intentionally omitted; categories belong to investors. */}
+              {/*
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Subcategory</label>
                 <div className="flex gap-2">
@@ -213,7 +215,7 @@ export const CategoriesView = () => {
                   <button type="button" onClick={() => { const value = formData.subcategoryDraft.trim(); if (value && !formData.subcategories.includes(value)) setFormData({ ...formData, subcategories: [...formData.subcategories, value], subcategoryDraft: '' }); }} className="px-3 py-2 rounded-xl bg-slate-900 text-white font-bold">Add</button>
                 </div>
                 {formData.subcategories.length > 0 && <div className="flex flex-wrap gap-1.5 mt-2">{formData.subcategories.map((sub) => <span key={sub} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-red-50 text-red-700 border border-red-100 font-semibold">{sub}<button type="button" onClick={() => setFormData({ ...formData, subcategories: formData.subcategories.filter((item) => item !== sub) })} className="font-black">×</button></span>)}</div>}
-              </div>
+              </div>*/}
 
               <div className="order-first">
                 <label className="block font-bold text-slate-700 mb-1">Upload Category Image *</label>
