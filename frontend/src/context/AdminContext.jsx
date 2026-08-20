@@ -395,7 +395,7 @@ export const AdminProvider = ({ children, session }) => {
       quantity
     }, ...current]);
     if (product) updateProductStock(product.id, product.stock + quantity);
-    fetch('/api/stock', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ product_id: record.productId, product_name: product?.name || '', total_items: Number(record.totalItems) || quantity, stock_belong_to: record.stockBelongTo, quantity, description: record.description }) }).catch(() => {});
+    fetch('/api/stock', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ product_id: record.productId, product_name: product?.name || '', total_items: Number(record.totalItems) || quantity, stock_belong_to: record.stockBelongTo, investor_id: record.investorId || null, quantity, description: record.description }) }).catch(() => {});
     addToast('Stock entry added successfully.', 'success');
   };
   const deleteStockRecord = (record) => {

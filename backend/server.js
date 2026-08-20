@@ -627,7 +627,7 @@ const resources = {
   promotions: ['name', 'image_url', 'valid_from', 'valid_till', 'show_on_website', 'status', 'created_at'],
   categories: ['name', 'parent_id', 'image_url', 'description', 'subcategories', 'status'],
   products: ['image_url', 'product_images', 'name', 'description', 'product_detail', 'category', 'subcategory', 'actual_price', 'base_price', 'discounted_price', 'sku', 'stock_qty', 'slug', 'meta_title', 'meta_desc', 'status'],
-  stock: ['product_id', 'product_name', 'total_items', 'stock_belong_to', 'sku', 'category', 'quantity', 'reorder_level', 'description', 'warehouse'],
+  stock: ['product_id', 'product_name', 'total_items', 'stock_belong_to', 'investor_id', 'sku', 'category', 'quantity', 'reorder_level', 'description', 'warehouse'],
   orders: ['customer_id', 'customer_name', 'customer_email', 'customer_phone', 'items_count', 'total_amount', 'payment_method', 'payment_status', 'order_status', 'shipping_address', 'created_at'],
   returns: ['order_id', 'product_id', 'customer_id', 'customer', 'product', 'reason', 'status', 'refund_amount', 'refund_method', 'created_at'],
   expenses: ['title', 'category', 'amount', 'payment_method', 'date', 'receipt_url', 'added_by', 'notes'],
