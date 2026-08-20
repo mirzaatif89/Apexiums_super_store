@@ -8,7 +8,13 @@ export const CustomersView = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
 
-  const customersWithRevenue = customers.map((customer) => {
+  const customersWithRevenue = Array.from(new Map(orders.map((order) => {
+    const key = order.customerEmail || order.customerName || order.customerPhone || order.id;
+    const customerOrders = orders.filter((item) => (item.customerEmail && item.customerEmail === order.customerEmail) || (!item.customerEmail && item.customerName === order.customerName));
+    const saved = customers.find((customer) => customer.email === order.customerEmail || customer.name === order.customerName) || {};
+    return [key, { ...saved, id: saved.id || `order-customer-${key}`, name: order.customerName || saved.name || 'Customer', email: order.customerEmail || saved.email || 'Email not provided', phone: order.customerPhone || saved.phone || 'Phone not provided', city: saved.city || String(order.shippingAddress || '').split(',').pop()?.trim() || 'Address not provided', address: order.shippingAddress || saved.address || 'Address not provided', avatar: saved.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(order.customerName || 'Customer')}&background=ffe4e6&color=be123c`, totalOrders: customerOrders.length, totalSpent: customerOrders.reduce((sum, item) => sum + Number(item.totalAmount || 0), 0), lastOrderDate: order.orderDate || '—', status: saved.status || 'Active' }];
+  }))).map(([, customer]) => customer);
+  /*
     const customerOrders = orders.filter(
       (order) => order.customerEmail === customer.email || order.customerName === customer.name
     );
@@ -26,7 +32,7 @@ export const CustomersView = () => {
         customerOrders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0)
       )
     };
-  }).filter(Boolean);
+  }).filter(Boolean); */
 
   const filteredCustomers = customersWithRevenue.filter((customer) =>
     String(customer.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
