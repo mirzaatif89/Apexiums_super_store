@@ -408,9 +408,9 @@ export const ProductListing = () => {
                               window.dispatchEvent(new Event('apexiums-product-visibility-changed'));
                             }}
                             title={isHidden ? 'Show on website' : 'Hide from website'}
-                            className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold cursor-pointer transition-colors ${isHidden ? 'border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100' : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}
+                            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 cursor-pointer transition-colors ${isHidden ? 'bg-slate-300 hover:bg-slate-400' : 'bg-emerald-500 hover:bg-emerald-600'}`}
                           >
-                            <Power size={11} /> {isHidden ? 'Off' : 'On'}
+                            <span className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${isHidden ? 'translate-x-0' : 'translate-x-5'}`} />
                           </button>
                         </div>
                       </td>
