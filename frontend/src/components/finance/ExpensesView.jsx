@@ -8,15 +8,18 @@ import { CreditCard, DollarSign, Plus, X } from 'lucide-react';
 export const ExpensesView = () => {
   const { finance, addTransaction } = useAdmin();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
 
-  const [formData, setFormData] = useState({
+  const createEmptyForm = () => ({
     title: '',
     type: 'Expense',
     amount: '',
-    category: 'Software Fees',
-    date: '2026-08-11',
+    category: '',
+    date: new Date().toISOString().slice(0, 10),
     status: 'Completed'
   });
+  const [formData, setFormData] = useState(createEmptyForm);
 
   const expenses = finance.transactions.filter((t) => t.type === 'Expense');
 
@@ -29,12 +32,21 @@ export const ExpensesView = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.title || !formData.amount) return;
-    await addTransaction({
-      ...formData,
-      amount: Number(formData.amount)
-    });
-    setIsModalOpen(false);
+    if (!formData.title.trim() || !formData.category.trim() || Number(formData.amount) <= 0) {
+      setError('Please enter the expense title, description, and a valid amount.');
+      return;
+    }
+    setIsSaving(true);
+    setError('');
+    try {
+      await addTransaction({ ...formData, title: formData.title.trim(), category: formData.category.trim(), amount: Number(formData.amount) });
+      setFormData(createEmptyForm());
+      setIsModalOpen(false);
+    } catch (saveError) {
+      setError(saveError.message || 'Expense could not be saved.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -45,7 +57,7 @@ export const ExpensesView = () => {
           <p className="text-xs text-slate-500 font-medium">Track operational costs including server hosting, staff salaries, logistics, and digital marketing.</p>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => { setError(''); setIsModalOpen(true); }}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md cursor-pointer"
         >
           <Plus size={16} /> Record Expense Entry
@@ -89,7 +101,7 @@ export const ExpensesView = () => {
               <thead>
                 <tr className="bg-slate-50 border-b text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                   <th className="p-3.5">Expense Item</th>
-                  <th className="p-3.5">Category</th>
+                  <th className="p-3.5">Expense Description</th>
                   <th className="p-3.5">Amount</th>
                   <th className="p-3.5">Date</th>
                   <th className="p-3.5">Status</th>
@@ -123,6 +135,7 @@ export const ExpensesView = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-3 text-xs">
+              {error ? <div className="rounded-xl bg-red-50 px-3 py-2 font-bold text-red-600">{error}</div> : null}
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Expense Title *</label>
                 <input
@@ -136,10 +149,12 @@ export const ExpensesView = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Amount ($) *</label>
+                <label className="block font-bold text-slate-700 mb-1">Amount (Rs) *</label>
                 <input
                   type="number"
                   required
+                  min="1"
+                  step="0.01"
                   value={formData.amount}
                   onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                   className="w-full px-3 py-2 border rounded-xl font-semibold"
@@ -147,17 +162,26 @@ export const ExpensesView = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Expense Category</label>
-                <select
+                <label className="block font-bold text-slate-700 mb-1">Expense Description *</label>
+                <textarea
+                  required
+                  rows="3"
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   className="w-full px-3 py-2 border rounded-xl font-semibold"
-                >
-                  <option value="Software Fees">Software & Cloud Fees</option>
-                  <option value="Staff Salaries">Staff Salaries</option>
-                  <option value="Delivery Expenses">Delivery & Courier Expenses</option>
-                  <option value="Ad Marketing Costs">Ad Marketing Costs</option>
-                </select>
+                  placeholder="Describe what this expense was for"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Expense Date *</label>
+                <input
+                  type="date"
+                  required
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-xl font-semibold"
+                />
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t">
@@ -170,9 +194,10 @@ export const ExpensesView = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold shadow-md cursor-pointer"
+                  disabled={isSaving}
+                  className="px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold shadow-md cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Record Expense
+                  {isSaving ? 'Saving...' : 'Record Expense'}
                 </button>
               </div>
             </form>
