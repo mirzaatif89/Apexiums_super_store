@@ -1,7 +1,7 @@
 import React from 'react';
 import { Heart, Home, ShoppingCart, User } from 'lucide-react';
 import { openWhatsApp } from '../utils/whatsapp';
-import whatsappIcon from '../../images/whatsapp_icon.jpg';
+import customerSupportIcon from '../../images/customer_support.jpeg';
 
 export default function BottomNav({
   onCartClick,
@@ -101,7 +101,11 @@ export default function BottomNav({
                     <path d="M12 2.5L2 10.5H4.5V20.5C4.5 21.0523 4.94772 21.5 5.5 21.5H10V15.5H14V21.5H18.5C19.0523 21.5 19.5 21.0523 19.5 20.5V10.5H22L12 2.5Z" />
                   </svg>
                 ) : item.label === 'WhatsApp' ? (
-                  <img src={whatsappIcon} alt="WhatsApp" className="h-6 w-6 rounded-full object-cover" />
+                  <img
+                    src={customerSupportIcon}
+                    alt="Customer support"
+                    className="h-6 w-6 object-contain"
+                  />
                 ) : (
                   <Icon
                     size={22}
