@@ -12,6 +12,7 @@ import CheckoutModal from '../../components/CheckoutModal';
 import ProductDetailsModal from '../../components/ProductDetailsModal';
 import UserProfileView from '../../components/UserProfileView';
 import { openPrivacyPolicy } from '../../components/PrivacyPolicyModal';
+import customerSupportIcon from '../../../images/customer_support_green.svg';
 import {
   Briefcase,
   ChevronRight,
@@ -367,7 +368,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
     },
     {
       label: 'Help and Support',
-      icon: <Headphones size={18} />,
+      icon: <img src={customerSupportIcon} alt="" className="h-6 w-6 rounded-lg" />,
       onClick: () => openWhatsApp('Hello, I need assistance from Elistin customer support.')
     },
     {
