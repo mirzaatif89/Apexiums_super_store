@@ -8,7 +8,7 @@ export default function FlashSale({ products = [], onProductClick, onAddToCart }
   const [remaining, setRemaining] = React.useState({ h: 2, m: 12, s: 56 });
   const [wishlistedIds, setWishlistedIds] = React.useState(new Set());
 
-  const tabs = ['All', 'Newest', 'Popular', 'Clothes'];
+  const tabs = ['All', 'Newest', 'Popular'];
 
   const toggleWishlist = (id, e) => {
     e.stopPropagation();
@@ -43,9 +43,6 @@ export default function FlashSale({ products = [], onProductClick, onAddToCart }
       list.sort((a, b) => (b.reviewsCount || 50) - (a.reviewsCount || 50));
     } else if (activeTab === 'Newest') {
       list.reverse();
-    } else if (activeTab === 'Clothes') {
-      list = list.filter((p) => p.category?.toLowerCase().includes('fash') || p.category?.toLowerCase().includes('cloth'));
-      if (list.length === 0) list = products.slice(0, 4);
     }
     return list;
   }, [products, activeTab]);
@@ -80,7 +77,7 @@ export default function FlashSale({ products = [], onProductClick, onAddToCart }
           </div>
         </div>
 
-        {/* Filter Pills Tabs (All, Newest, Popular, Clothes) */}
+        {/* Filter Pills Tabs */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 no-scrollbar border-b border-slate-100">
           {tabs.map((tab) => {
             const isActive = activeTab === tab;
