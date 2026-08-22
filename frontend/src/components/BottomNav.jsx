@@ -1,7 +1,6 @@
 import React from 'react';
 import { Heart, Home, User } from 'lucide-react';
 import { openWhatsApp } from '../utils/whatsapp';
-import customerSupportIcon from '../../images/customer_support_green.svg';
 
 function ReferenceCartIcon({ className = '' }) {
   return (
@@ -112,11 +111,13 @@ export default function BottomNav({
                     <path d="M12 2.5L2 10.5H4.5V20.5C4.5 21.0523 4.94772 21.5 5.5 21.5H10V15.5H14V21.5H18.5C19.0523 21.5 19.5 21.0523 19.5 20.5V10.5H22L12 2.5Z" />
                   </svg>
                 ) : item.label === 'Contact' ? (
-                  <img
-                    src={customerSupportIcon}
-                    alt="Customer support"
-                    className="h-6 w-6 object-contain"
-                  />
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" className={`transition-colors duration-150 ${isActive ? 'text-[#E8262A]' : 'text-[#6E6E6E]'}`} aria-label="Customer support">
+                    <path d="M5 13v-1.5a7 7 0 0 1 14 0V13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                    <rect x="3.5" y="11.5" width="3.5" height="6" rx="1.75" fill="currentColor"/>
+                    <rect x="17" y="11.5" width="3.5" height="6" rx="1.75" fill="currentColor"/>
+                    <path d="M19 17c0 2.3-1.8 3.5-4.5 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                    <rect x="12" y="19" width="3.5" height="2.5" rx="1.25" fill="currentColor"/>
+                  </svg>
                 ) : item.label === 'Cart' ? (
                   <ReferenceCartIcon
                     className={`h-[22px] w-[22px] transition-colors duration-150 ${
