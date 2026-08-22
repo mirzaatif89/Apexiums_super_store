@@ -62,18 +62,18 @@ export default function FlashSale({ products = [], onProductClick, onAddToCart }
           </div>
 
           {/* Countdown timer on the right corner */}
-          <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-extrabold text-[#1E1E1E] bg-slate-50 border border-slate-200/80 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl shadow-2xs shrink-0">
-            <span className="text-[11px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider hidden sm:inline">Closing in:</span>
+          <div className="flex shrink-0 items-center gap-1 text-xs">
+            <span className="text-[10px] font-medium text-slate-400 sm:text-xs">Closing in :</span>
             <div className="flex items-center gap-1 font-mono text-xs font-black">
-              <span className="flex h-6.5 w-6.5 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-[#1E1E1E] text-white shadow-xs">
+              <span className="flex h-6 min-w-6 items-center justify-center rounded-md bg-red-50 px-1.5 text-[#E8262A] sm:h-7 sm:min-w-7 sm:text-sm">
                 {pad(remaining.h)}
               </span>
-              <span className="text-[#1E1E1E] font-black text-xs sm:text-sm">:</span>
-              <span className="flex h-6.5 w-6.5 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-[#1E1E1E] text-white shadow-xs">
+              <span className="text-xs font-bold text-slate-500">:</span>
+              <span className="flex h-6 min-w-6 items-center justify-center rounded-md bg-red-50 px-1.5 text-[#E8262A] sm:h-7 sm:min-w-7 sm:text-sm">
                 {pad(remaining.m)}
               </span>
-              <span className="text-[#1E1E1E] font-black text-xs sm:text-sm">:</span>
-              <span className="flex h-6.5 w-6.5 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-[#1E1E1E] text-white shadow-xs">
+              <span className="text-xs font-bold text-slate-500">:</span>
+              <span className="flex h-6 min-w-6 items-center justify-center rounded-md bg-red-50 px-1.5 text-[#E8262A] sm:h-7 sm:min-w-7 sm:text-sm">
                 {pad(remaining.s)}
               </span>
             </div>
