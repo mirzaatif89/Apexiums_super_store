@@ -42,7 +42,7 @@ export const StaffView = () => {
       name: s.name,
       email: s.email,
       phone: s.phone || '', password: '',
-      role: s.role,
+      role: 'Staff',
       department: s.department,
       status: s.status
     });
@@ -55,8 +55,9 @@ export const StaffView = () => {
     if (!editingStaff && !formData.password) return setFormError('Set a temporary password for the new staff member.');
     setIsSaving(true); setFormError('');
     try {
-      if (editingStaff) await updateStaffMember(editingStaff.id, formData);
-      else await addStaffMember(formData);
+      const staffData = { ...formData, role: 'Staff' };
+      if (editingStaff) await updateStaffMember(editingStaff.id, staffData);
+      else await addStaffMember(staffData);
       setIsModalOpen(false);
     } catch (error) { setFormError(error.message || 'Unable to save staff member.'); }
     finally { setIsSaving(false); }
@@ -159,16 +160,11 @@ export const StaffView = () => {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Assigned Role</label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-xl font-semibold"
-                  >
-                    <option value="Super Admin">Super Admin</option>
-                    <option value="Admin">Admin</option>
-                    <option value="Manager">Manager</option>
-                    <option value="Staff">Staff</option>
-                  </select>
+                  <input
+                    value="Staff"
+                    readOnly
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-100 text-slate-600 font-semibold cursor-not-allowed"
+                  />
                 </div>
 
                 <div>
