@@ -96,6 +96,7 @@ export const AdminProvider = ({ children, session }) => {
   const [ads, setAds] = useState([]);
   const [investors, setInvestors] = useState([]);
   const [staff, setStaff] = useState([]);
+  const [staffSalaries, setStaffSalaries] = useState([]);
   const [rolesPermissions, setRolesPermissions] = useState(() => {
     if (typeof localStorage === 'undefined') return initialRolesPermissions;
     try {
@@ -145,6 +146,23 @@ export const AdminProvider = ({ children, session }) => {
         })));
       })
       .catch(() => { if (active) setStaff([]); });
+    return () => { active = false; };
+  }, [session?.role, session?.businessId]);
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/staff_salaries?limit=1000', { headers: apiHeaders() })
+      .then((response) => response.ok ? response.json() : { rows: [] })
+      .then((data) => {
+        if (!active) return;
+        setStaffSalaries((data.rows || []).map((row) => ({
+          ...row,
+          base_salary: Number(row.base_salary || 0),
+          bonus: Number(row.bonus || 0),
+          deductions: Number(row.deductions || 0)
+        })));
+      })
+      .catch(() => { if (active) setStaffSalaries([]); });
     return () => { active = false; };
   }, [session?.role, session?.businessId]);
 
@@ -616,6 +634,15 @@ export const AdminProvider = ({ children, session }) => {
     }) });
     if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Staff member could not be saved.');
     const saved = await response.json();
+    const salaryResponse = await fetch('/api/staff_salaries', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({
+      staff_id: saved.id, staff_name: saved.name || staffData.name,
+      salary_month: new Date().toISOString().slice(0, 7), base_salary: Number(staffData.salary || 0),
+      bonus: 0, deductions: 0, payment_status: 'Pending', paid_date: null,
+      notes: staffData.department || null
+    }) });
+    if (!salaryResponse.ok) throw new Error((await salaryResponse.json().catch(() => ({}))).message || 'Staff salary could not be saved.');
+    const savedSalary = await salaryResponse.json();
+    setStaffSalaries((previous) => [{ ...savedSalary, base_salary: Number(savedSalary.base_salary || 0), bonus: Number(savedSalary.bonus || 0), deductions: Number(savedSalary.deductions || 0) }, ...previous]);
     setStaff((prev) => [{ ...newStaff, ...saved, id: saved.id, joinedDate: saved.created_at ? String(saved.created_at).slice(0, 10) : newStaff.joinedDate }, ...prev]);
     addToast(`Staff member "${newStaff.name}" created.`, 'success');
   };
@@ -639,6 +666,16 @@ export const AdminProvider = ({ children, session }) => {
     if (!response.ok) throw new Error('Staff member could not be deleted.');
     setStaff((prev) => prev.filter((s) => s.id !== id));
     addToast('Staff member deleted.', 'info');
+  };
+
+  const markStaffSalaryPaid = async (salaryId, paidDate) => {
+    const current = staffSalaries.find((salary) => String(salary.id) === String(salaryId));
+    if (!current) throw new Error('Salary record was not found.');
+    const response = await fetch(`/api/staff_salaries/${salaryId}`, { method: 'PUT', headers: apiHeaders(), body: JSON.stringify({ ...current, payment_status: 'Paid', paid_date: paidDate || new Date().toISOString().slice(0, 10) }) });
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Salary payment could not be updated.');
+    const updated = await response.json();
+    setStaffSalaries((previous) => previous.map((salary) => String(salary.id) === String(salaryId) ? { ...salary, ...updated, payment_status: 'Paid', paid_date: updated.paid_date || paidDate } : salary));
+    addToast(`${current.staff_name} salary marked as paid.`, 'success');
   };
 
   // Permissions
@@ -784,6 +821,7 @@ export const AdminProvider = ({ children, session }) => {
         ads,
         investors,
         staff,
+        staffSalaries,
         rolesPermissions,
         finance,
         notifications,
@@ -814,6 +852,7 @@ export const AdminProvider = ({ children, session }) => {
         addStaffMember,
         updateStaffMember,
         deleteStaffMember,
+        markStaffSalaryPaid,
         updateRolePermission,
         addTransaction,
         addBanner,

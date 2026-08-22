@@ -18,6 +18,7 @@ export const StaffView = () => {
     password: '',
     role: 'Staff',
     department: 'Customer Support & Returns',
+    salary: '',
     status: 'Active'
   });
 
@@ -30,6 +31,7 @@ export const StaffView = () => {
       phone: '', password: '',
       role: 'Staff',
       department: 'Customer Support & Returns',
+      salary: '',
       status: 'Active'
     });
     setIsModalOpen(true);
@@ -44,6 +46,7 @@ export const StaffView = () => {
       phone: s.phone || '', password: '',
       role: 'Staff',
       department: s.department,
+      salary: '',
       status: s.status
     });
     setIsModalOpen(true);
@@ -53,6 +56,7 @@ export const StaffView = () => {
     e.preventDefault();
     if (!formData.name || !formData.email) return setFormError('Full name and email are required.');
     if (!editingStaff && !formData.password) return setFormError('Set a temporary password for the new staff member.');
+    if (!editingStaff && Number(formData.salary) <= 0) return setFormError('Enter a valid monthly salary.');
     setIsSaving(true); setFormError('');
     try {
       const staffData = { ...formData, role: 'Staff' };
@@ -179,6 +183,8 @@ export const StaffView = () => {
               </div>
 
               <div><label className="block font-bold text-slate-700 mb-1">Account Status</label><select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:border-red-500"><option>Active</option><option>Inactive</option></select></div>
+
+              {!editingStaff ? <div><label className="block font-bold text-slate-700 mb-1">Monthly Salary (Rs) *</label><input type="number" min="1" step="0.01" required value={formData.salary} onChange={(e) => setFormData({ ...formData, salary: e.target.value })} placeholder="Enter monthly salary" className="w-full px-3 py-2 border border-slate-200 rounded-xl font-semibold focus:outline-none focus:border-red-500"/></div> : null}
 
               <div className="flex justify-end gap-2 pt-3 border-t">
                 <button
