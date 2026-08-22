@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import StatCard from '../common/StatCard';
-import Badge from '../common/Badge';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import { CalendarDays, DollarSign, TrendingUp, Receipt, Plus, X } from 'lucide-react';
 
 export const RevenueView = () => {
-  const { finance, orders, addTransaction } = useAdmin();
+  const { finance, orders, products, addTransaction } = useAdmin();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterType, setFilterType] = useState('all');
   const [filterValue, setFilterValue] = useState('');
@@ -64,6 +63,36 @@ export const RevenueView = () => {
     const topProduct = Object.values(productMap).sort((a, b) => b.quantity - a.quantity || b.sales - a.sales)[0];
     return { month, ...topProduct };
   }).sort((a, b) => a.month.localeCompare(b.month));
+
+  const productById = new Map(products.map((product) => [String(product.id), product]));
+  const categoryMonths = {};
+  orders
+    .filter((order) => ['Shipped', 'Delivered', 'Received'].includes(order.orderStatus || order.order_status))
+    .filter((order) => matchesPeriod(order.orderDate || order.created_at || order.date))
+    .forEach((order) => {
+      const month = normalizeDate(order.orderDate || order.created_at || order.date).slice(0, 7);
+      if (!month) return;
+      (order.products || []).forEach((item) => {
+        const product = productById.get(String(item.id));
+        const category = product?.category || item.category || 'Uncategorized';
+        const key = `${month}::${category}`;
+        if (!categoryMonths[key]) categoryMonths[key] = { month, category, units: 0, revenue: 0 };
+        categoryMonths[key].units += Number(item.qty || 1);
+        categoryMonths[key].revenue += Number(item.qty || 1) * Number(item.price || 0);
+      });
+    });
+  const monthlyRevenueTotals = Object.values(categoryMonths).reduce((totals, row) => ({ ...totals, [row.month]: (totals[row.month] || 0) + row.revenue }), {});
+  const monthlyExpenseTotals = filteredTransactions.filter((transaction) => transaction.type === 'Expense').reduce((totals, transaction) => {
+    const month = normalizeDate(transaction.date).slice(0, 7);
+    if (month) totals[month] = (totals[month] || 0) + Number(transaction.amount || 0);
+    return totals;
+  }, {});
+  const categoryProfitRows = Object.values(categoryMonths).map((row) => {
+    const revenueShare = monthlyRevenueTotals[row.month] ? row.revenue / monthlyRevenueTotals[row.month] : 0;
+    const allocatedExpense = Math.round(Number(monthlyExpenseTotals[row.month] || 0) * revenueShare);
+    const profit = row.revenue - allocatedExpense;
+    return { ...row, allocatedExpense, profit, margin: row.revenue ? (profit / row.revenue) * 100 : 0 };
+  }).sort((a, b) => b.month.localeCompare(a.month) || b.profit - a.profit);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -143,30 +172,35 @@ export const RevenueView = () => {
         </div>
       </div>
 
-      {/* Transactions Table */}
+      {/* Monthly Category Profit Table */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="p-4 border-b">
-          <h3 className="text-sm font-extrabold text-slate-900">Revenue Ledger Logs</h3>
+          <h3 className="text-sm font-extrabold text-slate-900">Monthly Category Profit</h3>
+          <p className="mt-0.5 text-[11px] text-slate-500">Category revenue ke proportion ke mutabiq monthly expenses allocate karke estimated net profit</p>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full min-w-[850px] text-left text-xs">
             <thead>
               <tr className="bg-slate-50 border-b text-slate-500 font-bold uppercase tracking-wider text-[10px]">
-                <th className="p-3.5">Transaction Title</th>
+                <th className="p-3.5">Month</th>
                 <th className="p-3.5">Category</th>
-                <th className="p-3.5">Amount</th>
-                <th className="p-3.5">Date</th>
-                <th className="p-3.5">Status</th>
+                <th className="p-3.5">Units Sold</th>
+                <th className="p-3.5">Revenue</th>
+                <th className="p-3.5">Allocated Expense</th>
+                <th className="p-3.5">Net Profit</th>
+                <th className="p-3.5">Profit Margin</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-              {!revenues.length ? <tr><td colSpan={5} className="p-6 text-center text-slate-400">No revenue entries recorded yet.</td></tr> : revenues.map((t) => (
-                <tr key={t.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="p-3.5 font-extrabold text-slate-900">{t.title}</td>
-                  <td className="p-3.5 font-semibold text-slate-700">{t.category}</td>
-                  <td className="p-3.5 font-black text-emerald-600">+Rs {t.amount.toLocaleString('en-PK')}</td>
-                  <td className="p-3.5 text-slate-500">{t.date}</td>
-                  <td className="p-3.5"><Badge status={t.status}>{t.status}</Badge></td>
+              {!categoryProfitRows.length ? <tr><td colSpan={7} className="p-8 text-center text-slate-400">Selected period mein completed category sales available nahi hain.</td></tr> : categoryProfitRows.map((row) => (
+                <tr key={`${row.month}-${row.category}`} className="hover:bg-red-50/30 transition-colors">
+                  <td className="p-3.5 font-bold text-slate-900">{row.month}</td>
+                  <td className="p-3.5 font-extrabold text-slate-900">{row.category}</td>
+                  <td className="p-3.5 font-bold">{row.units}</td>
+                  <td className="p-3.5 font-bold text-blue-700">Rs {row.revenue.toLocaleString('en-PK')}</td>
+                  <td className="p-3.5 font-bold text-rose-600">Rs {row.allocatedExpense.toLocaleString('en-PK')}</td>
+                  <td className={`p-3.5 font-black ${row.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>Rs {row.profit.toLocaleString('en-PK')}</td>
+                  <td className="p-3.5"><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${row.margin >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{row.margin.toFixed(1)}%</span></td>
                 </tr>
               ))}
             </tbody>
