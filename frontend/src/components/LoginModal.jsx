@@ -51,6 +51,34 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
   // Success Popup state
   const [showSuccessPopup, setShowSuccessPopup] = React.useState(false);
   const [registeredUser, setRegisteredUser] = React.useState(null);
+  const [googleConfigured, setGoogleConfigured] = React.useState(true);
+  const googleButtonRef = React.useRef(null);
+
+  const handleGoogleCredential = React.useCallback(async (response) => {
+    if (!response?.credential) return;
+    setLoading(true);
+    setError('');
+    try {
+      const loginResponse = await fetchWithTimeout('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: response.credential })
+      });
+      const data = await loginResponse.json();
+      if (!loginResponse.ok) throw new Error(data.message || 'Google login failed');
+
+      const customer = { ...data.user, role: 'User', loginType: 'user', provider: 'google' };
+      const customers = JSON.parse(localStorage.getItem('apexiums-registered-users') || '[]');
+      const nextCustomers = [customer, ...customers.filter((user) => String(user.email || '').toLowerCase() !== String(customer.email || '').toLowerCase())];
+      localStorage.setItem('apexiums-registered-users', JSON.stringify(nextCustomers));
+      onLogin(customer);
+      onClose();
+    } catch (googleError) {
+      setError(googleError.message || 'Google login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [onLogin, onClose]);
 
   React.useEffect(() => {
     if (!open) {
@@ -65,6 +93,61 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
     setUsername('');
     setPassword('');
   }, [open, initialTab]);
+
+  React.useEffect(() => {
+    if (!open || tab !== 'login') return undefined;
+    let cancelled = false;
+
+    const loadGoogleLogin = async () => {
+      try {
+        const configResponse = await fetch('/api/auth/google/config');
+        const config = configResponse.ok ? await configResponse.json() : {};
+        if (!config.clientId) {
+          if (!cancelled) setGoogleConfigured(false);
+          return;
+        }
+        if (!cancelled) setGoogleConfigured(true);
+
+        if (!window.google?.accounts?.id) {
+          await new Promise((resolve, reject) => {
+            const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+            if (existingScript) {
+              existingScript.addEventListener('load', resolve, { once: true });
+              existingScript.addEventListener('error', reject, { once: true });
+              return;
+            }
+            const script = document.createElement('script');
+            script.src = 'https://accounts.google.com/gsi/client';
+            script.async = true;
+            script.defer = true;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+          });
+        }
+
+        if (cancelled || !googleButtonRef.current || !window.google?.accounts?.id) return;
+        googleButtonRef.current.innerHTML = '';
+        window.google.accounts.id.initialize({ client_id: config.clientId, callback: handleGoogleCredential, ux_mode: 'popup' });
+        window.google.accounts.id.renderButton(googleButtonRef.current, {
+          type: 'standard',
+          theme: 'outline',
+          size: 'large',
+          text: 'continue_with',
+          shape: 'rectangular',
+          width: Math.min(380, googleButtonRef.current.clientWidth || 360)
+        });
+      } catch {
+        if (!cancelled) setError('Google sign-in could not load. Please try again.');
+      }
+    };
+
+    const frame = window.requestAnimationFrame(loadGoogleLogin);
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(frame);
+    };
+  }, [open, tab, handleGoogleCredential]);
 
   if (!open) return null;
 
@@ -283,56 +366,6 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
     }
   }
 
-  function handleGoogleLogin() {
-    setError('');
-    const enteredEmail = window.prompt('Apna Google email address enter karein:');
-    if (enteredEmail === null) return;
-
-    const googleEmail = enteredEmail.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(googleEmail)) {
-      setError('Please enter a valid Google email address.');
-      return;
-    }
-
-    let customer = null;
-    try {
-      const customers = JSON.parse(localStorage.getItem('apexiums-registered-users') || '[]');
-      customer = customers.find((user) => String(user.email || '').toLowerCase() === googleEmail) || null;
-
-      if (!customer) {
-        const displayName = googleEmail
-          .split('@')[0]
-          .replace(/[._-]+/g, ' ')
-          .replace(/\b\w/g, (letter) => letter.toUpperCase());
-        customer = {
-          id: `google-${Date.now()}`,
-          name: displayName || 'Google Customer',
-          username: googleEmail,
-          email: googleEmail,
-          joinDate: new Date().toISOString().split('T')[0],
-          provider: 'google',
-          role: 'User',
-          loginType: 'user'
-        };
-        customers.push(customer);
-        localStorage.setItem('apexiums-registered-users', JSON.stringify(customers));
-      }
-    } catch {
-      customer = {
-        id: `google-${Date.now()}`,
-        name: googleEmail.split('@')[0],
-        username: googleEmail,
-        email: googleEmail,
-        provider: 'google',
-        role: 'User',
-        loginType: 'user'
-      };
-    }
-
-    onLogin({ ...customer, role: 'User', loginType: 'user', provider: 'google' });
-    onClose();
-  }
-
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-3 sm:p-4 md:p-6 overflow-y-auto">
       {/* Backdrop overlay */}
@@ -523,8 +556,8 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
                     <div className="mt-3">
                       <button
                         type="button"
-                        onClick={handleGoogleLogin}
-                        className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:border-red-200 hover:bg-slate-50 transition cursor-pointer"
+                        onClick={() => {}}
+                        className="hidden"
                       >
                         <svg className="h-4 w-4" viewBox="0 0 24 24">
                           <path
@@ -546,6 +579,12 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
                         </svg>
                         <span>Continue with Google</span>
                       </button>
+                      <div ref={googleButtonRef} className="flex min-h-11 w-full items-center justify-center overflow-hidden rounded-xl" />
+                      {!googleConfigured ? (
+                        <p className="mt-2 text-center text-[11px] font-semibold text-amber-700">
+                          Google login setup is awaiting the OAuth Client ID.
+                        </p>
+                      ) : null}
                     </div>
                   </div>
 
