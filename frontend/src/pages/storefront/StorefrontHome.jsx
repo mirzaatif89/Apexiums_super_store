@@ -467,14 +467,14 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
 
       {/* Slide-out Menu Drawer */}
       {mobileMenuOpen ? (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs transition-opacity">
+        <div className="fixed inset-0 z-[120] bg-slate-950/60 backdrop-blur-xs transition-opacity">
           <button
             type="button"
             aria-label="Close menu overlay"
             className="absolute inset-0 h-full w-full cursor-pointer"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <aside className="absolute left-0 top-0 h-full w-[85%] max-w-sm overflow-y-auto bg-white p-5 shadow-2xl z-10 flex flex-col justify-between">
+          <aside className="absolute left-0 top-0 z-10 flex h-[100dvh] w-[85%] max-w-sm flex-col justify-between overflow-y-auto overscroll-contain bg-white p-5 pb-24 shadow-2xl sm:pb-8">
             <div>
               {/* Drawer Header */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
