@@ -11,7 +11,6 @@ import {
   RotateCcw,
   MapPin,
   CheckCircle2,
-  Headset,
   ShoppingCart,
   ShoppingBag,
   Plus,
@@ -23,6 +22,19 @@ import {
   Award
 } from 'lucide-react';
 import { openWhatsApp } from '../utils/whatsapp';
+
+function SupportAgentIcon({ className = '' }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className={className} xmlns="http://www.w3.org/2000/svg">
+      <path d="M8.2 10.2V9.1a3.8 3.8 0 0 1 7.6 0v1.1" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" />
+      <path d="M8.4 8.8c.35-3.05 1.65-4.55 3.6-4.55s3.25 1.5 3.6 4.55v4.1c0 2.45-1.6 4.45-3.6 4.45s-3.6-2-3.6-4.45V8.8Z" stroke="currentColor" strokeWidth="1.55" strokeLinejoin="round" />
+      <path d="M8.1 10.1H7.5c-.82 0-1.5.68-1.5 1.5v2c0 .82.68 1.5 1.5 1.5h.9M15.9 10.1h.6c.82 0 1.5.68 1.5 1.5v2c0 .82-.68 1.5-1.5 1.5h-.9" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M18 14.15v.55c0 1.1-.9 2-2 2h-2.1" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" />
+      <path d="M13.9 16.7h-1.2" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" />
+      <path d="M9.45 16.45v1.25l-2.25.85C5.3 19.25 4 21.05 4 23h16c0-1.95-1.3-3.75-3.2-4.45l-2.25-.85v-1.25" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 export default function ProductDetailsModal({
   product,
@@ -704,7 +716,7 @@ export default function ProductDetailsModal({
               className="h-11 sm:h-12 w-11 sm:w-12 rounded-xl border-2 border-red-100 bg-red-50/80 text-[#E8262A] flex items-center justify-center shrink-0 transition hover:bg-red-100 active:scale-95 cursor-pointer shadow-2xs"
               title="Customer Support"
             >
-              <Headset size={22} strokeWidth={2.2} className="shrink-0 text-[#E8262A]" />
+              <SupportAgentIcon className="h-7 w-7 shrink-0 text-[#E8262A]" />
             </button>
 
             {/* Add To Cart Button */}
