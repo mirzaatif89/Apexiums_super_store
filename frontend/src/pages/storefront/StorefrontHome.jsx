@@ -414,13 +414,6 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
           onProductClick={(p) => { setSelectedProduct(p); setModalQty(1); }}
           onAddToCart={(p) => handleAddProductToCart(p, 1)}
         />
-        <ProductGrid
-          sections={filteredSections}
-          selectedCategory={selectedCategory}
-          onSelectCategory={(cat) => setSelectedCategory(cat)}
-          onSelectProduct={(p) => { setSelectedProduct(p); setModalQty(1); }}
-          onAddToCart={(p) => handleAddProductToCart(p, 1)}
-        />
         </>}
       </main>
 

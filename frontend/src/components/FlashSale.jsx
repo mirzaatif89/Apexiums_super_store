@@ -51,7 +51,7 @@ export default function FlashSale({ products = [], onProductClick, onAddToCart }
   }, [products, activeTab]);
 
   return (
-    <section className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-6 pt-1 pb-2">
+    <section id="products-section" className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-6 pt-1 pb-2">
       <div className="rounded-2xl sm:rounded-3xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-2xs">
         {/* Top Header Bar: Flash Sale Title on Left, Closing Timer on Right Corner */}
         <div className="flex items-center justify-between gap-2.5 sm:gap-4 border-b border-slate-100 pb-3">
