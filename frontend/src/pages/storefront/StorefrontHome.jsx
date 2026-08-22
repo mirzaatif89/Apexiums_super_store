@@ -474,7 +474,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
             className="absolute inset-0 h-full w-full cursor-pointer"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <aside className="absolute left-0 top-0 z-10 flex h-[100dvh] w-[85%] max-w-sm flex-col justify-between overflow-y-auto overscroll-contain bg-white p-5 pb-24 shadow-2xl sm:pb-8">
+          <aside className="absolute left-0 top-0 z-10 flex h-[100dvh] w-[85%] max-w-sm flex-col justify-between overflow-y-auto overscroll-contain bg-white p-5 pb-32 shadow-2xl">
             <div>
               {/* Drawer Header */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -523,7 +523,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
               </div>
 
               {/* Menu Options List */}
-              <div className="mt-4 space-y-1">
+              <div className="mt-4 space-y-1 pb-6">
                 {sideMenuOptions.map((item) => (
                   <button
                     key={item.label}
@@ -534,7 +534,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
                     }}
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
                       item.isLogout
-                        ? 'text-red-600 hover:bg-red-50 mt-3 border border-red-100'
+                        ? 'text-red-600 hover:bg-red-50 mt-3 mb-4 border border-red-100'
                         : 'text-slate-800 hover:bg-red-50/60 hover:text-[#E8262A]'
                     }`}
                   >
