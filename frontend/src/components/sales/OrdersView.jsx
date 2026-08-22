@@ -14,7 +14,8 @@ import {
   CreditCard,
   PackageCheck,
   User,
-  RotateCcw
+  RotateCcw,
+  Printer
 } from 'lucide-react';
 
 export const OrdersView = () => {
@@ -22,6 +23,21 @@ export const OrdersView = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
+
+  const printReceipt = (order) => {
+    const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
+    const itemRows = (order.products || []).map((item) => `
+      <tr><td>${escapeHtml(item.name)}</td><td>${Number(item.qty || 0)}</td><td>Rs ${Number(item.price || 0).toLocaleString('en-PK')}</td><td>Rs ${(Number(item.qty || 0) * Number(item.price || 0)).toLocaleString('en-PK')}</td></tr>
+    `).join('');
+    const receiptWindow = window.open('', '_blank', 'width=820,height=900');
+    if (!receiptWindow) return;
+    receiptWindow.document.write(`<!doctype html><html><head><title>Receipt ${escapeHtml(order.id)}</title><style>
+      *{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#172033;margin:0;padding:28px}.receipt{max-width:760px;margin:auto;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden}.head{background:#F62C40;color:#fff;padding:22px 26px;display:flex;justify-content:space-between}.head h1{font-size:22px;margin:0}.head p{font-size:12px;margin:5px 0 0}.section{padding:20px 26px;border-bottom:1px solid #e2e8f0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.label{font-size:10px;text-transform:uppercase;color:#64748b;font-weight:700;margin-bottom:5px}.value{font-size:13px;font-weight:700;margin:3px 0}table{width:100%;border-collapse:collapse;font-size:12px}th,td{text-align:left;padding:10px;border-bottom:1px solid #e2e8f0}th{background:#f8fafc;text-transform:uppercase;font-size:10px;color:#64748b}.total{display:flex;justify-content:space-between;align-items:center;background:#fff1f2;padding:20px 26px}.total strong{font-size:22px;color:#F62C40}.foot{text-align:center;padding:18px;color:#64748b;font-size:11px}@media print{body{padding:0}.receipt{border:0}.no-print{display:none}}
+    </style></head><body><div class="receipt"><div class="head"><div><h1>Elistin</h1><p>Official Order Receipt</p></div><div style="text-align:right"><strong>Order #${escapeHtml(order.id)}</strong><p>${escapeHtml(order.orderDate)}</p></div></div><div class="section grid"><div><div class="label">Customer</div><div class="value">${escapeHtml(order.customerName)}</div><div>${escapeHtml(order.customerEmail)}</div><div>${escapeHtml(order.customerPhone)}</div></div><div><div class="label">Shipping Address</div><div class="value">${escapeHtml(order.shippingAddress)}</div><div>Courier: ${escapeHtml(order.deliveryCourier || 'Unassigned')}</div></div></div><div class="section"><div class="label">Purchased Items</div><table><thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>${itemRows}</tbody></table></div><div class="total"><div><div class="label">Payment Method</div><div class="value">${escapeHtml(order.paymentMethod)}</div></div><div style="text-align:right"><div class="label">Grand Total Paid</div><strong>Rs ${Number(order.totalAmount || 0).toLocaleString('en-PK')}</strong></div></div><div class="foot">Thank you for shopping with Elistin.</div></div></body></html>`);
+    receiptWindow.document.close();
+    receiptWindow.focus();
+    window.setTimeout(() => receiptWindow.print(), 250);
+  };
 
   const filteredOrders = orders.filter((o) => {
     const matchesSearch =
@@ -140,14 +156,15 @@ export const OrdersView = () => {
       {selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between p-4 bg-slate-900 text-white">
+            <div className="flex items-center justify-between p-4 bg-[#E8262A] text-white">
               <div>
                 <h3 className="text-sm font-extrabold">Order Details #{selectedOrder.id}</h3>
-                <p className="text-[10px] text-slate-300">Placed on {selectedOrder.orderDate}</p>
+                <p className="text-[10px] text-red-100">Placed on {selectedOrder.orderDate}</p>
               </div>
-              <button onClick={() => setSelectedOrder(null)} className="p-1 text-slate-400 hover:text-white">
-                <X size={18} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => printReceipt(selectedOrder)} className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-[11px] font-bold text-[#E8262A] shadow-sm hover:bg-red-50"><Printer size={15}/> Print Receipt</button>
+                <button onClick={() => setSelectedOrder(null)} className="rounded-lg p-1.5 text-red-100 hover:bg-white/15 hover:text-white"><X size={18} /></button>
+              </div>
             </div>
 
             <div className="p-5 overflow-y-auto space-y-5 text-xs">
@@ -156,12 +173,12 @@ export const OrdersView = () => {
                 <h4 className="font-extrabold text-slate-800 mb-2 flex items-center gap-1.5">
                   <PackageCheck size={16} className="text-red-600" /> Order Fulfillment Status Timeline
                 </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 p-3 rounded-xl border">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-red-50/60 p-3 rounded-xl border border-red-100">
                   {selectedOrder.timeline.map((step, idx) => (
                     <div key={idx} className="space-y-1">
                       <div className="flex items-center gap-1 font-bold text-slate-800">
                         {step.done ? (
-                          <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                          <CheckCircle2 size={14} className="text-[#E8262A] shrink-0" />
                         ) : (
                           <div className="w-3.5 h-3.5 rounded-full border border-slate-300 shrink-0" />
                         )}
@@ -175,13 +192,13 @@ export const OrdersView = () => {
 
               {/* Customer & Shipping */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-3 bg-slate-50 rounded-xl border space-y-1">
+                <div className="p-3 bg-red-50/40 rounded-xl border border-red-100 space-y-1">
                   <p className="font-extrabold text-slate-800 flex items-center gap-1"><User size={14} /> Customer Information</p>
                   <p className="font-bold text-slate-900">{selectedOrder.customerName}</p>
                   <p className="text-slate-500">{selectedOrder.customerEmail}</p>
                   <p className="text-slate-500">{selectedOrder.customerPhone}</p>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl border space-y-1">
+                <div className="p-3 bg-red-50/40 rounded-xl border border-red-100 space-y-1">
                   <p className="font-extrabold text-slate-800 flex items-center gap-1"><MapPin size={14} /> Shipping Address</p>
                   <p className="text-slate-700 font-medium">{selectedOrder.shippingAddress}</p>
                   <p className="text-slate-500 font-bold mt-1">Courier: {selectedOrder.deliveryCourier}</p>
@@ -193,7 +210,7 @@ export const OrdersView = () => {
                 <h4 className="font-extrabold text-slate-800 mb-2">Purchased Items ({selectedOrder.products.length})</h4>
                 <div className="space-y-2">
                   {selectedOrder.products.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl border bg-white">
+                    <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl border border-red-100 bg-white">
                       <div className="flex items-center gap-3">
                         <img src={item.image} alt={item.name} className="w-10 h-10 rounded-lg object-cover border shrink-0" />
                         <div>
@@ -208,14 +225,14 @@ export const OrdersView = () => {
               </div>
 
               {/* Financial Summary */}
-              <div className="p-3 bg-slate-900 text-white rounded-xl flex items-center justify-between">
+              <div className="p-3 bg-[#E8262A] text-white rounded-xl flex items-center justify-between shadow-md shadow-red-900/15">
                 <div>
-                  <p className="text-[10px] text-slate-400 uppercase font-bold">Payment Method</p>
+                  <p className="text-[10px] text-red-100 uppercase font-bold">Payment Method</p>
                   <p className="font-bold text-xs">{selectedOrder.paymentMethod}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] text-slate-400 uppercase font-bold">Grand Total Paid</p>
-                  <p className="text-lg font-black text-emerald-400">Rs {selectedOrder.totalAmount}</p>
+                  <p className="text-[10px] text-red-100 uppercase font-bold">Grand Total Paid</p>
+                  <p className="text-lg font-black text-white">Rs {selectedOrder.totalAmount}</p>
                 </div>
               </div>
             </div>
