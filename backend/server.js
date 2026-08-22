@@ -1383,11 +1383,12 @@ app.post('/api/coupons/validate', async (req, res) => {
     if (coupon.valid_till && String(coupon.valid_till).slice(0, 10) < today) return res.status(400).json({ message: 'This coupon has expired.' });
     if (Number(coupon.usage_limit || 0) > 0 && Number(coupon.used_count || 0) >= Number(coupon.usage_limit)) return res.status(400).json({ message: 'Coupon usage limit has been reached.' });
     if (orderAmount < Number(coupon.min_order_amount || 0)) return res.status(400).json({ message: `Minimum order amount is Rs ${Number(coupon.min_order_amount).toLocaleString('en-PK')}.` });
-    const rawDiscount = String(coupon.discount_type).toLowerCase() === 'percentage'
+    const freeDelivery = String(coupon.discount_type).toLowerCase() === 'free delivery';
+    const rawDiscount = freeDelivery ? 0 : String(coupon.discount_type).toLowerCase() === 'percentage'
       ? orderAmount * Number(coupon.discount_value || 0) / 100
       : Number(coupon.discount_value || 0);
     const discount = Math.max(0, Math.min(orderAmount, Math.round(rawDiscount)));
-    res.json({ coupon, discount });
+    res.json({ coupon, discount, freeDelivery });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

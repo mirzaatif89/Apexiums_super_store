@@ -73,7 +73,8 @@ export default function CheckoutModal({
 
   const subtotal = items.reduce((sum, item) => sum + (item.price || 0) * (item.qty || 1), 0);
   const totalQuantity = items.reduce((sum, item) => sum + (item.qty || 1), 0);
-  const shippingFee = items.length > 0 && totalQuantity < 3 ? 260 : 0;
+  const baseShippingFee = items.length > 0 && totalQuantity < 3 ? 260 : 0;
+  const shippingFee = String(appliedCoupon?.discount_type || '').toLowerCase() === 'free delivery' ? 0 : baseShippingFee;
   const itemSavings = items.reduce((sum, item) => {
     if (item.originalPrice && item.originalPrice > item.price) {
       return sum + (item.originalPrice - item.price) * (item.qty || 1);
@@ -144,7 +145,7 @@ export default function CheckoutModal({
       if (!response.ok) throw new Error(result.message || 'Invalid coupon code.');
       setAppliedDiscount(Number(result.discount || 0));
       setAppliedCoupon(result.coupon);
-      setCouponMsg(`${result.coupon.title || result.coupon.code} applied! Rs ${Number(result.discount || 0).toLocaleString('en-PK')} discount added.`);
+      setCouponMsg(result.freeDelivery ? `${result.coupon.title || result.coupon.code} applied! Delivery is now free.` : `${result.coupon.title || result.coupon.code} applied! Rs ${Number(result.discount || 0).toLocaleString('en-PK')} discount added.`);
       setError('');
     } catch (couponError) {
       setAppliedDiscount(0);
