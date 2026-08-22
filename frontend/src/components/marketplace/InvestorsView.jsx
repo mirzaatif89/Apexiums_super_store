@@ -5,7 +5,7 @@ import ActionMenu from '../common/ActionMenu';
 import { TrendingUp, Plus, CheckCircle2, X } from 'lucide-react';
 
 export const InvestorsView = () => {
-  const { investors, addInvestor, updateInvestorStatus } = useAdmin();
+  const { investors, addInvestor, updateInvestorStatus, investorApplications, reviewInvestorApplication } = useAdmin();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedInvestor, setSelectedInvestor] = useState(null);
 
@@ -52,6 +52,8 @@ export const InvestorsView = () => {
           <Plus size={16} /> Register Investor
         </button>
       </div>
+
+      <div className="overflow-hidden rounded-2xl border border-red-100 bg-white shadow-xs"><div className="border-b bg-red-50/60 p-4"><h3 className="text-sm font-black text-slate-900">Website Investor Applications</h3><p className="text-[11px] text-slate-500">Approve proposals to register applicants as active investors.</p></div><div className="overflow-x-auto"><table className="w-full min-w-[750px] text-left text-xs"><thead><tr className="border-b bg-slate-50 text-[10px] font-bold uppercase text-slate-500"><th className="p-3">Applicant</th><th className="p-3">Contact</th><th className="p-3">Proposed Amount</th><th className="p-3">Message</th><th className="p-3">Status</th><th className="p-3 text-right">Review</th></tr></thead><tbody className="divide-y">{!investorApplications.length ? <tr><td colSpan={6} className="p-8 text-center text-slate-400">No investor applications received yet.</td></tr> : investorApplications.map((application) => <tr key={application.id}><td className="p-3 font-bold">{application.applicant_name}</td><td className="p-3"><p>{application.email}</p><p className="text-slate-400">{application.phone}</p></td><td className="p-3 font-black text-red-600">Rs {Number(application.proposed_amount || 0).toLocaleString('en-PK')}</td><td className="max-w-xs truncate p-3">{application.message || '-'}</td><td className="p-3"><Badge status={application.status}>{application.status}</Badge></td><td className="p-3 text-right">{application.status === 'Pending' ? <div className="inline-flex gap-2"><button onClick={() => reviewInvestorApplication(application, 'Rejected')} className="rounded-lg border border-red-200 px-3 py-2 font-bold text-red-600">Reject</button><button onClick={() => reviewInvestorApplication(application, 'Approved')} className="rounded-lg bg-red-600 px-3 py-2 font-bold text-white">Approve & Register</button></div> : <span className="font-bold text-slate-500">Reviewed</span>}</td></tr>)}</tbody></table></div></div>
 
       {/* Investors Directory Table */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">

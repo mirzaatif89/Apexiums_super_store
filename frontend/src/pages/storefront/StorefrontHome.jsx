@@ -171,6 +171,8 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
   }, [cartItems]);
 
   const [infoModal, setInfoModal] = React.useState(null);
+  const [applicationForm, setApplicationForm] = React.useState({ applicant_name: '', business_name: '', email: '', phone: '', category: '', proposed_amount: '', message: '' });
+  const [applicationStatus, setApplicationStatus] = React.useState('');
   const [chatOpen, setChatOpen] = React.useState(false);
   const [chatMessage, setChatMessage] = React.useState('');
   const [chatSent, setChatSent] = React.useState(false);
@@ -341,6 +343,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
       onClick: () =>
         setInfoModal({
           title: 'Become a Seller',
+          type: 'seller-application',
           content:
             'Join thousands of successful merchants on Apexiums! List your products, reach millions of active shoppers across Pakistan, and grow your sales effortless.'
         })
@@ -351,6 +354,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
       onClick: () =>
         setInfoModal({
           title: 'Become an Investor',
+          type: 'investor-application',
           content:
             'Apexiums Technologies is expanding rapidly! Partner with us to revolutionize next-generation logistics and digital e-commerce infrastructure.'
         })
@@ -597,11 +601,23 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
               </button>
             </div>
 
-            <p className="mt-4 text-xs sm:text-sm leading-relaxed text-slate-600 font-medium">
-              {infoModal.content}
-            </p>
+            <p className="mt-4 text-xs sm:text-sm leading-relaxed text-slate-600 font-medium">{infoModal.content}</p>
 
-            <div className="mt-6 flex justify-end">
+            {infoModal.type ? <form className="mt-4 space-y-3" onSubmit={async (event) => {
+              event.preventDefault(); setApplicationStatus('Submitting...');
+              const resource = infoModal.type === 'seller-application' ? 'seller_applications' : 'investor_applications';
+              const payload = infoModal.type === 'seller-application' ? { applicant_name: applicationForm.applicant_name, business_name: applicationForm.business_name, email: applicationForm.email, phone: applicationForm.phone, category: applicationForm.category, message: applicationForm.message, status: 'Pending' } : { applicant_name: applicationForm.applicant_name, email: applicationForm.email, phone: applicationForm.phone, proposed_amount: Number(applicationForm.proposed_amount || 0), message: applicationForm.message, status: 'Pending' };
+              try { const response = await fetch(`/api/${resource}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (!response.ok) throw new Error('Application could not be submitted.'); setApplicationStatus('Application submitted successfully. Our team will review it.'); setApplicationForm({ applicant_name: '', business_name: '', email: '', phone: '', category: '', proposed_amount: '', message: '' }); } catch (error) { setApplicationStatus(error.message); }
+            }}>
+              <div className="grid grid-cols-2 gap-2"><input required value={applicationForm.applicant_name} onChange={(event) => setApplicationForm({ ...applicationForm, applicant_name: event.target.value })} placeholder="Full name" className="rounded-xl border px-3 py-2 text-xs"/><input required type="email" value={applicationForm.email} onChange={(event) => setApplicationForm({ ...applicationForm, email: event.target.value })} placeholder="Email address" className="rounded-xl border px-3 py-2 text-xs"/></div>
+              <input required value={applicationForm.phone} onChange={(event) => setApplicationForm({ ...applicationForm, phone: event.target.value })} placeholder="Phone number" className="w-full rounded-xl border px-3 py-2 text-xs"/>
+              {infoModal.type === 'seller-application' ? <div className="grid grid-cols-2 gap-2"><input required value={applicationForm.business_name} onChange={(event) => setApplicationForm({ ...applicationForm, business_name: event.target.value })} placeholder="Business name" className="rounded-xl border px-3 py-2 text-xs"/><input required value={applicationForm.category} onChange={(event) => setApplicationForm({ ...applicationForm, category: event.target.value })} placeholder="Product category" className="rounded-xl border px-3 py-2 text-xs"/></div> : <input required type="number" min="1" value={applicationForm.proposed_amount} onChange={(event) => setApplicationForm({ ...applicationForm, proposed_amount: event.target.value })} placeholder="Proposed investment amount (Rs)" className="w-full rounded-xl border px-3 py-2 text-xs"/>}
+              <textarea rows="3" value={applicationForm.message} onChange={(event) => setApplicationForm({ ...applicationForm, message: event.target.value })} placeholder="Additional details" className="w-full rounded-xl border px-3 py-2 text-xs"/>
+              {applicationStatus ? <p className="text-xs font-bold text-emerald-600">{applicationStatus}</p> : null}
+              <button className="w-full rounded-xl bg-[#E8262A] py-2.5 text-xs font-bold text-white">Submit Application</button>
+            </form> : null}
+
+            {!infoModal.type ? <div className="mt-6 flex justify-end">
               <button
                 type="button"
                 onClick={() => setInfoModal(null)}
@@ -609,7 +625,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
               >
                 Got It
               </button>
-            </div>
+            </div> : null}
           </div>
         </div>
       ) : null}

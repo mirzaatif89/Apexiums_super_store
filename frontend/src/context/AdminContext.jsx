@@ -98,6 +98,8 @@ export const AdminProvider = ({ children, session }) => {
   const [staff, setStaff] = useState([]);
   const [staffSalaries, setStaffSalaries] = useState([]);
   const [deliveryCompanies, setDeliveryCompanies] = useState([]);
+  const [sellerApplications, setSellerApplications] = useState([]);
+  const [investorApplications, setInvestorApplications] = useState([]);
   const [rolesPermissions, setRolesPermissions] = useState(() => {
     if (typeof localStorage === 'undefined') return initialRolesPermissions;
     try {
@@ -173,6 +175,15 @@ export const AdminProvider = ({ children, session }) => {
       .then((response) => response.ok ? response.json() : { rows: [] })
       .then((data) => { if (active) setDeliveryCompanies((data.rows || []).map((row) => ({ ...row, amount: Number(row.amount || 0) }))); })
       .catch(() => { if (active) setDeliveryCompanies([]); });
+    return () => { active = false; };
+  }, [session?.role, session?.businessId]);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([fetch('/api/seller_applications?limit=500', { headers: apiHeaders() }), fetch('/api/investor_applications?limit=500', { headers: apiHeaders() })])
+      .then(async ([sellerResponse, investorResponse]) => [sellerResponse.ok ? sellerResponse.json() : { rows: [] }, investorResponse.ok ? investorResponse.json() : { rows: [] }])
+      .then(async ([sellerData, investorData]) => { if (active) { setSellerApplications((await sellerData).rows || []); setInvestorApplications((await investorData).rows || []); } })
+      .catch(() => {});
     return () => { active = false; };
   }, [session?.role, session?.businessId]);
 
@@ -629,6 +640,34 @@ export const AdminProvider = ({ children, session }) => {
     addToast(`Investor status updated to ${newStatus}.`, 'success');
   };
 
+  const reviewSellerApplication = async (application, decision) => {
+    if (decision === 'Approved') {
+      const username = String(application.email || application.business_name || `seller${application.id}`).split('@')[0].replace(/[^a-z0-9]/gi, '').toLowerCase() || `seller${application.id}`;
+      const response = await fetch('/api/wholesellers', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ name: application.applicant_name, business_name: application.business_name, contact_person: application.applicant_name, phone: application.phone, email: application.email, description: application.message, stock_seller_sell: application.category, username, password: `Seller@${application.id}2026`, status: 'Active' }) });
+      if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Seller registration failed.');
+      const saved = await response.json();
+      setSellers((previous) => [{ ...saved, id: saved.id, sellerName: saved.name, storeName: saved.business_name, contact: saved.contact_person, stockSellerSell: saved.stock_seller_sell, productsCount: 0, ordersCount: 0, revenue: 0, ratings: 5, commissionRate: 10, verificationStatus: 'Verified', status: 'Active' }, ...previous]);
+    }
+    const updateResponse = await fetch(`/api/seller_applications/${application.id}`, { method: 'PUT', headers: apiHeaders(), body: JSON.stringify({ ...application, status: decision }) });
+    if (!updateResponse.ok) throw new Error('Application status could not be updated.');
+    setSellerApplications((previous) => previous.map((item) => item.id === application.id ? { ...item, status: decision } : item));
+    addToast(`Seller application ${decision.toLowerCase()}.`, 'success');
+  };
+
+  const reviewInvestorApplication = async (application, decision) => {
+    if (decision === 'Approved') {
+      const username = String(application.email || `investor${application.id}`).split('@')[0].replace(/[^a-z0-9]/gi, '').toLowerCase() || `investor${application.id}`;
+      const response = await fetch('/api/investors', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ name: application.applicant_name, email: application.email, phone: application.phone, username, password: `Investor@${application.id}2026`, investment_amount: Number(application.proposed_amount || 0), investment_date: new Date().toISOString().slice(0, 10), status: 'Active', description: application.message }) });
+      if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Investor registration failed.');
+      const saved = await response.json();
+      setInvestors((previous) => [{ ...saved, investmentAmount: Number(saved.investment_amount || 0), totalReturnsPaid: 0, contactPerson: saved.name, returnRate: 0, equityShare: '0%' }, ...previous]);
+    }
+    const updateResponse = await fetch(`/api/investor_applications/${application.id}`, { method: 'PUT', headers: apiHeaders(), body: JSON.stringify({ ...application, status: decision }) });
+    if (!updateResponse.ok) throw new Error('Application status could not be updated.');
+    setInvestorApplications((previous) => previous.map((item) => item.id === application.id ? { ...item, status: decision } : item));
+    addToast(`Investor application ${decision.toLowerCase()}.`, 'success');
+  };
+
   // Staff
   const addStaffMember = async (staffData) => {
     const newStaff = {
@@ -850,6 +889,8 @@ export const AdminProvider = ({ children, session }) => {
         staff,
         staffSalaries,
         deliveryCompanies,
+        sellerApplications,
+        investorApplications,
         rolesPermissions,
         finance,
         notifications,
@@ -883,6 +924,8 @@ export const AdminProvider = ({ children, session }) => {
         markStaffSalaryPaid,
         saveDeliveryCompany,
         deleteDeliveryCompany,
+        reviewSellerApplication,
+        reviewInvestorApplication,
         updateRolePermission,
         addTransaction,
         addBanner,

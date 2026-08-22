@@ -5,7 +5,7 @@ import ActionMenu from '../common/ActionMenu';
 import { Store, Search, Plus, CheckCircle2, ShieldAlert, X, Star, DollarSign, Package } from 'lucide-react';
 
 export const SellersView = () => {
-  const { sellers, updateSellerStatus, addSeller } = useAdmin();
+  const { sellers, updateSellerStatus, addSeller, sellerApplications, reviewSellerApplication } = useAdmin();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSeller, setSelectedSeller] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -67,6 +67,8 @@ export const SellersView = () => {
           className="w-full bg-transparent text-xs font-semibold text-slate-800 focus:outline-none"
         />
       </div>
+
+      <div className="overflow-hidden rounded-2xl border border-red-100 bg-white shadow-xs"><div className="border-b bg-red-50/60 p-4"><h3 className="text-sm font-black text-slate-900">Website Seller Applications</h3><p className="text-[11px] text-slate-500">Approve applicants to register them as active sellers.</p></div><div className="overflow-x-auto"><table className="w-full min-w-[800px] text-left text-xs"><thead><tr className="border-b bg-slate-50 text-[10px] font-bold uppercase text-slate-500"><th className="p-3">Applicant</th><th className="p-3">Business</th><th className="p-3">Category</th><th className="p-3">Contact</th><th className="p-3">Status</th><th className="p-3 text-right">Review</th></tr></thead><tbody className="divide-y">{!sellerApplications.length ? <tr><td colSpan={6} className="p-8 text-center text-slate-400">No seller applications received yet.</td></tr> : sellerApplications.map((application) => <tr key={application.id}><td className="p-3 font-bold">{application.applicant_name}</td><td className="p-3">{application.business_name}</td><td className="p-3">{application.category || '-'}</td><td className="p-3"><p>{application.email}</p><p className="text-slate-400">{application.phone}</p></td><td className="p-3"><Badge status={application.status}>{application.status}</Badge></td><td className="p-3 text-right">{application.status === 'Pending' ? <div className="inline-flex gap-2"><button onClick={() => reviewSellerApplication(application, 'Rejected')} className="rounded-lg border border-red-200 px-3 py-2 font-bold text-red-600">Reject</button><button onClick={() => reviewSellerApplication(application, 'Approved')} className="rounded-lg bg-emerald-600 px-3 py-2 font-bold text-white">Approve & Register</button></div> : <span className="font-bold text-slate-500">Reviewed</span>}</td></tr>)}</tbody></table></div></div>
 
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
