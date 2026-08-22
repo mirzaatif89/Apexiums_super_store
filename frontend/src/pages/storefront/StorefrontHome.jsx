@@ -429,7 +429,20 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
         </>}
       </main>
 
-      <Footer sections={footerSections} paymentMethods={paymentMethods} storeName={storeName} logoSrc={storeLogoSrc} onAdminClick={() => setLoginOpen(true)} />
+      <Footer
+        sections={footerSections}
+        paymentMethods={paymentMethods}
+        storeName={storeName}
+        logoSrc={storeLogoSrc}
+        categories={websiteCategories}
+        onCategoryClick={(categoryName) => {
+          setSelectedCategory(categoryName);
+          setCategoryPage(categoryName);
+          window.history.pushState({}, '', `/category/${encodeURIComponent(categoryName)}`);
+          window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+        }}
+        onAdminClick={() => setLoginOpen(true)}
+      />
 
       {!selectedProduct ? (
         <BottomNav

@@ -14,7 +14,7 @@ import { getWhatsAppUrl } from '../utils/whatsapp';
 import easypaisaLogo from '../../images/EASYPAISA-logo.png';
 import jazzCashLogo from '../../images/jazzcash-logo.png';
 
-export default function Footer({ storeName = "Apexiums", logoSrc, onAdminClick }) {
+export default function Footer({ storeName = "Apexiums", logoSrc, categories = [], onCategoryClick, onAdminClick }) {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
@@ -209,12 +209,19 @@ export default function Footer({ storeName = "Apexiums", logoSrc, onAdminClick }
                 <span>CATEGORIES</span>
               </div>
               <ul className="space-y-2 text-xs text-slate-600 font-medium">
-                <li><a href="#" className="hover:text-[#E8262A] transition">Electronics</a></li>
-                <li><a href="#" className="hover:text-[#E8262A] transition">Fashion</a></li>
-                <li><a href="#" className="hover:text-[#E8262A] transition">Home Essentials</a></li>
-                <li><a href="#" className="hover:text-[#E8262A] transition">Beauty & Health</a></li>
-                <li><a href="#" className="hover:text-[#E8262A] transition">Sports & Outdoors</a></li>
-                <li><a href="#" className="hover:text-[#E8262A] transition">Toys & Games</a></li>
+                {categories
+                  .filter((category) => category?.name && String(category.status || 'Active').toLowerCase() === 'active')
+                  .map((category) => (
+                    <li key={category.id || category.name}>
+                      <button
+                        type="button"
+                        onClick={() => onCategoryClick?.(category.name)}
+                        className="text-left hover:text-[#E8262A] transition cursor-pointer"
+                      >
+                        {category.name}
+                      </button>
+                    </li>
+                  ))}
               </ul>
             </div>
 
