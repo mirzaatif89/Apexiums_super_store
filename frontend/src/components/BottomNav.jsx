@@ -145,9 +145,7 @@ export default function BottomNav({
 
               <span
                 className={`text-[11px] tracking-tight mt-1 leading-none transition-colors duration-150 ${
-                  item.label === 'Contact'
-                    ? 'text-[#25D366] font-medium'
-                    : isActive
+                  isActive
                     ? 'text-[#E8262A] font-medium'
                     : 'text-[#6E6E6E] font-normal'
                 }`}
