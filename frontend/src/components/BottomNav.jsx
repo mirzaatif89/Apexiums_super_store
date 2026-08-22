@@ -1,6 +1,15 @@
 import React from 'react';
-import { Heart, Home, MessageSquare, ShoppingCart, User } from 'lucide-react';
+import { Heart, Home, ShoppingCart, User } from 'lucide-react';
 import { openWhatsApp } from '../utils/whatsapp';
+
+function WhatsAppIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#25D366" d="M12 2a9.8 9.8 0 0 0-8.45 14.76L2.2 21.8l5.16-1.31A9.98 9.98 0 1 0 12 2Z" />
+      <path fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M8.15 7.45c.35-.4.72-.25.93.08l1.12 2.05c.18.32.12.63-.13.91l-.65.72c.82 1.65 1.76 2.55 3.4 3.35l.72-.72c.27-.27.58-.32.9-.14l2.08 1.13c.34.2.46.55.2.9-.7.95-1.76 1.38-2.88 1.2-3.57-.55-6.43-3.42-6.95-6.98-.16-1.08.3-1.9 1.26-2.5Z" />
+    </svg>
+  );
+}
 
 export default function BottomNav({
   onCartClick,
@@ -35,7 +44,7 @@ export default function BottomNav({
   };
 
   const handleChat = () => {
-    setActiveTab('Chat');
+    setActiveTab('WhatsApp');
     if (onChatClick) {
       onChatClick();
     } else if (onSupportClick) {
@@ -67,7 +76,7 @@ export default function BottomNav({
 
   const navItems = [
     { label: 'Home', icon: Home, action: handleHome },
-    { label: 'Chat', icon: MessageSquare, action: handleChat },
+    { label: 'WhatsApp', icon: WhatsAppIcon, action: handleChat },
     { label: 'Cart', icon: ShoppingCart, action: handleCart, badge: cartCount },
     { label: 'Wishlist', icon: Heart, action: handleWishlist },
     { label: 'Account', icon: User, action: handleAccount }
@@ -99,6 +108,8 @@ export default function BottomNav({
                   >
                     <path d="M12 2.5L2 10.5H4.5V20.5C4.5 21.0523 4.94772 21.5 5.5 21.5H10V15.5H14V21.5H18.5C19.0523 21.5 19.5 21.0523 19.5 20.5V10.5H22L12 2.5Z" />
                   </svg>
+                ) : item.label === 'WhatsApp' ? (
+                  <WhatsAppIcon />
                 ) : (
                   <Icon
                     size={22}
@@ -121,7 +132,9 @@ export default function BottomNav({
 
               <span
                 className={`text-[11px] tracking-tight mt-1 leading-none transition-colors duration-150 ${
-                  isActive
+                  item.label === 'WhatsApp'
+                    ? 'text-[#25D366] font-medium'
+                    : isActive
                     ? 'text-[#E8262A] font-medium'
                     : 'text-[#6E6E6E] font-normal'
                 }`}
