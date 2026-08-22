@@ -82,6 +82,43 @@ export default function CheckoutModal({
   const totalDiscount = appliedDiscount + itemSavings;
   const grandTotal = Math.max(0, subtotal + shippingFee - appliedDiscount);
 
+  const savedAddressStorageKey = React.useMemo(
+    () => `elistin-saved-checkout-address:${customerEmail.trim().toLowerCase() || 'guest'}`,
+    [customerEmail]
+  );
+
+  React.useEffect(() => {
+    if (!open) return;
+
+    try {
+      const storedAddress = JSON.parse(localStorage.getItem(savedAddressStorageKey) || 'null');
+      if (storedAddress?.fullName && storedAddress?.phone && storedAddress?.province && storedAddress?.city && storedAddress?.address) {
+        setFullName(storedAddress.fullName);
+        setPhone(storedAddress.phone);
+        setEmail(storedAddress.email || customerEmail || '');
+        setProvince(storedAddress.province);
+        setCity(storedAddress.city);
+        setAddress(storedAddress.address);
+        setLandmark(storedAddress.landmark || '');
+        setSavedAddress(storedAddress);
+        setShowAddressForm(false);
+        return;
+      }
+    } catch {
+      localStorage.removeItem(savedAddressStorageKey);
+    }
+
+    setFullName('');
+    setPhone('');
+    setEmail(customerEmail || '');
+    setProvince('Punjab');
+    setCity('Lahore');
+    setAddress('');
+    setLandmark('');
+    setSavedAddress(null);
+    setShowAddressForm(false);
+  }, [open, customerEmail, savedAddressStorageKey]);
+
   React.useEffect(() => {
     if (!open) {
       setStep('cart');
@@ -130,7 +167,7 @@ export default function CheckoutModal({
     const currentCity = savedAddress?.city || city;
     const currentLandmark = savedAddress?.landmark || landmark;
 
-    if (!currentName || !currentPhone || !currentEmail || !currentProvince || !currentCity || !currentAddress) {
+    if (!currentName || !currentPhone || !currentProvince || !currentCity || !currentAddress) {
       setShowAddressForm(true);
       setError('Please click "+ Add Address" and enter your shipping details before placing the order.');
       return;
@@ -592,7 +629,7 @@ export default function CheckoutModal({
 
                     <div>
                       <label className="block text-[11px] font-extrabold text-slate-700 mb-1">
-                        Email
+                        Email <span className="font-medium text-slate-400">(Optional)</span>
                       </label>
                       <input
                         type="email"
@@ -669,12 +706,14 @@ export default function CheckoutModal({
                       <button
                         type="button"
                         onClick={() => {
-                          if (!fullName || !phone || !email || !province || !city || !address) {
-                            setError('Please fill in Name, Contact, Email, Province, City, and Mohallah / Sector / Street.');
+                          if (!fullName || !phone || !province || !city || !address) {
+                            setError('Please fill in Name, Contact, Province, City, and Mohallah / Sector / Street.');
                             return;
                           }
+                          const addressToSave = { fullName, phone, email: email.trim(), province, city, address, landmark };
                           setError('');
-                          setSavedAddress({ fullName, phone, email, province, city, address, landmark });
+                          setSavedAddress(addressToSave);
+                          localStorage.setItem(savedAddressStorageKey, JSON.stringify(addressToSave));
                           setShowAddressForm(false);
                         }}
                         className="px-6 py-2 rounded-xl bg-[#E8262A] text-white font-black text-xs uppercase tracking-wider hover:bg-red-700 transition shadow-sm cursor-pointer"
@@ -700,9 +739,11 @@ export default function CheckoutModal({
                         <p className="text-[11px] text-slate-600 mt-0.5">
                           {savedAddress?.phone || phone}
                         </p>
-                        <p className="text-[11px] text-slate-600">
-                          {savedAddress?.email || email}
-                        </p>
+                        {(savedAddress?.email || email) ? (
+                          <p className="text-[11px] text-slate-600">
+                            {savedAddress?.email || email}
+                          </p>
+                        ) : null}
                         <p className="text-[11px] text-slate-500 font-medium leading-snug truncate">
                           {savedAddress?.address || address}{(savedAddress?.landmark || landmark) ? `, Near ${savedAddress?.landmark || landmark}` : ''}, {savedAddress?.city || city}, {savedAddress?.province || province}
                         </p>
