@@ -3,22 +3,56 @@ import { useAdmin } from '../../context/AdminContext';
 import StatCard from '../common/StatCard';
 import Badge from '../common/Badge';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { DollarSign, TrendingUp, Percent, ArrowUpRight, Plus, X } from 'lucide-react';
+import { CalendarDays, DollarSign, TrendingUp, Receipt, Plus, X } from 'lucide-react';
 
 export const RevenueView = () => {
-  const { finance, addTransaction } = useAdmin();
+  const { finance, orders, addTransaction } = useAdmin();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [filterType, setFilterType] = useState('all');
+  const [filterValue, setFilterValue] = useState('');
 
   const [formData, setFormData] = useState({
     title: '',
     type: 'Revenue',
     amount: '',
     category: 'Marketplace Commission',
-    date: '2026-08-11',
+    date: new Date().toISOString().slice(0, 10),
     status: 'Completed'
   });
 
-  const revenues = finance.transactions.filter((t) => t.type === 'Revenue');
+  const matchesPeriod = (dateValue) => {
+    if (filterType === 'all' || !filterValue) return true;
+    const date = String(dateValue || '').slice(0, 10);
+    if (filterType === 'date') return date === filterValue;
+    if (filterType === 'month') return date.startsWith(filterValue);
+    if (filterType === 'year') return date.startsWith(filterValue);
+    return true;
+  };
+  const filteredTransactions = finance.transactions.filter((transaction) => matchesPeriod(transaction.date));
+  const revenues = filteredTransactions.filter((transaction) => transaction.type === 'Revenue');
+  const completedOrderRevenue = orders
+    .filter((order) => ['Shipped', 'Delivered', 'Received'].includes(order.orderStatus || order.order_status))
+    .filter((order) => matchesPeriod(order.orderDate || order.created_at || order.date))
+    .reduce((sum, order) => sum + Number(order.totalAmount || order.total_amount || 0), 0);
+  const totalRevenue = completedOrderRevenue + revenues.reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
+  const totalExpenses = filteredTransactions.filter((transaction) => transaction.type === 'Expense').reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
+  const netProfit = totalRevenue - totalExpenses;
+
+  const chartBuckets = {};
+  filteredTransactions.forEach((transaction) => {
+    const key = filterType === 'date' ? String(transaction.date || '').slice(0, 10) : String(transaction.date || '').slice(0, 7);
+    if (!key) return;
+    if (!chartBuckets[key]) chartBuckets[key] = { period: key, revenue: 0, expenses: 0 };
+    chartBuckets[key][transaction.type === 'Expense' ? 'expenses' : 'revenue'] += Number(transaction.amount || 0);
+  });
+  orders.filter((order) => ['Shipped', 'Delivered', 'Received'].includes(order.orderStatus || order.order_status)).filter((order) => matchesPeriod(order.orderDate || order.created_at || order.date)).forEach((order) => {
+    const date = order.orderDate || order.created_at || order.date;
+    const key = filterType === 'date' ? String(date || '').slice(0, 10) : String(date || '').slice(0, 7);
+    if (!key) return;
+    if (!chartBuckets[key]) chartBuckets[key] = { period: key, revenue: 0, expenses: 0 };
+    chartBuckets[key].revenue += Number(order.totalAmount || order.total_amount || 0);
+  });
+  const filteredChartData = Object.values(chartBuckets).sort((a, b) => a.period.localeCompare(b.period));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,34 +73,43 @@ export const RevenueView = () => {
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#E8262A] hover:bg-red-700 text-white text-xs font-bold shadow-md cursor-pointer"
         >
           <Plus size={16} /> Record Revenue Entry
         </button>
       </div>
 
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs sm:flex-row sm:items-end">
+        <div className="flex items-center gap-2 text-slate-700 sm:mr-2"><div className="rounded-xl bg-red-50 p-2 text-[#E8262A]"><CalendarDays size={18}/></div><div><p className="text-xs font-bold">Revenue Period</p><p className="text-[10px] text-slate-500">Select a date, month or year</p></div></div>
+        <label className="text-[11px] font-bold text-slate-600">Filter By<select value={filterType} onChange={(event) => { setFilterType(event.target.value); setFilterValue(''); }} className="mt-1 block h-10 min-w-32 rounded-xl border border-slate-200 bg-white px-3 text-xs outline-none focus:border-red-400"><option value="all">All Time</option><option value="date">Specific Date</option><option value="month">Month</option><option value="year">Year</option></select></label>
+        {filterType === 'date' && <label className="text-[11px] font-bold text-slate-600">Select Date<input type="date" value={filterValue} onChange={(event) => setFilterValue(event.target.value)} className="mt-1 block h-10 rounded-xl border border-slate-200 px-3 text-xs outline-none focus:border-red-400"/></label>}
+        {filterType === 'month' && <label className="text-[11px] font-bold text-slate-600">Select Month<input type="month" value={filterValue} onChange={(event) => setFilterValue(event.target.value)} className="mt-1 block h-10 rounded-xl border border-slate-200 px-3 text-xs outline-none focus:border-red-400"/></label>}
+        {filterType === 'year' && <label className="text-[11px] font-bold text-slate-600">Select Year<input type="number" min="2000" max="2100" placeholder="2026" value={filterValue} onChange={(event) => setFilterValue(event.target.value.replace(/\D/g, '').slice(0, 4))} className="mt-1 block h-10 w-32 rounded-xl border border-slate-200 px-3 text-xs outline-none focus:border-red-400"/></label>}
+        {filterType !== 'all' && filterValue && <button type="button" onClick={() => { setFilterType('all'); setFilterValue(''); }} className="h-10 rounded-xl border border-red-200 px-4 text-xs font-bold text-red-600 hover:bg-red-50">Clear Filter</button>}
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard
-          title="Gross Merchandise Value (GMV)"
-          value={`Rs ${finance.summary.totalRevenue.toLocaleString('en-PK')}`}
+          title="Total Revenue"
+          value={`Rs ${totalRevenue.toLocaleString('en-PK')}`}
           trend="up"
-          description="+14.2% from last month"
+          description="Completed orders and revenue entries"
           icon={DollarSign}
           accentColor="emerald"
         />
         <StatCard
-          title="Platform Takeaway Commission"
-          value={`Rs ${finance.summary.commissionEarnings.toLocaleString('en-PK')}`}
-          trend="up"
-          description="Average 10% commission rate"
-          icon={Percent}
-          accentColor="blue"
+          title="Total Expense"
+          value={`Rs ${totalExpenses.toLocaleString('en-PK')}`}
+          trend="down"
+          description="All recorded operational expenses"
+          icon={Receipt}
+          accentColor="rose"
         />
         <StatCard
-          title="Net Profit Margin"
-          value={`Rs ${finance.summary.netProfit.toLocaleString('en-PK')}`}
+          title="Net Profit"
+          value={`Rs ${netProfit.toLocaleString('en-PK')}`}
           trend="up"
-          description="Post-expense operational net"
+          description="Revenue minus total expenses"
           icon={TrendingUp}
           accentColor="purple"
         />
@@ -74,10 +117,10 @@ export const RevenueView = () => {
 
       {/* Area Chart */}
       <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs space-y-3">
-        <h3 className="text-sm font-extrabold text-slate-900">Revenue & Commission Growth Curve</h3>
+        <h3 className="text-sm font-extrabold text-slate-900">Revenue & Expense Growth</h3>
         <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" h="100%">
-            <AreaChart data={finance.revenueTrend}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={filteredChartData}>
               <defs>
                 <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
@@ -88,11 +131,11 @@ export const RevenueView = () => {
                   <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="month" stroke="#94a3b8" fontSize={11} tickLine={false} />
+              <XAxis dataKey="period" stroke="#94a3b8" fontSize={11} tickLine={false} />
               <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} />
               <Tooltip />
-              <Area type="monotone" dataKey="grossSales" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#revenueGrad)" name="Gross Sales ($)" />
-              <Area type="monotone" dataKey="commissions" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#commGrad)" name="Platform Commission ($)" />
+              <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#revenueGrad)" name="Revenue (Rs)" />
+              <Area type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#commGrad)" name="Expenses (Rs)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
