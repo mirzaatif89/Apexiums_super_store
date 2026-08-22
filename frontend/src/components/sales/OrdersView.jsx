@@ -75,11 +75,11 @@ export const OrdersView = () => {
           className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none"
         >
           <option value="">All Order Statuses</option>
-          <option value="Pending">Pending</option>
-          <option value="Dispatched">Dispatched</option>
-          <option value="On the Way">On the Way</option>
+          <option value="Packed">Packed</option>
           <option value="Shipped">Shipped</option>
+          <option value="Received">Received</option>
           <option value="Cancelled">Cancelled</option>
+          <option value="Return">Return</option>
         </select>
       </div>
 
@@ -121,16 +121,19 @@ export const OrdersView = () => {
                     </td>
                     <td className="p-3.5">
                       <select
-                        value={['Pending', 'Dispatched', 'On the Way', 'Shipped', 'Cancelled', 'Returned'].includes(o.orderStatus) ? o.orderStatus : 'Pending'}
-                        onChange={(e) => updateOrderStatus(o.id, e.target.value)}
+                        value={o.orderStatus === 'Returned' ? 'Return' : ['Packed', 'Shipped', 'Received', 'Cancelled', 'Return'].includes(o.orderStatus) ? o.orderStatus : ''}
+                        onChange={(e) => {
+                          if (e.target.value === 'Return') createReturnFromOrder(o);
+                          else updateOrderStatus(o.id, e.target.value);
+                        }}
                         className="px-2 py-1 bg-slate-100 border rounded-lg text-[11px] font-bold text-slate-800 focus:outline-none cursor-pointer"
                       >
-                        <option value="Pending">Pending</option>
-                        <option value="Dispatched">Dispatched</option>
-                        <option value="On the Way">On the Way</option>
+                        <option value="" disabled>Select status</option>
+                        <option value="Packed">Packed</option>
                         <option value="Shipped">Shipped</option>
+                        <option value="Received">Received</option>
                         <option value="Cancelled">Cancelled</option>
-                        <option value="Returned">Returned</option>
+                        <option value="Return">Return</option>
                       </select>
                     </td>
                     <td className="p-3.5 text-slate-500 font-medium">{o.orderDate}</td>

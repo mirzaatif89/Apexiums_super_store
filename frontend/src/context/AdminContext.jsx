@@ -538,6 +538,40 @@ export const AdminProvider = ({ children, session }) => {
 
   useEffect(() => {
     let active = true;
+    const loadReturns = async () => {
+      try {
+        const response = await fetch("/api/returns?limit=200", { headers: apiHeaders() });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!active || !Array.isArray(data.rows)) return;
+        const apiReturns = data.rows.map((row) => ({
+          id: `RET-${row.id}`,
+          orderId: row.order_id ? `ORD-${row.order_id}` : "",
+          customerName: row.customer || "Customer",
+          customerEmail: "",
+          productName: row.product || "Order items",
+          sellerName: "Marketplace",
+          reason: row.reason || "Order returned",
+          amount: Number(row.refund_amount || 0),
+          status: row.status || "Requested",
+          date: row.created_at ? String(row.created_at).slice(0, 10) : "",
+          images: [],
+        }));
+        setReturns(apiReturns);
+      } catch {
+        /* Keep current return data when the API is unavailable. */
+      }
+    };
+    loadReturns();
+    const interval = window.setInterval(loadReturns, 30000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [session?.role, session?.businessId]);
+
+  useEffect(() => {
+    let active = true;
     const loadCustomers = async () => {
       try {
         const headers = { "x-user-role": session?.role || "" };
@@ -1056,6 +1090,11 @@ export const AdminProvider = ({ children, session }) => {
   };
 
   const createReturnFromOrder = (order) => {
+    if (returns.some((item) => item.orderId === order.id)) {
+      updateOrderStatus(order.id, "Return");
+      addToast(`${order.id} is already available in Returns.`, "info");
+      return;
+    }
     const item = order.products?.[0] || {};
     const newReturn = {
       id: `RET-${Date.now()}`,
@@ -1075,7 +1114,7 @@ export const AdminProvider = ({ children, session }) => {
         ? current
         : [newReturn, ...current],
     );
-    updateOrderStatus(order.id, "Returned");
+    updateOrderStatus(order.id, "Return");
     (order.products || []).forEach((product) => {
       const quantity = Number(product.qty || 1);
       if (product.id)
