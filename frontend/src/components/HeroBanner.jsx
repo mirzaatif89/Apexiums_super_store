@@ -25,21 +25,23 @@ export default function HeroBanner() {
       </div>
 
       <div className="mx-auto w-full max-w-6xl md:px-3 lg:px-8">
-        <div className="group relative min-h-[210px] overflow-hidden rounded-2xl border border-slate-200/60 bg-slate-900 shadow-lg shadow-slate-900/10 sm:min-h-[280px] sm:rounded-[28px] md:min-h-[340px] lg:min-h-[390px]">
+        <div className="group relative aspect-[1.95/1] overflow-hidden rounded-2xl border border-slate-200/60 bg-slate-900 shadow-lg shadow-slate-900/10 sm:rounded-[28px]">
           <img key={activeSlide.id} src={activeSlide.image} alt={activeSlide.subtitle} className="absolute inset-0 h-full w-full object-cover object-center transition duration-700 group-hover:scale-[1.025]" />
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/52 to-slate-950/5" />
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-950/35 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/72 via-slate-950/30 to-slate-950/5" />
+          <div className="absolute inset-x-0 bottom-0 h-[18%] bg-slate-950/45 backdrop-blur-[1px]" />
 
-          <div className="relative z-10 flex min-h-[210px] max-w-[84%] flex-col items-start justify-center p-5 sm:min-h-[280px] sm:max-w-[68%] sm:p-8 md:min-h-[340px] md:max-w-[62%] md:p-10 lg:min-h-[390px] lg:max-w-[58%] lg:p-12">
-            <span className="mb-3 inline-flex items-center rounded-full border border-white/70 bg-white/95 px-3.5 py-1.5 text-[10px] font-bold text-slate-900 shadow-sm sm:text-xs">{activeSlide.badge}</span>
-            <h3 className="text-xl font-black leading-tight tracking-tight text-white drop-shadow-sm sm:text-2xl md:text-3xl lg:text-4xl">{activeSlide.subtitle}</h3>
-            <div className="my-1.5 flex flex-wrap items-baseline gap-2 sm:my-2">
-              <span className="text-sm font-bold text-white sm:text-lg md:text-xl">{activeSlide.offerPrefix}</span>
-              <span className="text-4xl font-black leading-none tracking-tight text-white drop-shadow-sm sm:text-5xl md:text-6xl lg:text-7xl">{activeSlide.offerMain}</span>
-            </div>
-            <p className="mb-3 text-[10px] font-medium leading-tight text-white/80 sm:mb-5 sm:text-xs md:text-sm">{activeSlide.terms}</p>
-            <button type="button" onClick={showProducts} className="inline-flex items-center justify-center rounded-full bg-[#E8262A] px-6 py-2.5 text-xs font-extrabold text-white shadow-lg shadow-red-950/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#d01f23] hover:shadow-xl active:scale-95 sm:px-8 sm:py-3 sm:text-sm md:text-base">{activeSlide.cta}</button>
+          <span className="absolute left-[4%] top-[8%] z-10 inline-flex items-center rounded-full border border-white/70 bg-white/95 px-3 py-1 text-[9px] font-bold text-slate-900 shadow-sm sm:px-4 sm:py-2 sm:text-xs md:text-sm">{activeSlide.badge}</span>
+
+          <h3 className="absolute left-[4%] top-[36%] z-10 max-w-[70%] text-lg font-black leading-tight tracking-tight text-white drop-shadow-md sm:text-2xl md:text-3xl lg:text-4xl">{activeSlide.subtitle}</h3>
+
+          <div className="absolute left-[4%] top-[54%] z-10 flex items-baseline gap-1.5 sm:gap-3">
+            <span className="text-xs font-bold text-white sm:text-lg md:text-xl lg:text-2xl">{activeSlide.offerPrefix}</span>
+            <span className="text-4xl font-black leading-none tracking-tight text-white drop-shadow-md sm:text-5xl md:text-6xl lg:text-7xl">{activeSlide.offerMain}</span>
           </div>
+
+          <p className="absolute bottom-[5.5%] left-[4%] z-10 max-w-[58%] truncate text-[8px] font-medium leading-none text-white/80 sm:text-xs md:text-sm">{activeSlide.terms}</p>
+
+          <button type="button" onClick={showProducts} className="absolute bottom-[3.5%] right-[4%] z-20 inline-flex items-center justify-center rounded-full bg-[#E8262A] px-5 py-2 text-xs font-extrabold text-white shadow-lg shadow-red-950/30 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#d01f23] hover:shadow-xl active:scale-95 sm:px-8 sm:py-3 sm:text-sm md:px-10 md:py-3.5 md:text-base lg:text-lg">{activeSlide.cta}</button>
         </div>
       </div>
 
