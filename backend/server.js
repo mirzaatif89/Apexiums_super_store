@@ -633,7 +633,10 @@ const schemas = [
     business_name VARCHAR(180),
     email VARCHAR(180),
     phone VARCHAR(60),
+    address TEXT,
     category VARCHAR(120),
+    leopard_courier_nearby VARCHAR(10),
+    product_image_url VARCHAR(500),
     message TEXT,
     status VARCHAR(40) DEFAULT 'Pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -692,7 +695,7 @@ const resources = {
   staff_salaries: ['staff_id', 'staff_name', 'salary_month', 'base_salary', 'bonus', 'deductions', 'payment_status', 'paid_date', 'notes', 'created_at'],
   delivery_expenses: ['order_id', 'courier', 'tracking_number', 'amount', 'expense_date', 'payment_status', 'notes', 'created_at'],
   chats: ['sender_name', 'sender_type', 'subject', 'message', 'reply_message', 'status', 'created_at'],
-  seller_applications: ['applicant_name', 'business_name', 'email', 'phone', 'category', 'message', 'status', 'created_at'],
+  seller_applications: ['applicant_name', 'business_name', 'email', 'phone', 'address', 'category', 'leopard_courier_nearby', 'product_image_url', 'message', 'status', 'created_at'],
   investor_applications: ['applicant_name', 'email', 'phone', 'address', 'proposed_amount', 'investment_product', 'document_url', 'message', 'status', 'created_at']
 };
 
@@ -932,6 +935,9 @@ async function initializeDatabase() {
   await ensureColumn('business_accounts', 'address', 'TEXT');
   await ensureColumn('business_accounts', 'agreement_image', 'VARCHAR(500)');
   await ensureColumn('business_accounts', 'plain_password', 'VARCHAR(255)');
+  await ensureColumn('seller_applications', 'address', 'TEXT');
+  await ensureColumn('seller_applications', 'leopard_courier_nearby', 'VARCHAR(10)');
+  await ensureColumn('seller_applications', 'product_image_url', 'VARCHAR(500)');
   await ensureColumn('investor_applications', 'address', 'TEXT');
   await ensureColumn('investor_applications', 'investment_product', 'VARCHAR(180)');
   await ensureColumn('investor_applications', 'document_url', 'VARCHAR(500)');
@@ -1012,6 +1018,7 @@ function crudRoutes(resource, required = []) {
       }
       if ((resource === 'categories' || resource === 'products') && data.image_url) data.image_url = persistImageDataUrl(data.image_url, resource === 'products' ? 'products' : 'categories');
       if (resource === 'investor_applications' && data.document_url) data.document_url = persistImageDataUrl(data.document_url, 'investor-documents');
+      if (resource === 'seller_applications' && data.product_image_url) data.product_image_url = persistImageDataUrl(data.product_image_url, 'seller-products');
       if (resource === 'staff' && data.password_hash) data.password_hash = hashPassword(data.password_hash);
       const { role, businessId } = getContext(req);
       if (businessScopedTables.has(resource) && !Object.prototype.hasOwnProperty.call(data, 'business_id')) {
