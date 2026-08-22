@@ -10,14 +10,13 @@ import {
   ShieldCheck,
   RotateCcw,
   Lock,
-  Mail,
-  Sparkles
+  Mail
 } from 'lucide-react';
 import { getWhatsAppUrl } from '../utils/whatsapp';
 import easypaisaLogo from '../../images/EASYPAISA-logo.png';
 import jazzCashLogo from '../../images/jazzcash-logo.png';
 
-export default function Footer({ storeName = "Apexiums Technologies", onAdminClick }) {
+export default function Footer({ storeName = "Apexiums", logoSrc, onAdminClick }) {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
@@ -43,17 +42,16 @@ export default function Footer({ storeName = "Apexiums Technologies", onAdminCli
             {/* Logo and Tagline */}
             <div className="space-y-3">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#E8262A] to-[#B71C1C] text-white shadow-md shadow-red-900/20">
-                  <Sparkles size={20} className="fill-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold tracking-tight text-slate-900 leading-none">
-                    {storeName}
-                  </h2>
-                  <span className="text-[10px] uppercase font-bold tracking-widest text-[#E8262A]">
-                    Technologies
-                  </span>
-                </div>
+                {logoSrc ? (
+                  <img src={logoSrc} alt={`${storeName} logo`} className="h-11 w-11 rounded-xl border border-slate-200 bg-white object-cover shadow-sm" />
+                ) : (
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#E8262A] to-[#B71C1C] text-lg font-black text-white shadow-md shadow-red-900/20">
+                    {storeName.charAt(0)}
+                  </div>
+                )}
+                <h2 className="text-xl font-extrabold leading-none tracking-tight text-slate-900">
+                  {storeName}
+                </h2>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed max-w-md font-medium">
                 Pakistan's leading online store for electronics, fashion, home essentials & lifestyle products with fast delivery and authentic items.
