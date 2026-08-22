@@ -27,6 +27,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   ShoppingCart,
+  Store,
   Truck,
   Upload,
   User,
@@ -318,6 +319,18 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
           content:
             'Apexiums Technologies is your premier online e-commerce marketplace offering high-quality fashion, electronics, gadgets, and daily essentials with fast delivery and guaranteed satisfaction.'
         })
+    },
+    {
+      label: 'Become a Seller',
+      icon: <Store size={18} />,
+      onClick: () => {
+        setApplicationStatus('');
+        setInfoModal({
+          title: 'Become a Seller',
+          type: 'seller-application',
+          content: 'Sell your products on Elistin, reach customers across Pakistan, and grow your business with our marketplace.'
+        });
+      }
     },
     {
       label: 'Become an Investor',
