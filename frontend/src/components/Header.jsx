@@ -1,6 +1,34 @@
 import React from 'react';
 import { Heart, Menu, Search, ShoppingCart, User } from 'lucide-react';
 
+function ReferenceCartIcon({ className = '' }) {
+  return (
+    <svg
+      viewBox="0 0 32 32"
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M3.75 5.5h3.5l2.65 12.25h14.4l3.2-9.25H9"
+        stroke="currentColor"
+        strokeWidth="2.65"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M10.4 21.25h13.15"
+        stroke="currentColor"
+        strokeWidth="2.65"
+        strokeLinecap="round"
+      />
+      <circle cx="12" cy="26" r="1.9" fill="currentColor" />
+      <circle cx="22.2" cy="26" r="1.9" fill="currentColor" />
+    </svg>
+  );
+}
+
 export default function Header({
   storeName = 'Apexiums',
   logoSrc,
@@ -119,7 +147,7 @@ export default function Header({
               title="Cart"
               aria-label="Cart"
             >
-              <ShoppingCart size={30} strokeWidth={2.25} className="text-white transition-transform group-hover:scale-105" />
+              <ReferenceCartIcon className="h-[31px] w-[31px] text-white transition-transform group-hover:scale-105" />
               {cartCount > 0 ? (
                 <span className="absolute -top-1 -right-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-white px-1 text-[9px] font-black text-[#E8262A] shadow-md animate-bounce">
                   {cartCount}
