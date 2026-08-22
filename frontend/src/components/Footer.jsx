@@ -14,6 +14,8 @@ import {
   Sparkles
 } from 'lucide-react';
 import { getWhatsAppUrl } from '../utils/whatsapp';
+import easypaisaLogo from '../../images/EASYPAISA-logo.png';
+import jazzCashLogo from '../../images/jazzcash-logo.png';
 
 export default function Footer({ storeName = "Apexiums Technologies", onAdminClick }) {
   const [email, setEmail] = useState('');
@@ -65,19 +67,13 @@ export default function Footer({ storeName = "Apexiums Technologies", onAdminCli
               </h3>
               <div className="flex flex-wrap gap-2.5 items-center">
                 {/* JazzCash Badge */}
-                <div className="flex h-8 items-center rounded-lg bg-white px-3 py-1 shadow-xs border border-slate-200/90 hover:scale-105 transition cursor-default">
-                  <div className="flex items-center">
-                    <span className="font-black italic text-amber-500 text-sm tracking-tighter drop-shadow-xs">Jazz</span>
-                    <span className="font-black text-[#E8262A] text-sm ml-0.5">Cash</span>
-                  </div>
+                <div className="flex h-8 w-[88px] items-center justify-center overflow-hidden rounded-lg border border-slate-200/90 bg-white px-2 py-1 shadow-xs transition hover:scale-105 cursor-default">
+                  <img src={jazzCashLogo} alt="JazzCash" className="h-7 w-auto object-contain" />
                 </div>
 
                 {/* easypaisa Badge */}
-                <div className="flex h-8 items-center rounded-lg bg-white px-2.5 py-1 shadow-xs border border-slate-200/90 hover:scale-105 transition cursor-default gap-1.5">
-                  <svg className="w-4 h-4 text-emerald-600 fill-current" viewBox="0 0 24 24">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                  </svg>
-                  <span className="font-extrabold text-emerald-600 text-xs tracking-tight">easypaisa</span>
+                <div className="flex h-8 w-[98px] items-center justify-center overflow-hidden rounded-lg border border-slate-200/90 bg-white px-2.5 py-1 shadow-xs transition hover:scale-105 cursor-default">
+                  <img src={easypaisaLogo} alt="Easypaisa" className="h-6 w-auto object-contain" />
                 </div>
 
                 {/* VISA Badge */}
