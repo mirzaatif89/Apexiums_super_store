@@ -196,7 +196,7 @@ export default function CheckoutModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[75] flex items-center justify-center bg-slate-950/65 backdrop-blur-sm p-0 sm:p-4 md:p-6 pb-14 sm:pb-4 overflow-hidden">
+    <div className="fixed inset-0 z-[110] flex items-start justify-center overflow-hidden bg-slate-950/65 p-0 backdrop-blur-sm sm:items-center sm:p-4 md:p-6">
       <button
         type="button"
         className="absolute inset-0 h-full w-full cursor-default"
@@ -205,9 +205,9 @@ export default function CheckoutModal({
       />
 
       {/* Cart Modal Container */}
-      <section className="relative z-10 w-full max-w-6xl xl:max-w-7xl h-[calc(100dvh-56px)] sm:h-[92vh] sm:max-h-[920px] overflow-hidden rounded-none sm:rounded-3xl bg-white shadow-2xl border-0 sm:border sm:border-slate-200/90 flex flex-col mb-14 sm:mb-0">
+      <section className="relative z-10 flex h-[100dvh] w-full max-w-6xl flex-col overflow-hidden rounded-none border-0 bg-white shadow-2xl sm:h-[92vh] sm:max-h-[920px] sm:rounded-3xl sm:border sm:border-slate-200/90 xl:max-w-7xl">
         {/* Compact Colored Top Header Bar */}
-        <div className="flex items-center justify-between bg-[#E8262A] px-3.5 sm:px-5 py-2.5 text-white rounded-none sm:rounded-t-3xl border-b border-red-700/60 shrink-0">
+        <div className="flex shrink-0 items-center justify-between rounded-none border-b border-red-700/60 bg-[#E8262A] px-3.5 py-2.5 text-white sm:rounded-t-3xl sm:px-5">
           {/* Left: Back Arrow Icon */}
           <button
             type="button"
