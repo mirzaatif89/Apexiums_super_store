@@ -19,10 +19,11 @@ import {
 } from 'lucide-react';
 
 const generateOrderId = () => {
-  const date = new Date();
-  const datePart = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
-  const uniquePart = `${Date.now().toString(36).slice(-4)}${Math.random().toString(36).slice(2, 6)}`.toUpperCase();
-  return `EL-${datePart}-${uniquePart}`;
+  const sequenceKey = 'elistin-order-sequence';
+  const currentSequence = Number.parseInt(localStorage.getItem(sequenceKey) || '0', 10) || 0;
+  const nextSequence = currentSequence + 1;
+  localStorage.setItem(sequenceKey, String(nextSequence));
+  return String(nextSequence).padStart(3, '0');
 };
 
 export default function CheckoutModal({
