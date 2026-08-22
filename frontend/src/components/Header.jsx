@@ -46,7 +46,10 @@ export default function Header({
   onSearchFocus
 }) {
   return (
-    <header className="w-full bg-brand-primary text-white transition-all relative z-20 shadow-md">
+    <header
+      className="w-full text-white transition-all relative z-20 shadow-md"
+      style={{ backgroundColor: 'var(--brand-primary)' }}
+    >
       {/* Header Content Container - Full Available Width */}
       <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-3 sm:py-3.5 md:py-2.5">
 
