@@ -12,43 +12,46 @@ export const StatCard = ({
   onClick
 }) => {
   const colorMap = {
-    blue: 'bg-blue-50 text-blue-600 border-blue-100',
-    emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-    amber: 'bg-amber-50 text-amber-600 border-amber-100',
-    purple: 'bg-purple-50 text-purple-600 border-purple-100',
-    rose: 'bg-rose-50 text-rose-600 border-rose-100',
-    indigo: 'bg-indigo-50 text-indigo-600 border-indigo-100'
+    blue: { card: 'from-blue-50/90 via-white to-cyan-50/60 border-blue-100/90 hover:border-blue-200', icon: 'bg-blue-500 text-white shadow-blue-200', dot: 'bg-blue-400' },
+    emerald: { card: 'from-emerald-50/90 via-white to-teal-50/60 border-emerald-100/90 hover:border-emerald-200', icon: 'bg-emerald-500 text-white shadow-emerald-200', dot: 'bg-emerald-400' },
+    amber: { card: 'from-amber-50/90 via-white to-orange-50/60 border-amber-100/90 hover:border-amber-200', icon: 'bg-amber-500 text-white shadow-amber-200', dot: 'bg-amber-400' },
+    purple: { card: 'from-purple-50/90 via-white to-fuchsia-50/60 border-purple-100/90 hover:border-purple-200', icon: 'bg-purple-500 text-white shadow-purple-200', dot: 'bg-purple-400' },
+    rose: { card: 'from-rose-50/90 via-white to-pink-50/60 border-rose-100/90 hover:border-rose-200', icon: 'bg-rose-500 text-white shadow-rose-200', dot: 'bg-rose-400' },
+    indigo: { card: 'from-indigo-50/90 via-white to-violet-50/60 border-indigo-100/90 hover:border-indigo-200', icon: 'bg-indigo-500 text-white shadow-indigo-200', dot: 'bg-indigo-400' }
   };
 
   const isPositive = trend === 'up';
+  const colors = colorMap[accentColor] || colorMap.blue;
 
   return (
     <div
       onClick={onClick}
-      className={`bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-200 ${
-        onClick ? 'cursor-pointer hover:border-slate-300' : ''
+      className={`group relative overflow-hidden rounded-2xl border bg-gradient-to-br p-5 shadow-[0_4px_16px_rgba(15,23,42,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(15,23,42,0.10)] ${colors.card} ${
+        onClick ? 'cursor-pointer' : ''
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+      <div className={`absolute -right-8 -top-10 h-24 w-24 rounded-full opacity-10 blur-xl ${colors.dot}`} />
+      <div className="relative flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <p className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">
+            <span className={`h-1.5 w-1.5 rounded-full ${colors.dot}`} />
             {title}
           </p>
-          <h3 className="text-2xl font-black text-slate-900 tracking-tight mt-1.5">
+          <h3 className="mt-2 text-xl font-bold tracking-tight text-slate-800 sm:text-[22px]">
             {value}
           </h3>
         </div>
         {Icon && (
           <div
-            className={`p-3 rounded-xl border ${colorMap[accentColor] || colorMap.blue}`}
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-lg transition-transform duration-300 group-hover:rotate-3 group-hover:scale-105 ${colors.icon}`}
           >
-            <Icon size={22} strokeWidth={2.2} />
+            <Icon size={21} strokeWidth={1.9} />
           </div>
         )}
       </div>
 
       {(trendValue || description) && (
-        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+        <div className="relative mt-3 flex items-center justify-between border-t border-white/80 pt-3 text-xs">
           {trendValue && (
             <span
               className={`inline-flex items-center gap-0.5 font-bold ${
