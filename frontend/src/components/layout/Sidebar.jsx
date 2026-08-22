@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useAdmin } from '../../context/AdminContext';
-import { isSuperAdminRole } from '../../utils/roles';
+import React, { useState } from "react";
+import { useAdmin } from "../../context/AdminContext";
+import { isSuperAdminRole } from "../../utils/roles";
 import {
   LayoutDashboard,
   Package,
@@ -10,7 +10,6 @@ import {
   RotateCcw,
   Users,
   Megaphone,
-  Radio,
   TrendingUp,
   UserCheck,
   Store,
@@ -28,16 +27,40 @@ import {
   LogOut,
   ChevronDown,
   ChevronRight,
-  X
-} from 'lucide-react';
+  X,
+} from "lucide-react";
 
-export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLogout, session }) => {
-  const { activeTab, setActiveTab, activeSubTab, setActiveSubTab, notifications, currentUser, hasPermission } = useAdmin();
+export const Sidebar = ({
+  isOpen,
+  onClose,
+  storeName = "Apexiums",
+  logoSrc,
+  onLogout,
+  session,
+}) => {
+  const {
+    activeTab,
+    setActiveTab,
+    activeSubTab,
+    setActiveSubTab,
+    notifications,
+    currentUser,
+    hasPermission,
+  } = useAdmin();
   const isSuperAdmin = isSuperAdminRole(session?.role || currentUser.role);
 
   // Collapsible accordion sub-menus
   const [openSections, setOpenSections] = useState(() =>
-    isSuperAdmin ? ['catalog', 'sales', 'marketing', 'marketplace', 'finance', 'notifications'] : ['catalog']
+    isSuperAdmin
+      ? [
+          "catalog",
+          "sales",
+          "marketing",
+          "marketplace",
+          "finance",
+          "notifications",
+        ]
+      : ["catalog"],
   );
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -46,11 +69,11 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
     setOpenSections((sections) =>
       sections.includes(section)
         ? sections.filter((item) => item !== section)
-        : [...sections, section]
+        : [...sections, section],
     );
   };
 
-  const handleNav = (tab, subTab = '') => {
+  const handleNav = (tab, subTab = "") => {
     setActiveTab(tab);
     if (subTab) setActiveSubTab(subTab);
     if (onClose) onClose();
@@ -58,87 +81,202 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
 
   const menuItems = [
     {
-      id: 'dashboard',
-      label: 'Dashboard',
+      id: "dashboard",
+      label: "Dashboard",
       icon: LayoutDashboard,
-      type: 'single',
-      permission: 'viewDashboard'
+      type: "single",
+      permission: "viewDashboard",
     },
     {
-      id: 'catalog',
-      label: 'Catalog',
+      id: "catalog",
+      label: "Catalog",
       icon: Package,
-      type: 'group',
+      type: "group",
       children: [
-        { id: 'products', label: 'Product Listing', icon: Package, permission: 'manageProducts' },
-        { id: 'categories', label: 'Categories', icon: Layers, permission: 'manageCategories' },
-        { id: 'stock', label: 'Stock', icon: Boxes, permission: 'manageStock' },
-        { id: 'suppliers', label: 'Suppliers', icon: Truck, permission: 'manageStock' }
-      ]
+        {
+          id: "products",
+          label: "Product Listing",
+          icon: Package,
+          permission: "manageProducts",
+        },
+        {
+          id: "categories",
+          label: "Categories",
+          icon: Layers,
+          permission: "manageCategories",
+        },
+        { id: "stock", label: "Stock", icon: Boxes, permission: "manageStock" },
+        {
+          id: "suppliers",
+          label: "Suppliers",
+          icon: Truck,
+          permission: "manageStock",
+        },
+      ],
     },
     {
-      id: 'sales',
-      label: 'Sales',
+      id: "sales",
+      label: "Sales",
       icon: ShoppingCart,
-      type: 'group',
+      type: "group",
       children: [
-        { id: 'orders', label: 'Orders', icon: ShoppingCart, permission: 'manageOrders' },
-        { id: 'returns', label: 'Returns', icon: RotateCcw, permission: 'manageReturns' },
-        { id: 'customers', label: 'Customers', icon: Users, permission: 'manageCustomers' }
-      ]
+        {
+          id: "orders",
+          label: "Orders",
+          icon: ShoppingCart,
+          permission: "manageOrders",
+        },
+        {
+          id: "returns",
+          label: "Returns",
+          icon: RotateCcw,
+          permission: "manageReturns",
+        },
+        {
+          id: "customers",
+          label: "Customers",
+          icon: Users,
+          permission: "manageCustomers",
+        },
+      ],
     },
     {
-      id: 'marketing',
-      label: 'Marketing',
+      id: "marketing",
+      label: "Marketing",
       icon: Megaphone,
-      type: 'group',
+      type: "group",
       children: [
-        { id: 'banners', label: 'Website Banner', icon: Megaphone, permission: 'manageMarketing' },
-        { id: 'ads', label: 'APP Banner', icon: Radio, permission: 'manageMarketing' },
-        { id: 'coupons', label: 'Coupons', icon: BadgePercent, permission: 'manageMarketing' }
-      ]
+        {
+          id: "banners",
+          label: "Banners",
+          icon: Megaphone,
+          permission: "manageMarketing",
+        },
+        {
+          id: "coupons",
+          label: "Coupons",
+          icon: BadgePercent,
+          permission: "manageMarketing",
+        },
+      ],
     },
     {
-      id: 'marketplace',
-      label: 'Marketplace',
+      id: "marketplace",
+      label: "Marketplace",
       icon: Store,
-      type: 'group',
+      type: "group",
       children: [
-        { id: 'investors', label: 'Investors', icon: TrendingUp, permission: 'manageInvestors' },
-        { id: 'staff', label: 'Staff', icon: UserCheck, permission: 'manageStaff' },
-        { id: 'sellers', label: 'Sellers', icon: Store, permission: 'manageSellers' },
-        ...(isSuperAdmin ? [{ id: 'permissions', label: 'Permissions', icon: ShieldCheck }] : [])
-      ]
+        {
+          id: "investors",
+          label: "Investors",
+          icon: TrendingUp,
+          permission: "manageInvestors",
+        },
+        {
+          id: "staff",
+          label: "Staff",
+          icon: UserCheck,
+          permission: "manageStaff",
+        },
+        {
+          id: "sellers",
+          label: "Sellers",
+          icon: Store,
+          permission: "manageSellers",
+        },
+        ...(isSuperAdmin
+          ? [{ id: "permissions", label: "Permissions", icon: ShieldCheck }]
+          : []),
+      ],
     },
     {
-      id: 'finance',
-      label: 'Finance',
+      id: "finance",
+      label: "Finance",
       icon: DollarSign,
-      type: 'group',
+      type: "group",
       children: [
-        { id: 'revenue', label: 'Revenue', icon: DollarSign, permission: 'manageFinance' },
-        { id: 'expenses', label: 'Expense', icon: Receipt, permission: 'manageFinance' },
-        { id: 'software-fees', label: 'Software Fees', icon: Server, permission: 'manageFinance' },
-        { id: 'staff-salaries', label: 'Staff Salaries', icon: UsersRound, permission: 'manageFinance' },
-        { id: 'delivery-expenses', label: 'Delivery Expenses', icon: Truck, permission: 'manageFinance' }
-      ]
+        {
+          id: "revenue",
+          label: "Revenue",
+          icon: DollarSign,
+          permission: "manageFinance",
+        },
+        {
+          id: "expenses",
+          label: "Expense",
+          icon: Receipt,
+          permission: "manageFinance",
+        },
+        {
+          id: "software-fees",
+          label: "Software Fees",
+          icon: Server,
+          permission: "manageFinance",
+        },
+        {
+          id: "staff-salaries",
+          label: "Staff Salaries",
+          icon: UsersRound,
+          permission: "manageFinance",
+        },
+        {
+          id: "delivery-expenses",
+          label: "Delivery Expenses",
+          icon: Truck,
+          permission: "manageFinance",
+        },
+      ],
     },
     {
-      id: 'notifications',
-      label: 'Notifications',
+      id: "notifications",
+      label: "Notifications",
       icon: Bell,
-      type: 'group',
+      type: "group",
       children: [
-        { id: 'chats', label: 'Chats', icon: MessageSquare, permission: 'manageChats' },
-        { id: 'sellers', label: 'Become a Seller', icon: Store, permission: 'manageSellers' },
-        { id: 'investors', label: 'Become an Investor', icon: TrendingUp, permission: 'manageInvestors' },
-        { id: 'notifications', label: 'All Notifications', icon: Bell, permission: 'viewNotifications', badge: unreadCount > 0 ? unreadCount : null }
-      ]
-    }
+        {
+          id: "chats",
+          label: "Chats",
+          icon: MessageSquare,
+          permission: "manageChats",
+        },
+        {
+          id: "sellers",
+          label: "Become a Seller",
+          icon: Store,
+          permission: "manageSellers",
+        },
+        {
+          id: "investors",
+          label: "Become an Investor",
+          icon: TrendingUp,
+          permission: "manageInvestors",
+        },
+        {
+          id: "notifications",
+          label: "All Notifications",
+          icon: Bell,
+          permission: "viewNotifications",
+          badge: unreadCount > 0 ? unreadCount : null,
+        },
+      ],
+    },
   ];
   const visibleMenuItems = menuItems
-    .map((item) => item.type === 'group' ? { ...item, children: item.children.filter((child) => !child.permission || hasPermission(child.permission)) } : item)
-    .filter((item) => item.type === 'group' ? item.children.length > 0 : !item.permission || hasPermission(item.permission));
+    .map((item) =>
+      item.type === "group"
+        ? {
+            ...item,
+            children: item.children.filter(
+              (child) => !child.permission || hasPermission(child.permission),
+            ),
+          }
+        : item,
+    )
+    .filter((item) =>
+      item.type === "group"
+        ? item.children.length > 0
+        : !item.permission || hasPermission(item.permission),
+    );
 
   return (
     <>
@@ -152,14 +290,18 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
 
       <aside
         className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-72 bg-white text-slate-700 border-r border-slate-200 flex flex-col transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
         {/* Brand Logo & Mobile Close */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200 shrink-0">
           <div className="flex items-center gap-3">
             {logoSrc ? (
-              <img src={logoSrc} alt={storeName} className="w-10 h-10 rounded-xl bg-white object-contain" />
+              <img
+                src={logoSrc}
+                alt={storeName}
+                className="w-10 h-10 rounded-xl bg-white object-contain"
+              />
             ) : (
               <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-600 to-rose-500 flex items-center justify-center text-white shadow-lg shadow-red-600/30 font-black text-xl">
                 A
@@ -191,7 +333,7 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
           {visibleMenuItems.map((item) => {
             const Icon = item.icon;
 
-            if (item.type === 'single') {
+            if (item.type === "single") {
               const isActive = activeTab === item.id;
               return (
                 <button
@@ -199,12 +341,15 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
                   onClick={() => handleNav(item.id)}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 cursor-pointer ${
                     isActive
-                      ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-lg shadow-red-900/30'
-                      : 'text-slate-600 hover:text-red-600 hover:bg-red-50'
+                      ? "bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-lg shadow-red-900/30"
+                      : "text-slate-600 hover:text-red-600 hover:bg-red-50"
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon size={18} className={isActive ? 'text-white' : 'text-slate-500'} />
+                    <Icon
+                      size={18}
+                      className={isActive ? "text-white" : "text-slate-500"}
+                    />
                     <span>{item.label}</span>
                   </div>
                   {item.badge && (
@@ -219,7 +364,9 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
             // Group Accordion
             const isGroupActive =
               activeTab === item.id ||
-              item.children.some((c) => c.id === activeTab || c.id === activeSubTab);
+              item.children.some(
+                (c) => c.id === activeTab || c.id === activeSubTab,
+              );
             const isExpanded = openSections.includes(item.id) || isGroupActive;
 
             return (
@@ -228,12 +375,17 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
                   onClick={() => toggleSection(item.id)}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 cursor-pointer ${
                     isGroupActive
-                      ? 'bg-red-50 text-red-700'
-                      : 'text-slate-600 hover:text-red-600 hover:bg-red-50'
+                      ? "bg-red-50 text-red-700"
+                      : "text-slate-600 hover:text-red-600 hover:bg-red-50"
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon size={18} className={isGroupActive ? 'text-red-500' : 'text-slate-400'} />
+                    <Icon
+                      size={18}
+                      className={
+                        isGroupActive ? "text-red-500" : "text-slate-400"
+                      }
+                    />
                     <span>{item.label}</span>
                   </div>
                   {isExpanded ? (
@@ -248,7 +400,8 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
                   <div className="pl-9 pr-1 space-y-1 py-1">
                     {item.children.map((child) => {
                       const ChildIcon = child.icon;
-                      const isChildActive = activeTab === child.id || activeSubTab === child.id;
+                      const isChildActive =
+                        activeTab === child.id || activeSubTab === child.id;
 
                       return (
                         <button
@@ -256,12 +409,19 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
                           onClick={() => handleNav(child.id, child.id)}
                           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg font-medium text-[11px] transition-colors cursor-pointer ${
                             isChildActive
-                              ? 'bg-red-500/15 text-red-300 font-bold border-l-2 border-red-400'
-                              : 'text-slate-500 hover:text-red-600 hover:bg-red-50'
+                              ? "bg-red-500/15 text-red-300 font-bold border-l-2 border-red-400"
+                              : "text-slate-500 hover:text-red-600 hover:bg-red-50"
                           }`}
                         >
-                          <ChildIcon size={14} className={isChildActive ? 'text-red-400' : 'text-slate-500'} />
-                          <span className="flex-1 text-left">{child.label}</span>
+                          <ChildIcon
+                            size={14}
+                            className={
+                              isChildActive ? "text-red-400" : "text-slate-500"
+                            }
+                          />
+                          <span className="flex-1 text-left">
+                            {child.label}
+                          </span>
                           {child.badge && (
                             <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-black text-white">
                               {child.badge}
@@ -282,11 +442,11 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
 
           {/* Profile */}
           <button
-            onClick={() => handleNav('profile')}
+            onClick={() => handleNav("profile")}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 cursor-pointer ${
-              activeTab === 'profile'
-                ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-lg shadow-red-900/30'
-                : 'text-slate-600 hover:text-red-600 hover:bg-red-50'
+              activeTab === "profile"
+                ? "bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-lg shadow-red-900/30"
+                : "text-slate-600 hover:text-red-600 hover:bg-red-50"
             }`}
           >
             <User size={18} />
@@ -294,17 +454,19 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
           </button>
 
           {/* Settings */}
-          {(isSuperAdmin || hasPermission('manageSettings')) && <button
-            onClick={() => handleNav('settings')}
-            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 cursor-pointer ${
-              activeTab === 'settings'
-                ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-lg shadow-red-900/30'
-                : 'text-slate-600 hover:text-red-600 hover:bg-red-50'
-            }`}
-          >
-            <Settings size={18} />
-            <span>Settings</span>
-          </button>}
+          {(isSuperAdmin || hasPermission("manageSettings")) && (
+            <button
+              onClick={() => handleNav("settings")}
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 cursor-pointer ${
+                activeTab === "settings"
+                  ? "bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-lg shadow-red-900/30"
+                  : "text-slate-600 hover:text-red-600 hover:bg-red-50"
+              }`}
+            >
+              <Settings size={18} />
+              <span>Settings</span>
+            </button>
+          )}
         </div>
 
         {/* Footer User Avatar Profile */}
@@ -312,10 +474,14 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               {currentUser.avatar ? (
-                <img src={currentUser.avatar} alt={currentUser.name} className="w-9 h-9 rounded-full object-cover border border-slate-700 shrink-0" />
+                <img
+                  src={currentUser.avatar}
+                  alt={currentUser.name}
+                  className="w-9 h-9 rounded-full object-cover border border-slate-700 shrink-0"
+                />
               ) : (
                 <div className="flex w-9 h-9 items-center justify-center rounded-full border border-slate-700 bg-red-600 text-xs font-black text-white shrink-0">
-                  {(currentUser.name || 'A').trim().charAt(0).toUpperCase()}
+                  {(currentUser.name || "A").trim().charAt(0).toUpperCase()}
                 </div>
               )}
               <div className="min-w-0">
