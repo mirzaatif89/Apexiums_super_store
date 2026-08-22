@@ -11,7 +11,7 @@ import {
   RotateCcw,
   MapPin,
   CheckCircle2,
-  Headphones,
+  Headset,
   ShoppingCart,
   ShoppingBag,
   Plus,
@@ -704,7 +704,7 @@ export default function ProductDetailsModal({
               className="h-11 sm:h-12 w-11 sm:w-12 rounded-xl border-2 border-red-100 bg-red-50/80 text-[#E8262A] flex items-center justify-center shrink-0 transition hover:bg-red-100 active:scale-95 cursor-pointer shadow-2xs"
               title="Customer Support"
             >
-              <Headphones size={20} className="shrink-0 text-[#E8262A]" />
+              <Headset size={22} strokeWidth={2.2} className="shrink-0 text-[#E8262A]" />
             </button>
 
             {/* Add To Cart Button */}
