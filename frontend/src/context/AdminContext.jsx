@@ -97,6 +97,7 @@ export const AdminProvider = ({ children, session }) => {
   const [investors, setInvestors] = useState([]);
   const [staff, setStaff] = useState([]);
   const [staffSalaries, setStaffSalaries] = useState([]);
+  const [deliveryCompanies, setDeliveryCompanies] = useState([]);
   const [rolesPermissions, setRolesPermissions] = useState(() => {
     if (typeof localStorage === 'undefined') return initialRolesPermissions;
     try {
@@ -163,6 +164,15 @@ export const AdminProvider = ({ children, session }) => {
         })));
       })
       .catch(() => { if (active) setStaffSalaries([]); });
+    return () => { active = false; };
+  }, [session?.role, session?.businessId]);
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/delivery_expenses?limit=500', { headers: apiHeaders() })
+      .then((response) => response.ok ? response.json() : { rows: [] })
+      .then((data) => { if (active) setDeliveryCompanies((data.rows || []).map((row) => ({ ...row, amount: Number(row.amount || 0) }))); })
+      .catch(() => { if (active) setDeliveryCompanies([]); });
     return () => { active = false; };
   }, [session?.role, session?.businessId]);
 
@@ -678,6 +688,23 @@ export const AdminProvider = ({ children, session }) => {
     addToast(`${current.staff_name} salary marked as paid.`, 'success');
   };
 
+  const saveDeliveryCompany = async (company, id = null) => {
+    const payload = { courier: company.courier, tracking_number: company.service_level || null, amount: Number(company.amount || 0), expense_date: company.effective_date || new Date().toISOString().slice(0, 10), payment_status: company.status || 'Active', notes: company.notes || null };
+    const response = await fetch(id ? `/api/delivery_expenses/${id}` : '/api/delivery_expenses', { method: id ? 'PUT' : 'POST', headers: apiHeaders(), body: JSON.stringify(payload) });
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Delivery company could not be saved.');
+    const saved = await response.json();
+    const normalized = { ...saved, amount: Number(saved.amount || 0) };
+    setDeliveryCompanies((previous) => id ? previous.map((item) => String(item.id) === String(id) ? normalized : item) : [normalized, ...previous]);
+    addToast(`Delivery company "${company.courier}" saved.`, 'success');
+  };
+
+  const deleteDeliveryCompany = async (id) => {
+    const response = await fetch(`/api/delivery_expenses/${id}`, { method: 'DELETE', headers: apiHeaders() });
+    if (!response.ok) throw new Error('Delivery company could not be deleted.');
+    setDeliveryCompanies((previous) => previous.filter((item) => String(item.id) !== String(id)));
+    addToast('Delivery company removed.', 'info');
+  };
+
   // Permissions
   const updateRolePermission = (roleName, permissionKey, value) => {
     if (isSuperAdminRole(roleName) && !value) {
@@ -822,6 +849,7 @@ export const AdminProvider = ({ children, session }) => {
         investors,
         staff,
         staffSalaries,
+        deliveryCompanies,
         rolesPermissions,
         finance,
         notifications,
@@ -853,6 +881,8 @@ export const AdminProvider = ({ children, session }) => {
         updateStaffMember,
         deleteStaffMember,
         markStaffSalaryPaid,
+        saveDeliveryCompany,
+        deleteDeliveryCompany,
         updateRolePermission,
         addTransaction,
         addBanner,
