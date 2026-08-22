@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   CheckCircle2,
   CreditCard,
-  Download,
   MapPin,
   Minus,
   PackageCheck,
@@ -39,6 +38,7 @@ export default function CheckoutModal({
 }) {
   const [step, setStep] = React.useState('cart'); // 'cart' | 'checkout' | 'success'
   const [placedOrderData, setPlacedOrderData] = React.useState(null);
+  const [trackingResult, setTrackingResult] = React.useState(null);
 
   // Address details
   const [fullName, setFullName] = React.useState('');
@@ -165,6 +165,7 @@ export default function CheckoutModal({
       const orderSummaryObj = {
         id: publicOrderId,
         backendOrderId,
+        status: 'Placed',
         customerName: currentName,
         customerEmail: currentEmail,
         customerPhone: currentPhone,
@@ -190,6 +191,7 @@ export default function CheckoutModal({
     } catch (err) {
       setPlacedOrderData({
         id: publicOrderId,
+        status: 'Placed',
         customerName: currentName,
         paymentMethod:
           paymentMethod === 'cod'
@@ -209,6 +211,24 @@ export default function CheckoutModal({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleViewOrder = async () => {
+    if (!placedOrderData?.id) return;
+    let status = placedOrderData.status || 'Placed';
+
+    if (placedOrderData.backendOrderId) {
+      try {
+        const response = await fetch(`/api/orders/${placedOrderData.backendOrderId}`);
+        const data = response.ok ? await response.json() : null;
+        const apiStatus = data?.order?.order_status || data?.order_status;
+        if (apiStatus) status = apiStatus === 'Pending' ? 'Placed' : apiStatus;
+      } catch {
+        // Keep the locally saved status when live tracking is unavailable.
+      }
+    }
+
+    setTrackingResult({ id: placedOrderData.id, status });
   };
 
   return (
@@ -980,6 +1000,19 @@ export default function CheckoutModal({
               </div>
             </div>
 
+            {trackingResult ? (
+              <div className="mx-auto w-full max-w-xl rounded-2xl border border-red-200 bg-red-50 p-4 text-left shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Tracking Order ID</p>
+                    <p className="mt-0.5 text-sm font-black tracking-wide text-[#E8262A]">{trackingResult.id}</p>
+                  </div>
+                  <span className="rounded-full bg-[#E8262A] px-4 py-2 text-xs font-black text-white">{trackingResult.status}</span>
+                </div>
+                <p className="mt-3 text-xs text-slate-600">Your order status is updated from the order tracking system.</p>
+              </div>
+            ) : null}
+
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <button
                 type="button"
@@ -992,13 +1025,11 @@ export default function CheckoutModal({
 
               <button
                 type="button"
-                onClick={() => {
-                  alert(`Invoice for Order #${placedOrderData?.id} downloaded!`);
-                }}
+                onClick={handleViewOrder}
                 className="px-6 h-12 inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-bold text-xs uppercase hover:bg-slate-50 transition cursor-pointer"
               >
-                <Download size={18} />
-                <span>Download Receipt</span>
+                <Truck size={18} />
+                <span>View Order</span>
               </button>
             </div>
           </div>

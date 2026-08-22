@@ -32,10 +32,11 @@ export default function UserProfileView({
   const [trackedOrder, setTrackedOrder] = useState(null);
   const trackOrder = async (event) => {
     event.preventDefault();
-    const id = trackId.trim().replace(/^ORD-/i, '');
+    const id = trackId.trim();
     if (!id) return;
     const local = JSON.parse(localStorage.getItem('apexiums-my-orders') || '[]').find((order) => String(order.id) === id);
-    try { const response = await fetch(`/api/orders/${id}`); const data = response.ok ? await response.json() : null; setTrackedOrder({ id, status: data?.order_status || local?.status || 'Pending' }); } catch { setTrackedOrder({ id, status: local?.status || 'Pending' }); }
+    const lookupId = local?.backendOrderId || id.replace(/^ORD-/i, '');
+    try { const response = await fetch(`/api/orders/${lookupId}`); const data = response.ok ? await response.json() : null; const status = data?.order?.order_status || data?.order_status || local?.status || 'Placed'; setTrackedOrder({ id, status: status === 'Pending' ? 'Placed' : status }); } catch { setTrackedOrder({ id, status: local?.status || 'Placed' }); }
   };
   const [profilePhone, setProfilePhone] = useState(session?.phone || '603.555.0123');
   const [avatarUrl, setAvatarUrl] = useState(() => {
