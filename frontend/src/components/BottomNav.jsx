@@ -1,7 +1,18 @@
 import React from 'react';
-import { Heart, Home, ShoppingCart, User } from 'lucide-react';
+import { Heart, Home, User } from 'lucide-react';
 import { openWhatsApp } from '../utils/whatsapp';
 import customerSupportIcon from '../../images/customer_support.jpeg';
+
+function ReferenceCartIcon({ className = '' }) {
+  return (
+    <svg viewBox="0 0 32 32" aria-hidden="true" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3.75 5.5h3.5l2.65 12.25h14.4l3.2-9.25H9" stroke="currentColor" strokeWidth="2.65" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M10.4 21.25h13.15" stroke="currentColor" strokeWidth="2.65" strokeLinecap="round" />
+      <circle cx="12" cy="26" r="1.9" fill="currentColor" />
+      <circle cx="22.2" cy="26" r="1.9" fill="currentColor" />
+    </svg>
+  );
+}
 
 export default function BottomNav({
   onCartClick,
@@ -69,7 +80,7 @@ export default function BottomNav({
   const navItems = [
     { label: 'Home', icon: Home, action: handleHome },
     { label: 'Contact', icon: null, action: handleChat },
-    { label: 'Cart', icon: ShoppingCart, action: handleCart, badge: cartCount },
+    { label: 'Cart', icon: null, action: handleCart, badge: cartCount },
     { label: 'Wishlist', icon: Heart, action: handleWishlist },
     { label: 'Account', icon: User, action: handleAccount }
   ];
@@ -105,6 +116,12 @@ export default function BottomNav({
                     src={customerSupportIcon}
                     alt="Customer support"
                     className="h-6 w-6 object-contain"
+                  />
+                ) : item.label === 'Cart' ? (
+                  <ReferenceCartIcon
+                    className={`h-[22px] w-[22px] transition-colors duration-150 ${
+                      isActive ? 'text-[#E8262A]' : 'text-[#6E6E6E]'
+                    }`}
                   />
                 ) : (
                   <Icon
