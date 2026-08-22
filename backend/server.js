@@ -51,6 +51,7 @@ const businessScopedTables = new Set([
   'products',
   'promotions',
   'product_variants',
+  'purchase_orders',
   'staff',
   'customers',
   'returns',
@@ -522,6 +523,7 @@ const schemas = [
   )`,
   `CREATE TABLE IF NOT EXISTS purchase_orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    business_id INT DEFAULT 1,
     wholeseller_id INT,
     items_json JSON,
     total_amount DECIMAL(12,2) DEFAULT 0,
@@ -671,6 +673,7 @@ const resources = {
   expenses: ['title', 'category', 'amount', 'payment_method', 'date', 'receipt_url', 'added_by', 'notes'],
   finance_transactions: ['title', 'type', 'category', 'amount', 'transaction_date', 'status', 'created_at'],
   wholesellers: ['name', 'business_name', 'contact_person', 'phone', 'email', 'address', 'description', 'seller_image', 'stock_seller_sell', 'username', 'password', 'products_supplied', 'total_purchases', 'payment_due', 'status'],
+  purchase_orders: ['wholeseller_id', 'items_json', 'total_amount', 'status', 'date'],
   staff: ['photo_url', 'name', 'email', 'phone', 'role', 'department', 'password_hash', 'status', 'last_login'],
   customers: ['avatar_url', 'name', 'username', 'password_hash', 'plain_password', 'email', 'phone', 'total_orders', 'total_spent', 'status', 'created_at'],
   notifications: ['type', 'title', 'message', 'is_read', 'created_at'],
@@ -864,7 +867,7 @@ async function initializeDatabase() {
   }
 
   await pool.query(`CREATE TABLE IF NOT EXISTS site_visits (id INT AUTO_INCREMENT PRIMARY KEY, visitor_key VARCHAR(180) NOT NULL, visited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
-  const businessTables = ['banners', 'promotions', 'coupons', 'categories', 'products', 'product_variants', 'stock', 'stock_history', 'orders', 'order_items', 'returns', 'staff', 'customers', 'expenses', 'finance_transactions', 'wholesellers', 'notifications', 'investors', 'permissions', 'software_fees', 'staff_salaries', 'delivery_expenses', 'chats', 'seller_applications', 'investor_applications'];
+  const businessTables = ['banners', 'promotions', 'coupons', 'categories', 'products', 'product_variants', 'stock', 'stock_history', 'orders', 'order_items', 'returns', 'staff', 'customers', 'expenses', 'finance_transactions', 'wholesellers', 'purchase_orders', 'notifications', 'investors', 'permissions', 'software_fees', 'staff_salaries', 'delivery_expenses', 'chats', 'seller_applications', 'investor_applications'];
   for (const table of businessTables) {
     await ensureColumn(table, 'business_id', 'INT DEFAULT 1');
     await pool.query(`UPDATE ${backtick(table)} SET business_id = ${DEFAULT_BUSINESS_ID} WHERE business_id IS NULL`);
@@ -1008,6 +1011,12 @@ function crudRoutes(resource, required = []) {
         await pool.query(
           'INSERT INTO stock (business_id, product_id, product_name, sku, category, quantity, reorder_level, warehouse, investor_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
           [data.business_id || DEFAULT_BUSINESS_ID, result.insertId, data.name, data.sku || null, data.category || null, Number(data.stock_qty || 0), 10, 'Main Warehouse', data.investor_id || null]
+        );
+      }
+      if (resource === 'stock' && data.product_id) {
+        await pool.query(
+          'UPDATE products SET stock_qty = stock_qty + ?, status = ? WHERE id = ? AND business_id = ?',
+          [Number(data.quantity || 0), Number(data.quantity || 0) > 0 ? 'Active' : 'Out of Stock', data.product_id, data.business_id || DEFAULT_BUSINESS_ID]
         );
       }
       if (resource === 'orders') {
@@ -1322,6 +1331,7 @@ Object.entries({
   returns: ['order_id', 'customer', 'product'],
   expenses: ['title'],
   wholesellers: ['business_name'],
+  purchase_orders: ['wholeseller_id', 'total_amount'],
   staff: ['name'],
   finance_transactions: ['title'],
   coupons: ['code'],

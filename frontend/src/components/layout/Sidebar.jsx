@@ -71,7 +71,8 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
       children: [
         { id: 'products', label: 'Product Listing', icon: Package, permission: 'manageProducts' },
         { id: 'categories', label: 'Categories', icon: Layers, permission: 'manageCategories' },
-        { id: 'stock', label: 'Stock', icon: Boxes, permission: 'manageStock' }
+        { id: 'stock', label: 'Stock', icon: Boxes, permission: 'manageStock' },
+        { id: 'suppliers', label: 'Suppliers', icon: Truck, permission: 'manageStock' }
       ]
     },
     {
