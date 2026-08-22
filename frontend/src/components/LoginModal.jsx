@@ -283,6 +283,56 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
     }
   }
 
+  function handleGoogleLogin() {
+    setError('');
+    const enteredEmail = window.prompt('Apna Google email address enter karein:');
+    if (enteredEmail === null) return;
+
+    const googleEmail = enteredEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(googleEmail)) {
+      setError('Please enter a valid Google email address.');
+      return;
+    }
+
+    let customer = null;
+    try {
+      const customers = JSON.parse(localStorage.getItem('apexiums-registered-users') || '[]');
+      customer = customers.find((user) => String(user.email || '').toLowerCase() === googleEmail) || null;
+
+      if (!customer) {
+        const displayName = googleEmail
+          .split('@')[0]
+          .replace(/[._-]+/g, ' ')
+          .replace(/\b\w/g, (letter) => letter.toUpperCase());
+        customer = {
+          id: `google-${Date.now()}`,
+          name: displayName || 'Google Customer',
+          username: googleEmail,
+          email: googleEmail,
+          joinDate: new Date().toISOString().split('T')[0],
+          provider: 'google',
+          role: 'User',
+          loginType: 'user'
+        };
+        customers.push(customer);
+        localStorage.setItem('apexiums-registered-users', JSON.stringify(customers));
+      }
+    } catch {
+      customer = {
+        id: `google-${Date.now()}`,
+        name: googleEmail.split('@')[0],
+        username: googleEmail,
+        email: googleEmail,
+        provider: 'google',
+        role: 'User',
+        loginType: 'user'
+      };
+    }
+
+    onLogin({ ...customer, role: 'User', loginType: 'user', provider: 'google' });
+    onClose();
+  }
+
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-3 sm:p-4 md:p-6 overflow-y-auto">
       {/* Backdrop overlay */}
@@ -466,17 +516,15 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
                     <div className="relative flex items-center justify-center">
                       <div className="w-full border-t border-slate-200" />
                       <span className="absolute bg-white px-3 text-[10px] font-bold uppercase text-slate-400">
-                        Or Login With
+                        Or Continue With
                       </span>
                     </div>
 
-                    <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div className="mt-3">
                       <button
                         type="button"
-                        onClick={() => {
-                          setError('Google login feature is coming soon.');
-                        }}
-                        className="flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                        onClick={handleGoogleLogin}
+                        className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:border-red-200 hover:bg-slate-50 transition cursor-pointer"
                       >
                         <svg className="h-4 w-4" viewBox="0 0 24 24">
                           <path
@@ -496,20 +544,7 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
                             d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.1-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"
                           />
                         </svg>
-                        <span>Google</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setError('Facebook login feature is coming soon.');
-                        }}
-                        className="flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
-                      >
-                        <svg className="h-4 w-4 text-[#1877F2] fill-current" viewBox="0 0 24 24">
-                          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                        </svg>
-                        <span>Facebook</span>
+                        <span>Continue with Google</span>
                       </button>
                     </div>
                   </div>
