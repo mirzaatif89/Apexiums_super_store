@@ -1,6 +1,6 @@
 export const WHATSAPP_NUMBER = '923391717571';
 
-export function getWhatsAppUrl(message = 'Assalam-o-Alaikum, mujhe Apexiums customer support se madad chahiye.') {
+export function getWhatsAppUrl(message = 'Hello, I need assistance from Elistin customer support.') {
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 }
 

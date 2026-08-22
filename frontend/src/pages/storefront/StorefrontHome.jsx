@@ -368,7 +368,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
     {
       label: 'Help and Support',
       icon: <Headphones size={18} />,
-      onClick: () => openWhatsApp('Assalam-o-Alaikum, mujhe Apexiums customer support se madad chahiye.')
+      onClick: () => openWhatsApp('Hello, I need assistance from Elistin customer support.')
     },
     {
       label: 'Logout',
@@ -471,12 +471,12 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
           onSupportClick={() => {
             setProfileOpen(false);
             setCheckoutOpen(false);
-            openWhatsApp('Assalam-o-Alaikum, mujhe Apexiums customer support se madad chahiye.');
+            openWhatsApp('Hello, I need assistance from Elistin customer support.');
           }}
           onChatClick={() => {
             setProfileOpen(false);
             setCheckoutOpen(false);
-            openWhatsApp('Assalam-o-Alaikum, mujhe Apexiums customer support se madad chahiye.');
+            openWhatsApp('Hello, I need assistance from Elistin customer support.');
           }}
         />
       ) : null}
@@ -576,7 +576,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
       ) : null}
 
       {/* Dynamic Info Popup Modal */}
-      {chatOpen ? <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"><form onSubmit={async(e)=>{e.preventDefault();if(!chatMessage.trim())return;const chat={id:`chat-${Date.now()}`,customerName:authUser?.name||'Guest Customer',customerEmail:authUser?.email||'',message:chatMessage.trim(),reply:'',status:'Open',date:new Date().toLocaleString()};const chats=JSON.parse(localStorage.getItem('apexiums-support-chats')||'[]');localStorage.setItem('apexiums-support-chats',JSON.stringify([chat,...chats]));window.dispatchEvent(new Event('apexiums-chat-created'));try{await fetch('/api/chats',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sender_name:chat.customerName,sender_type:'Customer',subject:'Customer Support',message:chat.message,status:'Open'})})}catch{}setChatMessage('');setChatSent(true)}} className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"><div className="flex items-center justify-between border-b pb-3"><div className="flex items-center gap-2"><Headphones className="text-red-600" size={20}/><h3 className="font-black">Chat with Support</h3></div><button type="button" onClick={()=>setChatOpen(false)}><X size={18}/></button></div>{chatSent&&<div className="mt-4 rounded-xl bg-emerald-50 p-3 text-xs font-bold text-emerald-700">Message sent. Admin will reply from Customer Chats.</div>}<label className="mt-4 block text-xs font-bold">Your question<textarea required rows="5" value={chatMessage} onChange={(e)=>setChatMessage(e.target.value)} placeholder="Apna sawal yahan likhein..." className="mt-1 w-full rounded-xl border p-3 font-medium outline-none focus:border-red-500"/></label><button className="mt-4 w-full rounded-xl bg-red-600 py-3 text-xs font-black text-white">Send Message</button></form></div> : null}
+      {chatOpen ? <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"><form onSubmit={async(e)=>{e.preventDefault();if(!chatMessage.trim())return;const chat={id:`chat-${Date.now()}`,customerName:authUser?.name||'Guest Customer',customerEmail:authUser?.email||'',message:chatMessage.trim(),reply:'',status:'Open',date:new Date().toLocaleString()};const chats=JSON.parse(localStorage.getItem('apexiums-support-chats')||'[]');localStorage.setItem('apexiums-support-chats',JSON.stringify([chat,...chats]));window.dispatchEvent(new Event('apexiums-chat-created'));try{await fetch('/api/chats',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sender_name:chat.customerName,sender_type:'Customer',subject:'Customer Support',message:chat.message,status:'Open'})})}catch{}setChatMessage('');setChatSent(true)}} className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"><div className="flex items-center justify-between border-b pb-3"><div className="flex items-center gap-2"><Headphones className="text-red-600" size={20}/><h3 className="font-black">Chat with Support</h3></div><button type="button" onClick={()=>setChatOpen(false)}><X size={18}/></button></div>{chatSent&&<div className="mt-4 rounded-xl bg-emerald-50 p-3 text-xs font-bold text-emerald-700">Message sent. Admin will reply from Customer Chats.</div>}<label className="mt-4 block text-xs font-bold">Your question<textarea required rows="5" value={chatMessage} onChange={(e)=>setChatMessage(e.target.value)} placeholder="Write your question here..." className="mt-1 w-full rounded-xl border p-3 font-medium outline-none focus:border-red-500"/></label><button className="mt-4 w-full rounded-xl bg-red-600 py-3 text-xs font-black text-white">Send Message</button></form></div> : null}
 
       {infoModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs">

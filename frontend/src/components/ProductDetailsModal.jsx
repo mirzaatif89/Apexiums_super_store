@@ -184,7 +184,7 @@ export default function ProductDetailsModal({
 
   const handleSupportInquiry = () => {
     openWhatsApp(
-      `Assalam-o-Alaikum ${storeName},\n\nMujhe is product ke bare mein maloomat chahiye:\n• Product: ${product.title}\n• Price: Rs ${product.price.toLocaleString('en-PK')}\n• Color: ${selectedColor}\n• Size/Variant: ${selectedSize}\n\nPlease meri rehnumai karein.`
+      `Hello ${storeName},\n\nI would like more information about this product:\n• Product: ${product.title}\n• Price: Rs ${product.price.toLocaleString('en-PK')}\n• Color: ${selectedColor}\n• Size/Variant: ${selectedSize}\n\nPlease assist me.`
     );
   };
 

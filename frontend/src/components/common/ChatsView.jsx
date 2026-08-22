@@ -15,7 +15,7 @@ export default function ChatsView() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-black text-slate-900">Customer Chats</h2>
-        <p className="text-xs text-slate-500">Customer questions receive karein aur direct reply send karein.</p>
+        <p className="text-xs text-slate-500">Receive customer questions and send direct replies.</p>
       </div>
 
       <div className="grid min-h-[520px] overflow-hidden rounded-2xl border bg-white lg:grid-cols-[320px_1fr]">

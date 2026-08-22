@@ -33,7 +33,7 @@ export default function SuppliersView() {
     setPurchases(Array.isArray(purchaseData.rows) ? purchaseData.rows : []);
   }, []);
 
-  React.useEffect(() => { loadData().catch(() => setError('Supplier data load nahi ho saka.')); }, [loadData]);
+  React.useEffect(() => { loadData().catch(() => setError('Supplier data could not be loaded.')); }, [loadData]);
 
   const filteredSuppliers = suppliers.filter((supplier) =>
     [supplier.business_name, supplier.contact_person, supplier.phone, supplier.email, supplier.products_supplied]
@@ -65,7 +65,7 @@ export default function SuppliersView() {
     const product = products.find((item) => String(item.id) === String(purchaseForm.product_id));
     const quantity = Number(purchaseForm.quantity || 0);
     const unitCost = Number(purchaseForm.unit_cost || 0);
-    if (!supplier || !product || quantity <= 0 || unitCost <= 0) return setError('Supplier, product, quantity aur unit cost enter karein.');
+    if (!supplier || !product || quantity <= 0 || unitCost <= 0) return setError('Please enter a supplier, product, quantity, and unit cost.');
     const total = quantity * unitCost;
     const item = { product_id: product.id, product_name: product.name, sku: product.sku || '', quantity, unit_cost: unitCost, notes: purchaseForm.notes };
     setSaving(true); setError('');

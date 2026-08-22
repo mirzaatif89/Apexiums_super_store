@@ -22,7 +22,7 @@ export default function CouponsView() {
     setCoupons(Array.isArray(data.rows) ? data.rows : []);
   }, []);
 
-  React.useEffect(() => { loadCoupons().catch(() => setError('Coupons load nahi ho sake.')); }, [loadCoupons]);
+  React.useEffect(() => { loadCoupons().catch(() => setError('Coupons could not be loaded.')); }, [loadCoupons]);
 
   const openCreate = () => { setEditing(null); setForm({ ...emptyCoupon }); setError(''); };
   const openEdit = (coupon) => {
@@ -34,10 +34,10 @@ export default function CouponsView() {
   const saveCoupon = async (event) => {
     event.preventDefault();
     const code = form.code.trim().toUpperCase();
-    if (!code || Number(form.discount_value) <= 0) return setError('Coupon code aur valid discount value enter karein.');
-    if (form.discount_type === 'Percentage' && Number(form.discount_value) > 100) return setError('Percentage discount 100% se zyada nahi ho sakta.');
-    if (form.valid_till && form.valid_from && form.valid_till < form.valid_from) return setError('Expiry date start date ke baad honi chahiye.');
-    if (!editing && coupons.some((coupon) => String(coupon.code).toUpperCase() === code)) return setError('Ye coupon code pehle se mojood hai.');
+    if (!code || Number(form.discount_value) <= 0) return setError('Please enter a coupon code and a valid discount value.');
+    if (form.discount_type === 'Percentage' && Number(form.discount_value) > 100) return setError('The percentage discount cannot exceed 100%.');
+    if (form.valid_till && form.valid_from && form.valid_till < form.valid_from) return setError('The expiry date must be after the start date.');
+    if (!editing && coupons.some((coupon) => String(coupon.code).toUpperCase() === code)) return setError('This coupon code already exists.');
     setSaving(true); setError('');
     try {
       const response = await fetch(editing ? `/api/coupons/${editing.id}` : '/api/coupons', {

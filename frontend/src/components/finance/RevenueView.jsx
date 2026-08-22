@@ -157,7 +157,7 @@ export const RevenueView = () => {
 
       {/* Monthly Top-Selling Product Chart */}
       <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs space-y-3">
-        <div><h3 className="text-sm font-extrabold text-slate-900">Monthly Top-Selling Products</h3><p className="mt-0.5 text-[11px] text-slate-500">Each month ki sab se zyada quantity mein sell hone wali product</p></div>
+        <div><h3 className="text-sm font-extrabold text-slate-900">Monthly Top-Selling Products</h3><p className="mt-0.5 text-[11px] text-slate-500">The product with the highest quantity sold in each month</p></div>
         <div className="h-64 w-full">
           {topSellingData.length ? <ResponsiveContainer width="100%" height="100%">
             <BarChart data={topSellingData} margin={{ top: 28, right: 16, left: -12, bottom: 4 }}>
@@ -168,7 +168,7 @@ export const RevenueView = () => {
                 <LabelList dataKey="product" position="top" fill="#334155" fontSize={10} fontWeight={700} />
               </Bar>
             </BarChart>
-          </ResponsiveContainer> : <div className="flex h-full items-center justify-center rounded-xl bg-slate-50 text-center"><div><TrendingUp className="mx-auto text-slate-300" size={30}/><p className="mt-2 text-xs font-bold text-slate-500">Selected period mein product sales data available nahi hai.</p></div></div>}
+          </ResponsiveContainer> : <div className="flex h-full items-center justify-center rounded-xl bg-slate-50 text-center"><div><TrendingUp className="mx-auto text-slate-300" size={30}/><p className="mt-2 text-xs font-bold text-slate-500">No product sales data is available for the selected period.</p></div></div>}
         </div>
       </div>
 
@@ -176,7 +176,7 @@ export const RevenueView = () => {
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="p-4 border-b">
           <h3 className="text-sm font-extrabold text-slate-900">Monthly Category Profit</h3>
-          <p className="mt-0.5 text-[11px] text-slate-500">Category revenue ke proportion ke mutabiq monthly expenses allocate karke estimated net profit</p>
+          <p className="mt-0.5 text-[11px] text-slate-500">Estimated net profit after allocating monthly expenses in proportion to category revenue</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[850px] text-left text-xs">
@@ -192,7 +192,7 @@ export const RevenueView = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-              {!categoryProfitRows.length ? <tr><td colSpan={7} className="p-8 text-center text-slate-400">Selected period mein completed category sales available nahi hain.</td></tr> : categoryProfitRows.map((row) => (
+              {!categoryProfitRows.length ? <tr><td colSpan={7} className="p-8 text-center text-slate-400">No completed category sales are available for the selected period.</td></tr> : categoryProfitRows.map((row) => (
                 <tr key={`${row.month}-${row.category}`} className="hover:bg-red-50/30 transition-colors">
                   <td className="p-3.5 font-bold text-slate-900">{row.month}</td>
                   <td className="p-3.5 font-extrabold text-slate-900">{row.category}</td>

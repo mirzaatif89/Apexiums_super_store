@@ -53,7 +53,7 @@ export default function BottomNav({
     } else if (onSupportClick) {
       onSupportClick();
     } else {
-      openWhatsApp('Assalam-o-Alaikum, mujhe Apexiums customer support se madad chahiye.');
+      openWhatsApp('Hello, I need assistance from Elistin customer support.');
     }
   };
 
