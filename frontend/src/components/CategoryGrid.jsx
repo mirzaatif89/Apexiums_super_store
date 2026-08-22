@@ -20,7 +20,7 @@ export default function CategoryGrid({ categories = [], selectedCategory = 'All'
   };
 
   return (
-    <section id="categories-section" className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-6 pt-2 pb-1">
+    <section id="categories-section" className="mx-auto max-w-7xl px-3 pt-1 pb-1 sm:px-4 lg:px-6">
       {/* Header Section: Category Title */}
       <div className="flex items-center justify-between pb-2 mb-1">
         <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">

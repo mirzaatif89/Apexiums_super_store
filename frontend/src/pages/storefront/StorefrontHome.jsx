@@ -391,7 +391,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
       />
 
       {/* Main Content Card with Crisp White / Light Slate #F8F9FA */}
-      <main className="relative z-10 flex-1 rounded-none bg-[#F8F9FA] pt-3 pb-24 shadow-xl sm:pb-28 space-y-2 sm:space-y-3 lg:space-y-4">
+      <main className="relative z-10 flex-1 rounded-none bg-[#F8F9FA] pt-3 pb-24 shadow-xl sm:pb-28 space-y-0">
         {categoryPage ? (
           <section className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-6 py-5 space-y-4">
             <button type="button" onClick={() => { setCategoryPage(null); setSelectedCategory('All'); window.history.pushState({}, '', '/'); window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); }} className="text-sm font-bold text-red-600">← Back to Home</button>

@@ -18,7 +18,7 @@ export default function HeroBanner() {
   const showProducts = () => document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth' });
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-3 pt-1 pb-1 sm:px-4 lg:px-6">
+    <section className="mx-auto w-full max-w-7xl px-3 pt-1 pb-0 sm:px-4 lg:px-6">
       <div className="mb-1 flex items-center justify-between pb-1.5">
         <h2 className="text-base font-black tracking-tight text-slate-900 sm:text-lg">#SpecialForYou</h2>
         <button type="button" onClick={showProducts} className="cursor-pointer text-xs font-bold tracking-wide text-[#E8262A] transition hover:text-red-700 sm:text-sm">See All</button>
@@ -45,7 +45,7 @@ export default function HeroBanner() {
         </div>
       </div>
 
-      <div className="mt-2.5 flex items-center justify-center gap-1.5">
+      <div className="mt-1.5 flex items-center justify-center gap-1.5">
         {displaySlides.map((slide, index) => (
           <button key={slide.id} type="button" onClick={() => setCurrentSlide(index)} className={`h-2 cursor-pointer rounded-full transition-all duration-300 ${index === currentSlide ? 'w-6 bg-[#E8262A]' : 'w-2 bg-slate-300 hover:bg-slate-400'}`} aria-label={`Go to slide ${index + 1}`} />
         ))}
