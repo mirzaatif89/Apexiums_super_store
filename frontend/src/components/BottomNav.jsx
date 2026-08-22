@@ -1,7 +1,7 @@
 import React from 'react';
 import { Heart, Home, User } from 'lucide-react';
 import { openWhatsApp } from '../utils/whatsapp';
-import customerSupportIcon from '../../images/customer_support.jpeg';
+import customerSupportIcon from '../../images/customer_support.png';
 
 function ReferenceCartIcon({ className = '' }) {
   return (

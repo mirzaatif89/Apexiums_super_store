@@ -22,7 +22,7 @@ import {
   Award
 } from 'lucide-react';
 import { openWhatsApp } from '../utils/whatsapp';
-import customerSupportIcon from '../../images/customer_support.jpeg';
+import customerSupportIcon from '../../images/customer_support.png';
 
 export default function ProductDetailsModal({
   product,
