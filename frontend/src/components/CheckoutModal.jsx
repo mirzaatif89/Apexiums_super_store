@@ -60,7 +60,8 @@ export default function CheckoutModal({
   const items = cartItems || [];
 
   const subtotal = items.reduce((sum, item) => sum + (item.price || 0) * (item.qty || 1), 0);
-  const shippingFee = items.length > 0 ? 99 : 0;
+  const totalQuantity = items.reduce((sum, item) => sum + (item.qty || 1), 0);
+  const shippingFee = items.length > 0 && totalQuantity < 3 ? 260 : 0;
   const itemSavings = items.reduce((sum, item) => {
     if (item.originalPrice && item.originalPrice > item.price) {
       return sum + (item.originalPrice - item.price) * (item.qty || 1);

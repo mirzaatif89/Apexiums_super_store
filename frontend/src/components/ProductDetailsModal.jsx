@@ -532,7 +532,7 @@ export default function ProductDetailsModal({
                 <div className="min-w-0">
                   <p className="text-xs font-extrabold text-slate-900">Standard Delivery</p>
                   <p className="text-xs font-bold text-slate-700 mt-0.5">2 to 4 Days</p>
-                  <p className="text-[11px] font-extrabold text-red-700 mt-0.5">Rs 99 (FREE over Rs 1,000)</p>
+                  <p className="text-[11px] font-extrabold text-red-700 mt-0.5">Rs 260 (Buy 3 products for free delivery)</p>
                 </div>
               </div>
 
