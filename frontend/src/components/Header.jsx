@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, Menu, Search, ShoppingCart, User } from 'lucide-react';
+import { Heart, Menu, Search, User } from 'lucide-react';
 
 function ReferenceCartIcon({ className = '' }) {
   return (
@@ -104,7 +104,7 @@ export default function Header({
               title="Cart"
               aria-label="Cart"
             >
-              <ShoppingCart size={20} strokeWidth={2.2} className="text-white transition-transform group-hover:scale-105" />
+              <ReferenceCartIcon className="h-[25px] w-[25px] text-white transition-transform group-hover:scale-105" />
               {cartCount > 0 ? (
                 <span className="absolute -top-1 -right-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-white px-1 text-[9px] font-black text-[#E8262A] shadow-md animate-bounce">
                   {cartCount}
