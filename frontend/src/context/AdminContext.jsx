@@ -657,7 +657,7 @@ export const AdminProvider = ({ children, session }) => {
   const reviewInvestorApplication = async (application, decision) => {
     if (decision === 'Approved') {
       const username = String(application.email || `investor${application.id}`).split('@')[0].replace(/[^a-z0-9]/gi, '').toLowerCase() || `investor${application.id}`;
-      const response = await fetch('/api/investors', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ name: application.applicant_name, email: application.email, phone: application.phone, username, password: `Investor@${application.id}2026`, investment_amount: Number(application.proposed_amount || 0), investment_date: new Date().toISOString().slice(0, 10), status: 'Active', description: application.message }) });
+      const response = await fetch('/api/investors', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ name: application.applicant_name, email: application.email, phone: application.phone, address: application.address, username, password: `Investor@${application.id}2026`, investment_amount: Number(application.proposed_amount || 0), investment_date: new Date().toISOString().slice(0, 10), status: 'Active', description: [application.investment_product ? `Investment product: ${application.investment_product}` : '', application.message || ''].filter(Boolean).join('\n') }) });
       if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Investor registration failed.');
       const saved = await response.json();
       setInvestors((previous) => [{ ...saved, investmentAmount: Number(saved.investment_amount || 0), totalReturnsPaid: 0, contactPerson: saved.name, returnRate: 0, equityShare: '0%' }, ...previous]);
