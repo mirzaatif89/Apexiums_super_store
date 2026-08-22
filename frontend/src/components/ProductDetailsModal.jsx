@@ -22,7 +22,6 @@ import {
   Award
 } from 'lucide-react';
 import { openWhatsApp } from '../utils/whatsapp';
-import customerSupportIcon from '../../images/customer_support_green.svg';
 
 export default function ProductDetailsModal({
   product,
@@ -701,14 +700,16 @@ export default function ProductDetailsModal({
             <button
               type="button"
               onClick={handleSupportInquiry}
-              className="h-11 sm:h-12 w-11 sm:w-12 rounded-xl border-2 border-red-100 bg-red-50/80 text-[#E8262A] flex items-center justify-center shrink-0 transition hover:bg-red-100 active:scale-95 cursor-pointer shadow-2xs"
+              className="h-11 sm:h-12 w-11 sm:w-12 rounded-xl border-2 border-slate-200 bg-white text-[#6E6E6E] flex items-center justify-center shrink-0 transition hover:bg-slate-50 hover:text-[#E8262A] active:scale-95 cursor-pointer shadow-2xs"
               title="Customer Support"
             >
-              <img
-                src={customerSupportIcon}
-                alt="Customer support"
-                className="h-8 w-8 shrink-0 object-contain mix-blend-multiply"
-              />
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-label="Customer support">
+                <path d="M5 13v-1.5a7 7 0 0 1 14 0V13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                <rect x="3.5" y="11.5" width="3.5" height="6" rx="1.75" fill="currentColor"/>
+                <rect x="17" y="11.5" width="3.5" height="6" rx="1.75" fill="currentColor"/>
+                <path d="M19 17c0 2.3-1.8 3.5-4.5 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                <rect x="12" y="19" width="3.5" height="2.5" rx="1.25" fill="currentColor"/>
+              </svg>
             </button>
 
             {/* Add To Cart Button */}
