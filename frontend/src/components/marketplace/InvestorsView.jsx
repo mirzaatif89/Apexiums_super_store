@@ -1,19 +1,13 @@
 import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
-import StatCard from '../common/StatCard';
 import Badge from '../common/Badge';
 import ActionMenu from '../common/ActionMenu';
-import { TrendingUp, Plus, DollarSign, Users, CheckCircle2, X } from 'lucide-react';
+import { TrendingUp, Plus, CheckCircle2, X } from 'lucide-react';
 
 export const InvestorsView = () => {
   const { investors, addInvestor, updateInvestorStatus } = useAdmin();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedInvestor, setSelectedInvestor] = useState(null);
-
-  const totalInvestment = investors.reduce((sum, i) => sum + i.investmentAmount, 0);
-  const totalReturns = investors.reduce((sum, i) => sum + i.totalReturnsPaid, 0);
-  const activeInvestorsCount = investors.filter((i) => i.status === 'Active').length;
-  const pendingInvestorsCount = investors.filter((i) => i.status === 'Pending' || i.status === 'Pending Approval').length;
 
   const [formData, setFormData] = useState({
     name: '',
@@ -53,46 +47,10 @@ export const InvestorsView = () => {
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-md cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#E8262A] hover:bg-red-700 text-white text-xs font-bold shadow-md shadow-red-900/15 cursor-pointer transition"
         >
           <Plus size={16} /> Register Investor
         </button>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Capital Raised"
-          value={`Rs ${totalInvestment.toLocaleString('en-PK')}`}
-          trend="up"
-          description="Equity & convertible notes"
-          icon={DollarSign}
-          accentColor="purple"
-        />
-        <StatCard
-          title="Active Investors"
-          value={activeInvestorsCount.toString()}
-          trend="up"
-          description="Institutional & Syndicate"
-          icon={Users}
-          accentColor="blue"
-        />
-        <StatCard
-          title="Returns Distributed"
-          value={`Rs ${totalReturns.toLocaleString('en-PK')}`}
-          trend="up"
-          description="Quarterly payouts"
-          icon={TrendingUp}
-          accentColor="emerald"
-        />
-        <StatCard
-          title="Pending Applications"
-          value={`${pendingInvestorsCount} Pending`}
-          trend="down"
-          description="Awaiting board review"
-          icon={CheckCircle2}
-          accentColor="amber"
-        />
       </div>
 
       {/* Investors Directory Table */}
@@ -121,7 +79,7 @@ export const InvestorsView = () => {
                   </td>
                   <td className="p-3.5 font-mono font-bold text-slate-800">{inv.username || '—'}</td>
                   <td className="p-3.5 font-mono font-bold text-slate-800">{inv.password || '—'}</td>
-                  <td className="p-3.5 font-black text-purple-700">Rs {inv.investmentAmount.toLocaleString('en-PK')}</td>
+                  <td className="p-3.5 font-black text-[#E8262A]">Rs {inv.investmentAmount.toLocaleString('en-PK')}</td>
                   <td className="p-3.5 font-black text-slate-900">Rs {inv.totalReturnsPaid.toLocaleString('en-PK')}</td>
                   <td className="p-3.5">
                     <Badge status={inv.status}>{inv.status}</Badge>
@@ -215,7 +173,7 @@ export const InvestorsView = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-purple-600 text-white text-xs font-bold shadow-md cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-[#E8262A] hover:bg-red-700 text-white text-xs font-bold shadow-md shadow-red-900/15 cursor-pointer transition"
                 >
                   Save Investor
                 </button>
@@ -238,7 +196,7 @@ export const InvestorsView = () => {
 
             <div className="space-y-2 text-xs bg-slate-50 p-3 rounded-xl border">
               <p><span className="text-slate-400">Contact:</span> <strong>{selectedInvestor.contactPerson} ({selectedInvestor.email})</strong></p>
-              <p><span className="text-slate-400">Total Investment:</span> <strong className="text-purple-700">Rs {selectedInvestor.investmentAmount.toLocaleString('en-PK')}</strong></p>
+              <p><span className="text-slate-400">Total Investment:</span> <strong className="text-[#E8262A]">Rs {selectedInvestor.investmentAmount.toLocaleString('en-PK')}</strong></p>
               <p><span className="text-slate-400">Notes:</span> <strong>{selectedInvestor.notes || 'N/A'}</strong></p>
             </div>
 
