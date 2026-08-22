@@ -18,14 +18,14 @@ table thead.bg-slate-900 {
 
 /* Apexiums brand palette */
 @theme {
-  --color-brand-primary: #FF384E;
-  --color-brand-light: #F62C40;
+  --color-brand-primary: #F62C40;
+  --color-brand-light: #FF5364;
   --color-brand-soft: #FFF1F1;
 }
 
 :root {
-  --brand-primary: #FF384E;
-  --brand-light: #F62C40;
+  --brand-primary: #F62C40;
+  --brand-light: #FF5364;
   --brand-soft: #FFF1F1;
 }
 

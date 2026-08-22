@@ -18,7 +18,7 @@ export default function Header({
   onSearchFocus
 }) {
   return (
-    <header className="w-full bg-[#FF384E] text-white transition-all relative z-20 shadow-md">
+    <header className="w-full bg-brand-primary text-white transition-all relative z-20 shadow-md">
       {/* Header Content Container - Full Available Width */}
       <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-3 sm:py-3.5 md:py-2.5">
 
@@ -63,7 +63,7 @@ export default function Header({
             >
               <Heart size={20} className="text-white transition-transform group-hover:scale-110" />
               {wishlistCount > 0 ? (
-                <span className="absolute -top-1 -right-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-white px-1 text-[9px] font-black text-[#FF384E] shadow-md animate-bounce">
+                <span className="absolute -top-1 -right-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-white px-1 text-[9px] font-black text-brand-primary shadow-md animate-bounce">
                   {wishlistCount}
                 </span>
               ) : null}
