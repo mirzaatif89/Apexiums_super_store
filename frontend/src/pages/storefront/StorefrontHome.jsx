@@ -45,6 +45,7 @@ import {
   topLinks
 } from '../../data/storeData';
 import { openWhatsApp } from '../../utils/whatsapp';
+import { isAdminRole } from '../../utils/roles';
 
 function matchesCategory(product, cat) {
   if (!cat || cat === 'All') return true;
@@ -265,7 +266,15 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
   }
 
   const handleAccountClick = () => {
-    if (authUser) {
+    let currentUser = authUser;
+    if (!currentUser) {
+      try { currentUser = JSON.parse(localStorage.getItem('apexiums-auth-session') || 'null'); } catch { currentUser = null; }
+    }
+
+    if (currentUser && (isAdminRole(currentUser.role) || currentUser.loginType === 'admin')) {
+      window.location.assign('/dashboard');
+    } else if (currentUser) {
+      setAuthUser(currentUser);
       setProfileOpen(true);
     } else {
       setLoginOpen(true);

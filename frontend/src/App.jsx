@@ -29,6 +29,17 @@ export default function App() {
   const [session, setSession] = React.useState(() => readSession());
 
   React.useEffect(() => {
+    const syncSessionAcrossTabs = (event) => {
+      if (event.key === AUTH_KEY || event.key === null) {
+        setSession(readSession());
+      }
+    };
+
+    window.addEventListener('storage', syncSessionAcrossTabs);
+    return () => window.removeEventListener('storage', syncSessionAcrossTabs);
+  }, []);
+
+  React.useEffect(() => {
     const keyName = 'elistin-visitor-key';
     let visitorKey = localStorage.getItem(keyName);
     if (!visitorKey) {
