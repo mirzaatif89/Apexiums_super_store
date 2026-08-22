@@ -253,9 +253,9 @@ export default function Footer({ storeName = "Apexiums", logoSrc, onAdminClick }
         </div>
 
         {/* Feature Trust Badges Banner */}
-        <div className="order-first grid grid-cols-1 gap-4 rounded-2xl border border-slate-200/90 bg-slate-50 p-4 sm:grid-cols-2 sm:gap-6 sm:p-6 lg:grid-cols-4">
+        <div className="order-first grid grid-cols-2 gap-x-3 gap-y-4 rounded-2xl border border-slate-200/90 bg-slate-50 p-3 sm:gap-6 sm:p-6 lg:grid-cols-4">
 
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#E8262A] border border-red-200 shadow-2xs">
               <Truck size={20} />
             </div>
@@ -265,7 +265,7 @@ export default function Footer({ storeName = "Apexiums", logoSrc, onAdminClick }
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#E8262A] border border-red-200 shadow-2xs">
               <ShieldCheck size={20} />
             </div>
@@ -275,7 +275,7 @@ export default function Footer({ storeName = "Apexiums", logoSrc, onAdminClick }
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#E8262A] border border-red-200 shadow-2xs">
               <RotateCcw size={20} />
             </div>
@@ -285,7 +285,7 @@ export default function Footer({ storeName = "Apexiums", logoSrc, onAdminClick }
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#E8262A] border border-red-200 shadow-2xs">
               <Lock size={20} />
             </div>
