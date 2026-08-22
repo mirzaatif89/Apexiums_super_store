@@ -26,6 +26,16 @@ const generateOrderId = () => {
   return String(nextSequence).padStart(3, '0');
 };
 
+const PAKISTAN_CITIES = {
+  Punjab: ['Ahmedpur East', 'Attock', 'Bahawalnagar', 'Bahawalpur', 'Bhakkar', 'Burewala', 'Chakwal', 'Chiniot', 'Dera Ghazi Khan', 'Faisalabad', 'Gujranwala', 'Gujrat', 'Hafizabad', 'Jaranwala', 'Jhang', 'Jhelum', 'Kasur', 'Khanewal', 'Kharian', 'Lahore', 'Layyah', 'Lodhran', 'Mandi Bahauddin', 'Mianwali', 'Multan', 'Muridke', 'Muzaffargarh', 'Nankana Sahib', 'Narowal', 'Okara', 'Pakpattan', 'Rahim Yar Khan', 'Rawalpindi', 'Sadiqabad', 'Sahiwal', 'Sargodha', 'Sheikhupura', 'Sialkot', 'Toba Tek Singh', 'Vehari'],
+  Sindh: ['Badin', 'Dadu', 'Ghotki', 'Hyderabad', 'Jacobabad', 'Jamshoro', 'Karachi', 'Khairpur', 'Larkana', 'Mirpur Khas', 'Nawabshah', 'Sanghar', 'Shikarpur', 'Sukkur', 'Thatta'],
+  'Khyber Pakhtunkhwa': ['Abbottabad', 'Bannu', 'Batkhela', 'Charsadda', 'Chitral', 'Dera Ismail Khan', 'Haripur', 'Kohat', 'Mansehra', 'Mardan', 'Mingora', 'Nowshera', 'Peshawar', 'Swabi', 'Swat'],
+  Balochistan: ['Chaman', 'Dera Murad Jamali', 'Gwadar', 'Hub', 'Khuzdar', 'Loralai', 'Quetta', 'Sibi', 'Turbat', 'Zhob'],
+  'Islamabad Capital Territory': ['Islamabad'],
+  'Gilgit-Baltistan': ['Chilas', 'Gilgit', 'Khaplu', 'Skardu'],
+  'Azad Jammu & Kashmir': ['Bagh', 'Bhimber', 'Kotli', 'Mirpur', 'Muzaffarabad', 'Rawalakot']
+};
+
 export default function CheckoutModal({
   open,
   onClose,
@@ -45,9 +55,9 @@ export default function CheckoutModal({
   const [fullName, setFullName] = React.useState('');
   const [phone, setPhone] = React.useState('');
   const [email, setEmail] = React.useState(customerEmail);
-  const [province, setProvince] = React.useState('Punjab');
+  const [province, setProvince] = React.useState('');
   const [address, setAddress] = React.useState('');
-  const [city, setCity] = React.useState('Lahore');
+  const [city, setCity] = React.useState('');
   const [landmark, setLandmark] = React.useState('');
   const [showAddressForm, setShowAddressForm] = React.useState(false);
   const [savedAddress, setSavedAddress] = React.useState(null);
@@ -111,8 +121,8 @@ export default function CheckoutModal({
     setFullName('');
     setPhone('');
     setEmail(customerEmail || '');
-    setProvince('Punjab');
-    setCity('Lahore');
+    setProvince('');
+    setCity('');
     setAddress('');
     setLandmark('');
     setSavedAddress(null);
@@ -647,16 +657,16 @@ export default function CheckoutModal({
                         </label>
                         <select
                           value={province}
-                          onChange={(e) => setProvince(e.target.value)}
+                          onChange={(e) => {
+                            setProvince(e.target.value);
+                            setCity('');
+                          }}
                           className="w-full h-10 px-3 text-xs font-semibold bg-white border border-slate-200 rounded-xl outline-none focus:border-[#E8262A] transition"
                         >
-                          <option value="Punjab">Punjab</option>
-                          <option value="Sindh">Sindh</option>
-                          <option value="Khyber Pakhtunkhwa">Khyber Pakhtunkhwa</option>
-                          <option value="Balochistan">Balochistan</option>
-                          <option value="Islamabad Capital Territory">Islamabad Capital Territory</option>
-                          <option value="Gilgit-Baltistan">Gilgit-Baltistan</option>
-                          <option value="Azad Jammu & Kashmir">Azad Jammu &amp; Kashmir</option>
+                          <option value="" disabled>Select Province</option>
+                          {Object.keys(PAKISTAN_CITIES).map((provinceName) => (
+                            <option key={provinceName} value={provinceName}>{provinceName}</option>
+                          ))}
                         </select>
                       </div>
 
@@ -664,13 +674,17 @@ export default function CheckoutModal({
                         <label className="block text-[11px] font-extrabold text-slate-700 mb-1">
                           City
                         </label>
-                        <input
-                          type="text"
+                        <select
                           value={city}
                           onChange={(e) => setCity(e.target.value)}
-                          placeholder="Lahore"
+                          disabled={!province}
                           className="w-full h-10 px-3 text-xs font-semibold bg-white border border-slate-200 rounded-xl outline-none focus:border-[#E8262A] transition"
-                        />
+                        >
+                          <option value="" disabled>Select City</option>
+                          {(PAKISTAN_CITIES[province] || []).map((cityName) => (
+                            <option key={cityName} value={cityName}>{cityName}</option>
+                          ))}
+                        </select>
                       </div>
                     </div>
 
