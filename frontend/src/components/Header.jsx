@@ -47,7 +47,7 @@ export default function Header({
 }) {
   return (
     <header
-      className="relative z-20 w-full rounded-none text-white shadow-md transition-all"
+      className="relative z-20 w-full rounded-none text-white transition-all"
       style={{ backgroundColor: 'var(--brand-primary)' }}
     >
       {/* Header Content Container - Full Available Width */}
