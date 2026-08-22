@@ -36,6 +36,8 @@ const PAKISTAN_CITIES = {
   'Azad Jammu & Kashmir': ['Bagh', 'Bhimber', 'Kotli', 'Mirpur', 'Muzaffarabad', 'Rawalakot']
 };
 
+const ALL_PAKISTAN_CITIES = [...new Set(Object.values(PAKISTAN_CITIES).flat())].sort((a, b) => a.localeCompare(b));
+
 export default function CheckoutModal({
   open,
   onClose,
@@ -677,11 +679,10 @@ export default function CheckoutModal({
                         <select
                           value={city}
                           onChange={(e) => setCity(e.target.value)}
-                          disabled={!province}
                           className="w-full h-10 px-3 text-xs font-semibold bg-white border border-slate-200 rounded-xl outline-none focus:border-[#E8262A] transition"
                         >
                           <option value="" disabled>Select City</option>
-                          {(PAKISTAN_CITIES[province] || []).map((cityName) => (
+                          {(PAKISTAN_CITIES[province] || ALL_PAKISTAN_CITIES).map((cityName) => (
                             <option key={cityName} value={cityName}>{cityName}</option>
                           ))}
                         </select>
