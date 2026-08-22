@@ -115,11 +115,11 @@ export default function Header({
             <button
               type="button"
               onClick={onCartClick}
-              className="group relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-[16px] bg-white/20 hover:bg-white/30 text-white transition active:scale-95 cursor-pointer shrink-0 backdrop-blur-md"
+              className="group relative flex h-11 w-11 items-center justify-center rounded-2xl border border-white/5 bg-white/15 hover:bg-white/25 text-white shadow-sm transition active:scale-95 cursor-pointer shrink-0 backdrop-blur-md"
               title="Cart"
               aria-label="Cart"
             >
-              <ShoppingCart size={20} strokeWidth={2.2} className="text-white transition-transform group-hover:scale-105" />
+              <ShoppingCart size={22} strokeWidth={2.5} className="text-white transition-transform group-hover:scale-105" />
               {cartCount > 0 ? (
                 <span className="absolute -top-1 -right-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-white px-1 text-[9px] font-black text-[#E8262A] shadow-md animate-bounce">
                   {cartCount}
