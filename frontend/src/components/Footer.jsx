@@ -4,8 +4,6 @@ import {
   Headphones,
   CreditCard,
   ShoppingBag,
-  HelpCircle,
-  Tag,
   Truck,
   ShieldCheck,
   RotateCcw,
@@ -158,8 +156,8 @@ export default function Footer({ storeName = "Apexiums", logoSrc, onAdminClick }
 
           </div>
 
-          {/* Right Columns Grid (2 Rows of 3 Columns) */}
-          <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-6 sm:gap-8">
+          {/* Right Footer Columns */}
+          <div className="lg:col-span-7 grid grid-cols-2 gap-6 sm:gap-8 xl:grid-cols-4">
 
             {/* Column 1: ABOUT */}
             <div className="space-y-3">
@@ -217,32 +215,6 @@ export default function Footer({ storeName = "Apexiums", logoSrc, onAdminClick }
                 <li><a href="#" className="hover:text-[#E8262A] transition">Beauty & Health</a></li>
                 <li><a href="#" className="hover:text-[#E8262A] transition">Sports & Outdoors</a></li>
                 <li><a href="#" className="hover:text-[#E8262A] transition">Toys & Games</a></li>
-              </ul>
-            </div>
-
-            {/* Column 5: HELP & SUPPORT */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-slate-900 border-b border-red-200 pb-1.5">
-                <HelpCircle size={14} className="text-[#E8262A]" />
-                <span>HELP & SUPPORT</span>
-              </div>
-              <ul className="space-y-2 text-xs text-slate-600 font-medium">
-                <li><a href={getWhatsAppUrl('Assalam-o-Alaikum, mujhe Help Center se madad chahiye.')} target="_blank" rel="noreferrer" className="hover:text-[#E8262A] transition">Help Center</a></li>
-                <li><a href="#" className="hover:text-[#E8262A] transition">How to Order</a></li>
-                <li><a href="#" className="hover:text-[#E8262A] transition">Warranty Policy</a></li>
-              </ul>
-            </div>
-
-            {/* Column 6: EXTRA */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-slate-900 border-b border-red-200 pb-1.5">
-                <Tag size={14} className="text-[#E8262A]" />
-                <span>EXTRA</span>
-              </div>
-              <ul className="space-y-2 text-xs text-slate-600 font-medium">
-                <li><a href="#" className="hover:text-[#E8262A] transition">Gift Cards</a></li>
-                <li><a href="#" className="hover:text-[#E8262A] transition">Become a Seller</a></li>
-                <li><a href="#" className="hover:text-[#E8262A] transition">Become an Investor</a></li>
               </ul>
             </div>
 
