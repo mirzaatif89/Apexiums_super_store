@@ -51,34 +51,6 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
   // Success Popup state
   const [showSuccessPopup, setShowSuccessPopup] = React.useState(false);
   const [registeredUser, setRegisteredUser] = React.useState(null);
-  const [googleConfigured, setGoogleConfigured] = React.useState(true);
-  const googleButtonRef = React.useRef(null);
-
-  const handleGoogleCredential = React.useCallback(async (response) => {
-    if (!response?.credential) return;
-    setLoading(true);
-    setError('');
-    try {
-      const loginResponse = await fetchWithTimeout('/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credential: response.credential })
-      });
-      const data = await loginResponse.json();
-      if (!loginResponse.ok) throw new Error(data.message || 'Google login failed');
-
-      const customer = { ...data.user, role: 'User', loginType: 'user', provider: 'google' };
-      const customers = JSON.parse(localStorage.getItem('apexiums-registered-users') || '[]');
-      const nextCustomers = [customer, ...customers.filter((user) => String(user.email || '').toLowerCase() !== String(customer.email || '').toLowerCase())];
-      localStorage.setItem('apexiums-registered-users', JSON.stringify(nextCustomers));
-      onLogin(customer);
-      onClose();
-    } catch (googleError) {
-      setError(googleError.message || 'Google login failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, [onLogin, onClose]);
 
   React.useEffect(() => {
     if (!open) {
@@ -93,61 +65,6 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
     setUsername('');
     setPassword('');
   }, [open, initialTab]);
-
-  React.useEffect(() => {
-    if (!open || tab !== 'login') return undefined;
-    let cancelled = false;
-
-    const loadGoogleLogin = async () => {
-      try {
-        const configResponse = await fetch('/api/auth/google/config');
-        const config = configResponse.ok ? await configResponse.json() : {};
-        if (!config.clientId) {
-          if (!cancelled) setGoogleConfigured(false);
-          return;
-        }
-        if (!cancelled) setGoogleConfigured(true);
-
-        if (!window.google?.accounts?.id) {
-          await new Promise((resolve, reject) => {
-            const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
-            if (existingScript) {
-              existingScript.addEventListener('load', resolve, { once: true });
-              existingScript.addEventListener('error', reject, { once: true });
-              return;
-            }
-            const script = document.createElement('script');
-            script.src = 'https://accounts.google.com/gsi/client';
-            script.async = true;
-            script.defer = true;
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
-          });
-        }
-
-        if (cancelled || !googleButtonRef.current || !window.google?.accounts?.id) return;
-        googleButtonRef.current.innerHTML = '';
-        window.google.accounts.id.initialize({ client_id: config.clientId, callback: handleGoogleCredential, ux_mode: 'popup' });
-        window.google.accounts.id.renderButton(googleButtonRef.current, {
-          type: 'standard',
-          theme: 'outline',
-          size: 'large',
-          text: 'continue_with',
-          shape: 'rectangular',
-          width: Math.min(380, googleButtonRef.current.clientWidth || 360)
-        });
-      } catch {
-        if (!cancelled) setError('Google sign-in could not load. Please try again.');
-      }
-    };
-
-    const frame = window.requestAnimationFrame(loadGoogleLogin);
-    return () => {
-      cancelled = true;
-      window.cancelAnimationFrame(frame);
-    };
-  }, [open, tab, handleGoogleCredential]);
 
   if (!open) return null;
 
@@ -544,67 +461,6 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
                     </div>
                   </form>
 
-                  {/* Social Login Placeholders (UI Only) */}
-                  <div className="pt-3">
-                    <div className="relative flex items-center justify-center">
-                      <div className="w-full border-t border-slate-200" />
-                      <span className="absolute bg-white px-3 text-[10px] font-bold uppercase text-slate-400">
-                        Or Continue With
-                      </span>
-                    </div>
-
-                    <div className="mt-3">
-                      <button
-                        type="button"
-                        onClick={() => {}}
-                        className="hidden"
-                      >
-                        <svg className="h-4 w-4" viewBox="0 0 24 24">
-                          <path
-                            fill="#EA4335"
-                            d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.1 9 5 12 5z"
-                          />
-                          <path
-                            fill="#4285F4"
-                            d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"
-                          />
-                          <path
-                            fill="#FBBC05"
-                            d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.4 0 15.3c0 2.9.7 5.6 1.9 8l3.7-2.9z"
-                          />
-                          <path
-                            fill="#34A853"
-                            d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.1-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"
-                          />
-                        </svg>
-                        <span>Continue with Google</span>
-                      </button>
-                      <div ref={googleButtonRef} className="flex min-h-11 w-full items-center justify-center overflow-hidden rounded-xl" />
-                      {!googleConfigured ? (
-                        <p className="mt-2 text-center text-[11px] font-semibold text-amber-700">
-                          Google login setup is awaiting the OAuth Client ID.
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  {/* Switch to Signup Prompt */}
-                  <div className="text-center pt-3 border-t border-slate-100">
-                    <p className="text-xs text-slate-600">
-                      Don't have an account?{' '}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setTab('signup');
-                          setError('');
-                          setSuccessMsg('');
-                        }}
-                        className="font-bold text-[#E8262A] hover:underline cursor-pointer"
-                      >
-                        Create Account
-                      </button>
-                    </p>
-                  </div>
                 </div>
               ) : (
                 /* TAB 2: SIGNUP FORM */

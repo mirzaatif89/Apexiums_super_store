@@ -1146,54 +1146,6 @@ function safeBusinessAccount(account) {
   return safe;
 }
 
-app.get('/api/auth/google/config', (_req, res) => {
-  res.json({ clientId: process.env.GOOGLE_CLIENT_ID || '' });
-});
-
-app.post('/api/auth/google', async (req, res) => {
-  try {
-    const credential = String(req.body?.credential || '').trim();
-    const clientId = String(process.env.GOOGLE_CLIENT_ID || '').trim();
-    if (!clientId) return res.status(503).json({ message: 'Google login is not configured' });
-    if (!credential) return res.status(400).json({ message: 'Google credential is required' });
-
-    const verifyResponse = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
-    const profile = verifyResponse.ok ? await verifyResponse.json() : null;
-    if (!profile || profile.aud !== clientId || profile.email_verified !== 'true') {
-      return res.status(401).json({ message: 'Google account verification failed' });
-    }
-
-    const email = String(profile.email || '').trim().toLowerCase();
-    const name = String(profile.name || email.split('@')[0] || 'Google Customer').trim();
-    const [[existing]] = await pool.query('SELECT * FROM customers WHERE email = ? LIMIT 1', [email]);
-    let customer = existing;
-
-    if (!customer) {
-      const generatedPassword = crypto.randomBytes(24).toString('hex');
-      const [result] = await pool.query(
-        'INSERT INTO customers (business_id, name, username, password_hash, plain_password, email, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [DEFAULT_BUSINESS_ID, name, email, hashPassword(generatedPassword), null, email, null, 'Active']
-      );
-      customer = { id: result.insertId, business_id: DEFAULT_BUSINESS_ID, name, username: email, email, phone: null, status: 'Active' };
-    }
-
-    res.json({
-      user: {
-        id: customer.id,
-        name: customer.name || name,
-        username: customer.username || email,
-        email,
-        avatar: profile.picture || null,
-        role: 'User',
-        loginType: 'user',
-        provider: 'google'
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Google login failed', error: error.message });
-  }
-});
-
 app.post('/api/auth/login', async (req, res) => {
   try {
     const username = String(req.body.username || '').trim();
