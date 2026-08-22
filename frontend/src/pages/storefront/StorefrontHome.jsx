@@ -11,6 +11,7 @@ import LoginModal from '../../components/LoginModal';
 import CheckoutModal from '../../components/CheckoutModal';
 import ProductDetailsModal from '../../components/ProductDetailsModal';
 import UserProfileView from '../../components/UserProfileView';
+import { openPrivacyPolicy } from '../../components/PrivacyPolicyModal';
 import {
   Briefcase,
   ChevronRight,
@@ -362,12 +363,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
     {
       label: 'Privacy Policy',
       icon: <ShieldCheck size={18} />,
-      onClick: () =>
-        setInfoModal({
-          title: 'Privacy Policy',
-          content:
-            'Your privacy and data security are our top priorities. All customer transactions are encrypted, and personal details are strictly protected under our global privacy standard.'
-        })
+      onClick: openPrivacyPolicy
     },
     {
       label: 'Help and Support',

@@ -5,6 +5,7 @@ import UserDashboard from './pages/storefront/UserDashboard.jsx';
 import { storeLogoSrc, storeName } from './data/storeData';
 import { isAdminRole, isSuperAdminRole, roleKey } from './utils/roles';
 import InvestorPortal from './pages/investor/InvestorPortal.jsx';
+import PrivacyPolicyModal from './components/PrivacyPolicyModal.jsx';
 
 const AUTH_KEY = 'apexiums-auth-session';
 
@@ -25,7 +26,7 @@ function saveSession(session) {
   localStorage.setItem(AUTH_KEY, JSON.stringify(session));
 }
 
-export default function App() {
+function AppContent() {
   const [session, setSession] = React.useState(() => readSession());
 
   React.useEffect(() => {
@@ -120,4 +121,8 @@ export default function App() {
       logoSrc={storeLogoSrc}
     />
   );
+}
+
+export default function App() {
+  return <><AppContent/><PrivacyPolicyModal/></>;
 }

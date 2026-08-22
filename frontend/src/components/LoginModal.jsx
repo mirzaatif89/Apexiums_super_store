@@ -1,4 +1,5 @@
 import React from 'react';
+import { openPrivacyPolicy } from './PrivacyPolicyModal';
 import {
   AlertCircle,
   CheckCircle2,
@@ -564,7 +565,7 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
                           className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#E8262A] focus:ring-red-500"
                         />
                         <span>
-                          I agree to the <a href="#" className="font-bold text-[#E8262A] hover:underline">Terms of Service</a> and <a href="#" className="font-bold text-[#E8262A] hover:underline">Privacy Policy</a>.
+                          I agree to the <a href="#" className="font-bold text-[#E8262A] hover:underline">Terms of Service</a> and <button type="button" onClick={openPrivacyPolicy} className="font-bold text-[#E8262A] hover:underline">Privacy Policy</button>.
                         </span>
                       </label>
                     </div>

@@ -11,6 +11,7 @@ import {
   Mail
 } from 'lucide-react';
 import { getWhatsAppUrl } from '../utils/whatsapp';
+import { openPrivacyPolicy } from './PrivacyPolicyModal';
 import easypaisaLogo from '../../images/EASYPAISA-logo.png';
 import jazzCashLogo from '../../images/jazzcash-logo.png';
 
@@ -168,7 +169,7 @@ export default function Footer({ storeName = "Apexiums", logoSrc, categories = [
               <ul className="space-y-2 text-xs text-slate-600 font-medium">
                 <li><a href="#" className="hover:text-[#E8262A] transition">About Us</a></li>
                 <li><a href="#" className="hover:text-[#E8262A] transition">Careers</a></li>
-                <li><a href="#" className="hover:text-[#E8262A] transition">Privacy Policy</a></li>
+                <li><button type="button" onClick={openPrivacyPolicy} className="hover:text-[#E8262A] transition">Privacy Policy</button></li>
                 <li><a href="#" className="hover:text-[#E8262A] transition">Terms & Conditions</a></li>
               </ul>
             </div>
@@ -278,7 +279,7 @@ export default function Footer({ storeName = "Apexiums", logoSrc, categories = [
         <div className="border-t border-slate-200 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-medium">
           <p>© {new Date().getFullYear()} {storeName}. All rights reserved.</p>
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-            <a href="#" className="hover:text-[#E8262A] transition">Privacy Policy</a>
+            <button type="button" onClick={openPrivacyPolicy} className="hover:text-[#E8262A] transition">Privacy Policy</button>
             <span>•</span>
             <a href="#" className="hover:text-[#E8262A] transition">Terms of Use</a>
             <span>•</span>

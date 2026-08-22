@@ -1,4 +1,5 @@
 import React from 'react';
+import { openPrivacyPolicy } from './PrivacyPolicyModal';
 import {
   AlertCircle,
   CheckCircle2,
@@ -517,7 +518,7 @@ export default function LoginScreen({ logoSrc, storeName, onLogin }) {
                         className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                       />
                       <span>
-                        I agree to the <a href="#" className="font-bold text-emerald-700 hover:underline">Terms of Service</a> and <a href="#" className="font-bold text-emerald-700 hover:underline">Privacy Policy</a>.
+                        I agree to the <a href="#" className="font-bold text-emerald-700 hover:underline">Terms of Service</a> and <button type="button" onClick={openPrivacyPolicy} className="font-bold text-emerald-700 hover:underline">Privacy Policy</button>.
                       </span>
                     </label>
                   </div>

@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { openPrivacyPolicy, PrivacyPolicyContent } from './PrivacyPolicyModal';
 import {
   ArrowLeft,
   Camera,
@@ -369,7 +370,7 @@ export default function UserProfileView({
         {/* Privacy Policy */}
         <button
           type="button"
-          onClick={() => setActiveModal('privacy')}
+          onClick={openPrivacyPolicy}
           className="w-full flex items-center justify-between py-4 border-b border-slate-100 hover:bg-slate-50/80 px-2 rounded-xl transition cursor-pointer group"
         >
           <div className="flex items-center gap-4">
@@ -607,17 +608,7 @@ export default function UserProfileView({
               </button>
             </div>
 
-            <div className="text-xs text-slate-600 space-y-3 leading-relaxed">
-              <p>
-                At Apexiums, we are committed to protecting your personal information and your right to privacy.
-              </p>
-              <p>
-                <strong>Information We Collect:</strong> Personal details such as name, email, delivery address, and payment information required for processing transactions.
-              </p>
-              <p>
-                <strong>Data Encryption:</strong> All sensitive user communication and credit card transactions are encrypted using end-to-end SSL standards.
-              </p>
-            </div>
+            <PrivacyPolicyContent />
           </div>
         </div>
       ) : null}
