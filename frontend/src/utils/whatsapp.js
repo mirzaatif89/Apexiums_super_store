@@ -5,5 +5,7 @@ export function getWhatsAppUrl(message = 'Assalam-o-Alaikum, mujhe Apexiums cust
 }
 
 export function openWhatsApp(message) {
-  window.location.href = getWhatsAppUrl(message);
+  const url = getWhatsAppUrl(message);
+  const whatsappWindow = window.open(url, '_blank', 'noopener,noreferrer');
+  if (!whatsappWindow) window.location.assign(url);
 }
