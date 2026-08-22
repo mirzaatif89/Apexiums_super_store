@@ -13,6 +13,7 @@ import {
   Mail,
   Sparkles
 } from 'lucide-react';
+import { getWhatsAppUrl } from '../utils/whatsapp';
 
 export default function Footer({ storeName = "Apexiums Technologies", onAdminClick }) {
   const [email, setEmail] = useState('');
@@ -189,7 +190,7 @@ export default function Footer({ storeName = "Apexiums Technologies", onAdminCli
                 <span>CUSTOMER SERVICE</span>
               </div>
               <ul className="space-y-2 text-xs text-slate-600 font-medium">
-                <li><a href="#" className="hover:text-[#E8262A] transition">Contact Us</a></li>
+                <li><a href={getWhatsAppUrl()} target="_blank" rel="noreferrer" className="hover:text-[#E8262A] transition">Contact Us</a></li>
                 <li><a href="#" className="hover:text-[#E8262A] transition">FAQs</a></li>
                 <li><a href="#" className="hover:text-[#E8262A] transition">Track Order</a></li>
                 <li><a href="#" className="hover:text-[#E8262A] transition">Shipping Information</a></li>
@@ -234,7 +235,7 @@ export default function Footer({ storeName = "Apexiums Technologies", onAdminCli
                 <span>HELP & SUPPORT</span>
               </div>
               <ul className="space-y-2 text-xs text-slate-600 font-medium">
-                <li><a href="#" className="hover:text-[#E8262A] transition">Help Center</a></li>
+                <li><a href={getWhatsAppUrl('Assalam-o-Alaikum, mujhe Help Center se madad chahiye.')} target="_blank" rel="noreferrer" className="hover:text-[#E8262A] transition">Help Center</a></li>
                 <li><a href="#" className="hover:text-[#E8262A] transition">How to Order</a></li>
                 <li><a href="#" className="hover:text-[#E8262A] transition">Warranty Policy</a></li>
               </ul>

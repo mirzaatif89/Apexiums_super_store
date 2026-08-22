@@ -44,6 +44,7 @@ import {
   storeName,
   topLinks
 } from '../../data/storeData';
+import { openWhatsApp } from '../../utils/whatsapp';
 
 function matchesCategory(product, cat) {
   if (!cat || cat === 'All') return true;
@@ -358,12 +359,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
     {
       label: 'Help and Support',
       icon: <Headphones size={18} />,
-      onClick: () =>
-        setInfoModal({
-          title: 'Help and Support',
-          content:
-            'Need assistance? Our 24/7 dedicated support team is available via Live Chat, email at support@apexiums.com, or phone hotline.'
-        })
+      onClick: () => openWhatsApp('Assalam-o-Alaikum, mujhe Apexiums customer support se madad chahiye.')
     },
     {
       label: 'Logout',
@@ -457,9 +453,13 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
           onSupportClick={() => {
             setProfileOpen(false);
             setCheckoutOpen(false);
-            window.location.href = 'mailto:support@apexiums.com?subject=Customer Support Inquiry';
+            openWhatsApp('Assalam-o-Alaikum, mujhe Apexiums customer support se madad chahiye.');
           }}
-          onChatClick={() => { setProfileOpen(false); setCheckoutOpen(false); setChatSent(false); setChatOpen(true); }}
+          onChatClick={() => {
+            setProfileOpen(false);
+            setCheckoutOpen(false);
+            openWhatsApp('Assalam-o-Alaikum, mujhe Apexiums customer support se madad chahiye.');
+          }}
         />
       ) : null}
 

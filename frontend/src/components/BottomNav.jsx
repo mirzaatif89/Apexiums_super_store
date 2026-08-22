@@ -1,5 +1,6 @@
 import React from 'react';
 import { Heart, Home, MessageSquare, ShoppingCart, User } from 'lucide-react';
+import { openWhatsApp } from '../utils/whatsapp';
 
 export default function BottomNav({
   onCartClick,
@@ -40,7 +41,7 @@ export default function BottomNav({
     } else if (onSupportClick) {
       onSupportClick();
     } else {
-      window.location.href = 'mailto:support@apexiums.com?subject=Customer Support Inquiry';
+      openWhatsApp('Assalam-o-Alaikum, mujhe Apexiums customer support se madad chahiye.');
     }
   };
 

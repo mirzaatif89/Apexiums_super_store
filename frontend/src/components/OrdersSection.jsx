@@ -202,7 +202,7 @@ export default function OrdersSection({
         </div>
 
         <div class="footer">
-          <p>Thank you for shopping at ${storeName}! For inquiries, contact support at 021-111-132-729</p>
+          <p>Thank you for shopping at ${storeName}! For inquiries, contact us on WhatsApp: 0339-1717571</p>
         </div>
 
         <script>

@@ -22,6 +22,7 @@ import {
   PackageCheck,
   Award
 } from 'lucide-react';
+import { openWhatsApp } from '../utils/whatsapp';
 
 export default function ProductDetailsModal({
   product,
@@ -182,11 +183,9 @@ export default function ProductDetailsModal({
   };
 
   const handleSupportInquiry = () => {
-    const subject = encodeURIComponent(`Support Inquiry: ${product.title}`);
-    const body = encodeURIComponent(
-      `Hello ${storeName} Support Team,\n\nI have a question regarding:\n- Product: ${product.title}\n- Price: Rs ${product.price.toLocaleString('en-PK')}\n- Color: ${selectedColor}\n- Size/Variant: ${selectedSize}\n\nPlease assist me.`
+    openWhatsApp(
+      `Assalam-o-Alaikum ${storeName},\n\nMujhe is product ke bare mein maloomat chahiye:\n• Product: ${product.title}\n• Price: Rs ${product.price.toLocaleString('en-PK')}\n• Color: ${selectedColor}\n• Size/Variant: ${selectedSize}\n\nPlease meri rehnumai karein.`
     );
-    window.location.href = `mailto:support@apexiums.com?subject=${subject}&body=${body}`;
   };
 
   return (
