@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import StatCard from '../common/StatCard';
 import Badge from '../common/Badge';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import { CalendarDays, DollarSign, TrendingUp, Receipt, Plus, X } from 'lucide-react';
 
 export const RevenueView = () => {
@@ -20,9 +20,16 @@ export const RevenueView = () => {
     status: 'Completed'
   });
 
+  const normalizeDate = (dateValue) => {
+    if (!dateValue) return '';
+    const raw = String(dateValue);
+    if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
+    const parsed = new Date(raw);
+    return Number.isNaN(parsed.getTime()) ? '' : parsed.toISOString().slice(0, 10);
+  };
   const matchesPeriod = (dateValue) => {
     if (filterType === 'all' || !filterValue) return true;
-    const date = String(dateValue || '').slice(0, 10);
+    const date = normalizeDate(dateValue);
     if (filterType === 'date') return date === filterValue;
     if (filterType === 'month') return date.startsWith(filterValue);
     if (filterType === 'year') return date.startsWith(filterValue);
@@ -38,21 +45,25 @@ export const RevenueView = () => {
   const totalExpenses = filteredTransactions.filter((transaction) => transaction.type === 'Expense').reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
   const netProfit = totalRevenue - totalExpenses;
 
-  const chartBuckets = {};
-  filteredTransactions.forEach((transaction) => {
-    const key = filterType === 'date' ? String(transaction.date || '').slice(0, 10) : String(transaction.date || '').slice(0, 7);
-    if (!key) return;
-    if (!chartBuckets[key]) chartBuckets[key] = { period: key, revenue: 0, expenses: 0 };
-    chartBuckets[key][transaction.type === 'Expense' ? 'expenses' : 'revenue'] += Number(transaction.amount || 0);
-  });
-  orders.filter((order) => ['Shipped', 'Delivered', 'Received'].includes(order.orderStatus || order.order_status)).filter((order) => matchesPeriod(order.orderDate || order.created_at || order.date)).forEach((order) => {
-    const date = order.orderDate || order.created_at || order.date;
-    const key = filterType === 'date' ? String(date || '').slice(0, 10) : String(date || '').slice(0, 7);
-    if (!key) return;
-    if (!chartBuckets[key]) chartBuckets[key] = { period: key, revenue: 0, expenses: 0 };
-    chartBuckets[key].revenue += Number(order.totalAmount || order.total_amount || 0);
-  });
-  const filteredChartData = Object.values(chartBuckets).sort((a, b) => a.period.localeCompare(b.period));
+  const monthlyProducts = {};
+  orders
+    .filter((order) => !['Cancelled', 'Returned'].includes(order.orderStatus || order.order_status))
+    .filter((order) => matchesPeriod(order.orderDate || order.created_at || order.date))
+    .forEach((order) => {
+      const month = normalizeDate(order.orderDate || order.created_at || order.date).slice(0, 7);
+      if (!month) return;
+      if (!monthlyProducts[month]) monthlyProducts[month] = {};
+      (order.products || []).forEach((item) => {
+        const key = String(item.id || item.name || 'Product');
+        if (!monthlyProducts[month][key]) monthlyProducts[month][key] = { product: item.name || 'Product', quantity: 0, sales: 0 };
+        monthlyProducts[month][key].quantity += Number(item.qty || 1);
+        monthlyProducts[month][key].sales += Number(item.qty || 1) * Number(item.price || 0);
+      });
+    });
+  const topSellingData = Object.entries(monthlyProducts).map(([month, productMap]) => {
+    const topProduct = Object.values(productMap).sort((a, b) => b.quantity - a.quantity || b.sales - a.sales)[0];
+    return { month, ...topProduct };
+  }).sort((a, b) => a.month.localeCompare(b.month));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -115,29 +126,20 @@ export const RevenueView = () => {
         />
       </div>
 
-      {/* Area Chart */}
+      {/* Monthly Top-Selling Product Chart */}
       <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs space-y-3">
-        <h3 className="text-sm font-extrabold text-slate-900">Revenue & Expense Growth</h3>
+        <div><h3 className="text-sm font-extrabold text-slate-900">Monthly Top-Selling Products</h3><p className="mt-0.5 text-[11px] text-slate-500">Each month ki sab se zyada quantity mein sell hone wali product</p></div>
         <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={filteredChartData}>
-              <defs>
-                <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="commGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="period" stroke="#94a3b8" fontSize={11} tickLine={false} />
-              <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} />
-              <Tooltip />
-              <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#revenueGrad)" name="Revenue (Rs)" />
-              <Area type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#commGrad)" name="Expenses (Rs)" />
-            </AreaChart>
-          </ResponsiveContainer>
+          {topSellingData.length ? <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={topSellingData} margin={{ top: 28, right: 16, left: -12, bottom: 4 }}>
+              <XAxis dataKey="month" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+              <YAxis allowDecimals={false} stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} label={{ value: 'Units Sold', angle: -90, position: 'insideLeft', fill: '#64748b', fontSize: 10 }} />
+              <Tooltip content={({ active, payload, label }) => active && payload?.length ? <div className="rounded-xl border border-red-100 bg-white p-3 text-xs shadow-xl"><p className="font-black text-slate-900">{label}</p><p className="mt-1 font-bold text-[#E8262A]">{payload[0].payload.product}</p><p className="text-slate-600">Quantity sold: <strong>{payload[0].payload.quantity}</strong></p><p className="text-slate-600">Sales: <strong>Rs {Number(payload[0].payload.sales).toLocaleString('en-PK')}</strong></p></div> : null} />
+              <Bar dataKey="quantity" name="Units Sold" fill="#F62C40" radius={[10, 10, 0, 0]} maxBarSize={70}>
+                <LabelList dataKey="product" position="top" fill="#334155" fontSize={10} fontWeight={700} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer> : <div className="flex h-full items-center justify-center rounded-xl bg-slate-50 text-center"><div><TrendingUp className="mx-auto text-slate-300" size={30}/><p className="mt-2 text-xs font-bold text-slate-500">Selected period mein product sales data available nahi hai.</p></div></div>}
         </div>
       </div>
 
