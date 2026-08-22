@@ -26,18 +26,6 @@ const generateOrderId = () => {
   return String(nextSequence).padStart(3, '0');
 };
 
-const PAKISTAN_CITIES = {
-  Punjab: ['Ahmedpur East', 'Attock', 'Bahawalnagar', 'Bahawalpur', 'Bhakkar', 'Burewala', 'Chakwal', 'Chiniot', 'Dera Ghazi Khan', 'Faisalabad', 'Gujranwala', 'Gujrat', 'Hafizabad', 'Jaranwala', 'Jhang', 'Jhelum', 'Kasur', 'Khanewal', 'Kharian', 'Lahore', 'Layyah', 'Lodhran', 'Mandi Bahauddin', 'Mianwali', 'Multan', 'Muridke', 'Muzaffargarh', 'Nankana Sahib', 'Narowal', 'Okara', 'Pakpattan', 'Rahim Yar Khan', 'Rawalpindi', 'Sadiqabad', 'Sahiwal', 'Sargodha', 'Sheikhupura', 'Sialkot', 'Toba Tek Singh', 'Vehari'],
-  Sindh: ['Badin', 'Dadu', 'Ghotki', 'Hyderabad', 'Jacobabad', 'Jamshoro', 'Karachi', 'Khairpur', 'Larkana', 'Mirpur Khas', 'Nawabshah', 'Sanghar', 'Shikarpur', 'Sukkur', 'Thatta'],
-  'Khyber Pakhtunkhwa': ['Abbottabad', 'Bannu', 'Batkhela', 'Charsadda', 'Chitral', 'Dera Ismail Khan', 'Haripur', 'Kohat', 'Mansehra', 'Mardan', 'Mingora', 'Nowshera', 'Peshawar', 'Swabi', 'Swat'],
-  Balochistan: ['Chaman', 'Dera Murad Jamali', 'Gwadar', 'Hub', 'Khuzdar', 'Loralai', 'Quetta', 'Sibi', 'Turbat', 'Zhob'],
-  'Islamabad Capital Territory': ['Islamabad'],
-  'Gilgit-Baltistan': ['Chilas', 'Gilgit', 'Khaplu', 'Skardu'],
-  'Azad Jammu & Kashmir': ['Bagh', 'Bhimber', 'Kotli', 'Mirpur', 'Muzaffarabad', 'Rawalakot']
-};
-
-const ALL_PAKISTAN_CITIES = [...new Set(Object.values(PAKISTAN_CITIES).flat())].sort((a, b) => a.localeCompare(b));
-
 export default function CheckoutModal({
   open,
   onClose,
@@ -657,35 +645,26 @@ export default function CheckoutModal({
                         <label className="block text-[11px] font-extrabold text-slate-700 mb-1">
                           Province
                         </label>
-                        <select
+                        <input
+                          type="text"
                           value={province}
-                          onChange={(e) => {
-                            setProvince(e.target.value);
-                            setCity('');
-                          }}
+                          onChange={(e) => setProvince(e.target.value)}
+                          placeholder="Enter Province"
                           className="w-full h-10 px-3 text-xs font-semibold bg-white border border-slate-200 rounded-xl outline-none focus:border-[#E8262A] transition"
-                        >
-                          <option value="" disabled>Select Province</option>
-                          {Object.keys(PAKISTAN_CITIES).map((provinceName) => (
-                            <option key={provinceName} value={provinceName}>{provinceName}</option>
-                          ))}
-                        </select>
+                        />
                       </div>
 
                       <div>
                         <label className="block text-[11px] font-extrabold text-slate-700 mb-1">
                           City
                         </label>
-                        <select
+                        <input
+                          type="text"
                           value={city}
                           onChange={(e) => setCity(e.target.value)}
+                          placeholder="Enter City"
                           className="w-full h-10 px-3 text-xs font-semibold bg-white border border-slate-200 rounded-xl outline-none focus:border-[#E8262A] transition"
-                        >
-                          <option value="" disabled>Select City</option>
-                          {(PAKISTAN_CITIES[province] || ALL_PAKISTAN_CITIES).map((cityName) => (
-                            <option key={cityName} value={cityName}>{cityName}</option>
-                          ))}
-                        </select>
+                        />
                       </div>
                     </div>
 
