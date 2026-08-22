@@ -36,8 +36,11 @@ export default function CheckoutModal({
   // Address details
   const [fullName, setFullName] = React.useState('');
   const [phone, setPhone] = React.useState('');
+  const [email, setEmail] = React.useState(customerEmail);
+  const [province, setProvince] = React.useState('Punjab');
   const [address, setAddress] = React.useState('');
   const [city, setCity] = React.useState('Lahore');
+  const [landmark, setLandmark] = React.useState('');
   const [showAddressForm, setShowAddressForm] = React.useState(false);
   const [savedAddress, setSavedAddress] = React.useState(null);
 
@@ -113,10 +116,13 @@ export default function CheckoutModal({
 
     const currentName = savedAddress?.fullName || fullName;
     const currentPhone = savedAddress?.phone || phone;
+    const currentEmail = savedAddress?.email || email;
+    const currentProvince = savedAddress?.province || province;
     const currentAddress = savedAddress?.address || address;
     const currentCity = savedAddress?.city || city;
+    const currentLandmark = savedAddress?.landmark || landmark;
 
-    if (!currentName || !currentPhone || !currentAddress) {
+    if (!currentName || !currentPhone || !currentEmail || !currentProvince || !currentCity || !currentAddress) {
       setShowAddressForm(true);
       setError('Please click "+ Add Address" and enter your shipping details before placing the order.');
       return;
@@ -129,9 +135,9 @@ export default function CheckoutModal({
       const orderPayload = {
         payment_method: paymentMethod.toUpperCase(),
         customer_name: currentName,
-        customer_email: customerEmail,
+        customer_email: currentEmail,
         customer_phone: currentPhone,
-        shipping_address: `${currentAddress}, ${currentCity}`,
+        shipping_address: `${currentAddress}${currentLandmark ? `, Near ${currentLandmark}` : ''}, ${currentCity}, ${currentProvince}`,
         total_amount: grandTotal,
         items_count: items.reduce((sum, item) => sum + Number(item.qty || 1), 0),
         items: items,
@@ -151,8 +157,9 @@ export default function CheckoutModal({
       const orderSummaryObj = {
         id: orderId,
         customerName: currentName,
+        customerEmail: currentEmail,
         customerPhone: currentPhone,
-        shippingAddress: `${currentAddress}, ${currentCity}`,
+        shippingAddress: `${currentAddress}${currentLandmark ? `, Near ${currentLandmark}` : ''}, ${currentCity}, ${currentProvince}`,
         paymentMethod:
           paymentMethod === 'cod'
             ? 'Cash on Delivery'
@@ -522,7 +529,7 @@ export default function CheckoutModal({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-[11px] font-extrabold text-slate-700 mb-1">
-                          Full Name
+                          Name
                         </label>
                         <div className="relative flex items-center">
                           <User size={15} className="absolute left-3 text-slate-400" />
@@ -538,7 +545,7 @@ export default function CheckoutModal({
 
                       <div>
                         <label className="block text-[11px] font-extrabold text-slate-700 mb-1">
-                          Phone Number
+                          Contact
                         </label>
                         <div className="relative flex items-center">
                           <Phone size={15} className="absolute left-3 text-slate-400" />
@@ -553,40 +560,78 @@ export default function CheckoutModal({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="sm:col-span-2">
+                    <div>
+                      <label className="block text-[11px] font-extrabold text-slate-700 mb-1">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="name@example.com"
+                        className="w-full h-10 px-3 text-xs font-semibold bg-white border border-slate-200 rounded-xl outline-none focus:border-[#E8262A] transition"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
                         <label className="block text-[11px] font-extrabold text-slate-700 mb-1">
-                          Shipping Street Address
+                          Province
                         </label>
-                        <input
-                          type="text"
-                          value={address}
-                          onChange={(e) => setAddress(e.target.value)}
-                          placeholder="House / Building No, Street, Area"
+                        <select
+                          value={province}
+                          onChange={(e) => setProvince(e.target.value)}
                           className="w-full h-10 px-3 text-xs font-semibold bg-white border border-slate-200 rounded-xl outline-none focus:border-[#E8262A] transition"
-                        />
+                        >
+                          <option value="Punjab">Punjab</option>
+                          <option value="Sindh">Sindh</option>
+                          <option value="Khyber Pakhtunkhwa">Khyber Pakhtunkhwa</option>
+                          <option value="Balochistan">Balochistan</option>
+                          <option value="Islamabad Capital Territory">Islamabad Capital Territory</option>
+                          <option value="Gilgit-Baltistan">Gilgit-Baltistan</option>
+                          <option value="Azad Jammu & Kashmir">Azad Jammu &amp; Kashmir</option>
+                        </select>
                       </div>
 
                       <div>
                         <label className="block text-[11px] font-extrabold text-slate-700 mb-1">
                           City
                         </label>
-                        <select
+                        <input
+                          type="text"
                           value={city}
                           onChange={(e) => setCity(e.target.value)}
+                          placeholder="Lahore"
                           className="w-full h-10 px-3 text-xs font-semibold bg-white border border-slate-200 rounded-xl outline-none focus:border-[#E8262A] transition"
-                        >
-                          <option value="Lahore">Lahore</option>
-                          <option value="Karachi">Karachi</option>
-                          <option value="Islamabad">Islamabad</option>
-                          <option value="Rawalpindi">Rawalpindi</option>
-                          <option value="Faisalabad">Faisalabad</option>
-                          <option value="Multan">Multan</option>
-                          <option value="Peshawar">Peshawar</option>
-                          <option value="Quetta">Quetta</option>
-                          <option value="Sialkot">Sialkot</option>
-                          <option value="Gujranwala">Gujranwala</option>
-                        </select>
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-extrabold text-slate-700 mb-1">
+                          Mohallah / Sector / Street
+                        </label>
+                        <input
+                          type="text"
+                          value={address}
+                          onChange={(e) => setAddress(e.target.value)}
+                          placeholder="House No, Mohallah, Sector or Street"
+                          className="w-full h-10 px-3 text-xs font-semibold bg-white border border-slate-200 rounded-xl outline-none focus:border-[#E8262A] transition"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-extrabold text-slate-700 mb-1">
+                          Landmark <span className="font-medium text-slate-400">(Optional)</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={landmark}
+                          onChange={(e) => setLandmark(e.target.value)}
+                          placeholder="Near mosque, school, market, etc."
+                          className="w-full h-10 px-3 text-xs font-semibold bg-white border border-slate-200 rounded-xl outline-none focus:border-[#E8262A] transition"
+                        />
                       </div>
                     </div>
 
@@ -594,12 +639,12 @@ export default function CheckoutModal({
                       <button
                         type="button"
                         onClick={() => {
-                          if (!fullName || !phone || !address) {
-                            setError('Please fill in your Full Name, Phone Number, and Street Address.');
+                          if (!fullName || !phone || !email || !province || !city || !address) {
+                            setError('Please fill in Name, Contact, Email, Province, City, and Mohallah / Sector / Street.');
                             return;
                           }
                           setError('');
-                          setSavedAddress({ fullName, phone, address, city });
+                          setSavedAddress({ fullName, phone, email, province, city, address, landmark });
                           setShowAddressForm(false);
                         }}
                         className="px-6 py-2 rounded-xl bg-[#E8262A] text-white font-black text-xs uppercase tracking-wider hover:bg-red-700 transition shadow-sm cursor-pointer"
@@ -625,8 +670,11 @@ export default function CheckoutModal({
                         <p className="text-[11px] text-slate-600 mt-0.5">
                           {savedAddress?.phone || phone}
                         </p>
+                        <p className="text-[11px] text-slate-600">
+                          {savedAddress?.email || email}
+                        </p>
                         <p className="text-[11px] text-slate-500 font-medium leading-snug truncate">
-                          {savedAddress?.address || address}, {savedAddress?.city || city}
+                          {savedAddress?.address || address}{(savedAddress?.landmark || landmark) ? `, Near ${savedAddress?.landmark || landmark}` : ''}, {savedAddress?.city || city}, {savedAddress?.province || province}
                         </p>
                       </div>
                     </div>
