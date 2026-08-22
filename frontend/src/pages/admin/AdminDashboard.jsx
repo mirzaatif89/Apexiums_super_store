@@ -222,7 +222,7 @@ const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
         return <ChatsView />;
       case "settings":
       case "profile":
-        return <SettingsView />;
+        return <SettingsView session={session} />;
       default:
         return <DashboardView />;
     }

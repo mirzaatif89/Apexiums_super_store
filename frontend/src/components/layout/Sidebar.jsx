@@ -21,8 +21,7 @@ import {
   Truck,
   Bell,
   MessageSquare,
-  User,
-  Settings,
+  KeyRound,
   BadgePercent,
   LogOut,
   ChevronDown,
@@ -440,20 +439,7 @@ export const Sidebar = ({
             System & Account
           </div>
 
-          {/* Profile */}
-          <button
-            onClick={() => handleNav("profile")}
-            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 cursor-pointer ${
-              activeTab === "profile"
-                ? "bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-lg shadow-red-900/30"
-                : "text-slate-600 hover:text-red-600 hover:bg-red-50"
-            }`}
-          >
-            <User size={18} />
-            <span>Profile</span>
-          </button>
-
-          {/* Settings */}
+          {/* Password */}
           {(isSuperAdmin || hasPermission("manageSettings")) && (
             <button
               onClick={() => handleNav("settings")}
@@ -463,8 +449,8 @@ export const Sidebar = ({
                   : "text-slate-600 hover:text-red-600 hover:bg-red-50"
               }`}
             >
-              <Settings size={18} />
-              <span>Settings</span>
+              <KeyRound size={18} />
+              <span>Change Password</span>
             </button>
           )}
         </div>

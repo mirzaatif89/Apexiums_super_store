@@ -813,9 +813,9 @@ async function ensureAdminAccount() {
   if (existing) {
     await pool.query(
       `UPDATE business_accounts
-       SET business_name = ?, username = ?, password_hash = ?, owner_name = ?, email = ?, phone = ?, role = ?, status = ?
+       SET business_name = ?, username = ?, owner_name = ?, email = ?, phone = ?, role = ?, status = ?
        WHERE id = 1`,
-      ['Apexiums HQ', adminUsername, passwordHash, 'Super Admin', 'admin@apexiums.com', '03000000000', 'SuperAdmin', 'Active']
+      ['Apexiums HQ', adminUsername, 'Super Admin', 'admin@apexiums.com', '03000000000', 'SuperAdmin', 'Active']
     );
     return;
   }
@@ -1204,6 +1204,25 @@ app.post('/api/auth/login', async (req, res) => {
       role: account.role,
       token: `business-${account.id}`
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.put('/api/auth/change-password', async (req, res) => {
+  try {
+    const accountId = Number(req.headers['x-account-id'] || req.headers['x-business-id'] || 0);
+    const currentPassword = String(req.body.currentPassword || '');
+    const newPassword = String(req.body.newPassword || '');
+    if (!accountId || !currentPassword || !newPassword) return res.status(400).json({ message: 'Current and new passwords are required.' });
+    if (newPassword.length < 8) return res.status(400).json({ message: 'New password must contain at least 8 characters.' });
+
+    const [[account]] = await pool.query('SELECT id, password_hash FROM business_accounts WHERE id = ? LIMIT 1', [accountId]);
+    if (!account || !verifyPassword(currentPassword, account.password_hash)) return res.status(401).json({ message: 'Current password is incorrect.' });
+    if (verifyPassword(newPassword, account.password_hash)) return res.status(400).json({ message: 'New password must be different from the current password.' });
+
+    await pool.query('UPDATE business_accounts SET password_hash = ?, plain_password = NULL WHERE id = ?', [hashPassword(newPassword), accountId]);
+    res.json({ message: 'Password changed successfully.' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
