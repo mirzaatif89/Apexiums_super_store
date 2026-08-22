@@ -1345,6 +1345,43 @@ Object.entries({
   investor_applications: ['applicant_name']
 }).forEach(([resource, required]) => crudRoutes(resource, required));
 
+app.post('/api/coupons/validate', async (req, res) => {
+  try {
+    const code = String(req.body?.code || '').trim().toUpperCase();
+    const orderAmount = Number(req.body?.orderAmount || 0);
+    if (!code) return res.status(400).json({ message: 'Coupon code required' });
+    const scope = businessScope('coupons', req);
+    const where = scope.clause ? `AND ${scope.clause}` : '';
+    const [[coupon]] = await pool.query(`SELECT * FROM coupons WHERE UPPER(code) = ? ${where} LIMIT 1`, [code, ...scope.params]);
+    if (!coupon || String(coupon.status).toLowerCase() !== 'active') return res.status(404).json({ message: 'Coupon code is invalid or inactive.' });
+    const today = new Date().toISOString().slice(0, 10);
+    if (coupon.valid_from && String(coupon.valid_from).slice(0, 10) > today) return res.status(400).json({ message: 'This coupon is not active yet.' });
+    if (coupon.valid_till && String(coupon.valid_till).slice(0, 10) < today) return res.status(400).json({ message: 'This coupon has expired.' });
+    if (Number(coupon.usage_limit || 0) > 0 && Number(coupon.used_count || 0) >= Number(coupon.usage_limit)) return res.status(400).json({ message: 'Coupon usage limit has been reached.' });
+    if (orderAmount < Number(coupon.min_order_amount || 0)) return res.status(400).json({ message: `Minimum order amount is Rs ${Number(coupon.min_order_amount).toLocaleString('en-PK')}.` });
+    const rawDiscount = String(coupon.discount_type).toLowerCase() === 'percentage'
+      ? orderAmount * Number(coupon.discount_value || 0) / 100
+      : Number(coupon.discount_value || 0);
+    const discount = Math.max(0, Math.min(orderAmount, Math.round(rawDiscount)));
+    res.json({ coupon, discount });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.post('/api/coupons/redeem', async (req, res) => {
+  try {
+    const id = Number(req.body?.id || 0);
+    if (!id) return res.status(400).json({ message: 'Coupon id required' });
+    const scope = businessScope('coupons', req);
+    const where = scope.clause ? `AND ${scope.clause}` : '';
+    await pool.query(`UPDATE coupons SET used_count = used_count + 1 WHERE id = ? ${where}`, [id, ...scope.params]);
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 app.get('/api/stock', async (req, res) => {
   try {
     const scope = businessScope('stock', req);

@@ -17,6 +17,7 @@ import ReturnsView from '../../components/sales/ReturnsView';
 import CustomersView from '../../components/sales/CustomersView';
 import BannersView from '../../components/marketing/BannersView';
 import AdsView from '../../components/marketing/AdsView';
+import CouponsView from '../../components/marketing/CouponsView';
 import InvestorsView from '../../components/marketplace/InvestorsView';
 import StaffView from '../../components/marketplace/StaffView';
 import SellersView from '../../components/marketplace/SellersView';
@@ -39,7 +40,7 @@ const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
 
   const pageSlugs = {
     dashboard: 'dashboard', products: 'products', categories: 'categories', stock: 'stock', suppliers: 'suppliers',
-    orders: 'orders', returns: 'returns', customers: 'customers', banners: 'website-banner', ads: 'app-banner',
+    orders: 'orders', returns: 'returns', customers: 'customers', banners: 'website-banner', ads: 'app-banner', coupons: 'coupons',
     investors: 'investors', staff: 'staff', sellers: 'sellers', permissions: 'permissions',
     'business-accounts': 'business-accounts', revenue: 'revenue', expenses: 'expenses',
     'software-fees': 'software-fees', 'staff-salaries': 'staff-salaries', 'delivery-expenses': 'delivery-expenses',
@@ -67,7 +68,7 @@ const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
   React.useEffect(() => {
     const pageNames = {
       dashboard: 'Dashboard', products: 'Product Listing', categories: 'Categories', stock: 'Stock', suppliers: 'Suppliers',
-      orders: 'Orders', returns: 'Returns', customers: 'Customers', banners: 'Website Banner', ads: 'APP Banner',
+      orders: 'Orders', returns: 'Returns', customers: 'Customers', banners: 'Website Banner', ads: 'APP Banner', coupons: 'Coupons',
       investors: 'Investors', staff: 'Staff', sellers: 'Sellers', permissions: 'Permissions',
       'business-accounts': 'Business Accounts', revenue: 'Revenue', expenses: 'Expense',
       'software-fees': 'Software Fees', 'staff-salaries': 'Staff Salaries', 'delivery-expenses': 'Delivery Expenses',
@@ -77,7 +78,7 @@ const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
   }, [activeTab, storeName]);
 
   const renderActiveView = () => {
-    const tabPermissions = { dashboard: 'viewDashboard', products: 'manageProducts', categories: 'manageCategories', stock: 'manageStock', suppliers: 'manageStock', orders: 'manageOrders', returns: 'manageReturns', customers: 'manageCustomers', banners: 'manageMarketing', ads: 'manageMarketing', investors: 'manageInvestors', staff: 'manageStaff', sellers: 'manageSellers', revenue: 'manageFinance', expenses: 'manageFinance', 'software-fees': 'manageFinance', 'staff-salaries': 'manageFinance', 'delivery-expenses': 'manageFinance', chats: 'manageChats', notifications: 'viewNotifications', settings: 'manageSettings' };
+    const tabPermissions = { dashboard: 'viewDashboard', products: 'manageProducts', categories: 'manageCategories', stock: 'manageStock', suppliers: 'manageStock', orders: 'manageOrders', returns: 'manageReturns', customers: 'manageCustomers', banners: 'manageMarketing', ads: 'manageMarketing', coupons: 'manageMarketing', investors: 'manageInvestors', staff: 'manageStaff', sellers: 'manageSellers', revenue: 'manageFinance', expenses: 'manageFinance', 'software-fees': 'manageFinance', 'staff-salaries': 'manageFinance', 'delivery-expenses': 'manageFinance', chats: 'manageChats', notifications: 'viewNotifications', settings: 'manageSettings' };
     if (['permissions', 'business-accounts'].includes(activeTab) && !isSuperAdminRole(session?.role)) {
       return <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center"><h2 className="text-lg font-black text-red-800">SuperAdmin access required</h2><p className="mt-1 text-xs text-red-600">You do not have permission to open this module.</p></div>;
     }
@@ -105,6 +106,8 @@ const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
         return <BannersView />;
       case 'ads':
         return <AdsView />;
+      case 'coupons':
+        return <CouponsView />;
       case 'investors':
         return <InvestorsView />;
       case 'staff':

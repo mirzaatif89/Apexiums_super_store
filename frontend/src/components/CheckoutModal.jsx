@@ -62,6 +62,7 @@ export default function CheckoutModal({
   // Coupon code
   const [couponCode, setCouponCode] = React.useState('');
   const [appliedDiscount, setAppliedDiscount] = React.useState(0);
+  const [appliedCoupon, setAppliedCoupon] = React.useState(null);
   const [couponMsg, setCouponMsg] = React.useState('');
 
   // State
@@ -129,21 +130,27 @@ export default function CheckoutModal({
 
   if (!open) return null;
 
-  const handleApplyCoupon = (e) => {
+  const handleApplyCoupon = async (e) => {
     e.preventDefault();
     const code = couponCode.trim().toUpperCase();
     if (!code) return;
-    if (code === 'APEX500' || code === 'WELCOME') {
-      setAppliedDiscount(500);
-      setCouponMsg('Voucher applied! Rs 500 discount added.');
+    try {
+      const response = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, orderAmount: subtotal })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || 'Invalid coupon code.');
+      setAppliedDiscount(Number(result.discount || 0));
+      setAppliedCoupon(result.coupon);
+      setCouponMsg(`${result.coupon.title || result.coupon.code} applied! Rs ${Number(result.discount || 0).toLocaleString('en-PK')} discount added.`);
       setError('');
-    } else if (code === 'SUPERDEAL') {
-      setAppliedDiscount(1000);
-      setCouponMsg('Mega Voucher applied! Rs 1,000 discount added.');
-      setError('');
-    } else {
+    } catch (couponError) {
+      setAppliedDiscount(0);
+      setAppliedCoupon(null);
       setCouponMsg('');
-      setError('Invalid voucher code. Try "APEX500" or "SUPERDEAL".');
+      setError(couponError.message);
     }
   };
 
@@ -199,6 +206,12 @@ export default function CheckoutModal({
 
       const orderResult = response.ok ? await response.json() : null;
       const backendOrderId = orderResult?.order?.id || null;
+      if (response.ok && appliedCoupon?.id) {
+        fetch('/api/coupons/redeem', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: appliedCoupon.id })
+        }).catch(() => {});
+      }
 
       const orderSummaryObj = {
         id: publicOrderId,

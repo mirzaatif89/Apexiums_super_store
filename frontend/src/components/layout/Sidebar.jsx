@@ -24,6 +24,7 @@ import {
   MessageSquare,
   User,
   Settings,
+  BadgePercent,
   LogOut,
   ChevronDown,
   ChevronRight,
@@ -93,7 +94,8 @@ export const Sidebar = ({ isOpen, onClose, storeName = 'Apexiums', logoSrc, onLo
       type: 'group',
       children: [
         { id: 'banners', label: 'Website Banner', icon: Megaphone, permission: 'manageMarketing' },
-        { id: 'ads', label: 'APP Banner', icon: Radio, permission: 'manageMarketing' }
+        { id: 'ads', label: 'APP Banner', icon: Radio, permission: 'manageMarketing' },
+        { id: 'coupons', label: 'Coupons', icon: BadgePercent, permission: 'manageMarketing' }
       ]
     },
     {

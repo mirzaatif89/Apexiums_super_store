@@ -21,7 +21,7 @@ const AdminContext = createContext();
 const defaultChats = [];
 
 const pageBySlug = {
-  dashboard: 'dashboard', products: 'products', categories: 'categories', stock: 'stock', suppliers: 'suppliers',
+  dashboard: 'dashboard', products: 'products', categories: 'categories', stock: 'stock', suppliers: 'suppliers', coupons: 'coupons',
   'website-banner': 'banners', 'app-banner': 'ads', orders: 'orders', returns: 'returns', customers: 'customers',
   investors: 'investors', staff: 'staff', sellers: 'sellers', permissions: 'permissions',
   'business-accounts': 'business-accounts', revenue: 'revenue', expenses: 'expenses',
