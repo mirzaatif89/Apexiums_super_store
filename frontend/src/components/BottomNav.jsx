@@ -36,7 +36,7 @@ export default function BottomNav({
   };
 
   const handleChat = () => {
-    setActiveTab('WhatsApp');
+    setActiveTab('Contact');
     if (onChatClick) {
       onChatClick();
     } else if (onSupportClick) {
@@ -68,7 +68,7 @@ export default function BottomNav({
 
   const navItems = [
     { label: 'Home', icon: Home, action: handleHome },
-    { label: 'WhatsApp', icon: null, action: handleChat },
+    { label: 'Contact', icon: null, action: handleChat },
     { label: 'Cart', icon: ShoppingCart, action: handleCart, badge: cartCount },
     { label: 'Wishlist', icon: Heart, action: handleWishlist },
     { label: 'Account', icon: User, action: handleAccount }
@@ -100,7 +100,7 @@ export default function BottomNav({
                   >
                     <path d="M12 2.5L2 10.5H4.5V20.5C4.5 21.0523 4.94772 21.5 5.5 21.5H10V15.5H14V21.5H18.5C19.0523 21.5 19.5 21.0523 19.5 20.5V10.5H22L12 2.5Z" />
                   </svg>
-                ) : item.label === 'WhatsApp' ? (
+                ) : item.label === 'Contact' ? (
                   <img
                     src={customerSupportIcon}
                     alt="Customer support"
@@ -128,7 +128,7 @@ export default function BottomNav({
 
               <span
                 className={`text-[11px] tracking-tight mt-1 leading-none transition-colors duration-150 ${
-                  item.label === 'WhatsApp'
+                  item.label === 'Contact'
                     ? 'text-[#25D366] font-medium'
                     : isActive
                     ? 'text-[#E8262A] font-medium'
