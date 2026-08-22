@@ -123,7 +123,7 @@ export default function Footer({ storeName = "Apexiums", logoSrc, onAdminClick }
             </div>
 
             {/* Stay Updated Card Box */}
-            <div className="rounded-2xl bg-red-50/70 border border-red-100 p-4 sm:p-5 shadow-xs space-y-3 relative overflow-hidden">
+            <div className="hidden">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-slate-900 font-extrabold text-xs uppercase tracking-wider">
                   <Mail size={16} className="text-[#E8262A]" />
