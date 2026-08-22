@@ -19,6 +19,13 @@ import {
   X
 } from 'lucide-react';
 
+const generateOrderId = () => {
+  const date = new Date();
+  const datePart = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
+  const uniquePart = `${Date.now().toString(36).slice(-4)}${Math.random().toString(36).slice(2, 6)}`.toUpperCase();
+  return `EL-${datePart}-${uniquePart}`;
+};
+
 export default function CheckoutModal({
   open,
   onClose,
@@ -130,6 +137,7 @@ export default function CheckoutModal({
 
     setLoading(true);
     setError('');
+    const publicOrderId = generateOrderId();
 
     try {
       const orderPayload = {
@@ -152,10 +160,11 @@ export default function CheckoutModal({
       });
 
       const orderResult = response.ok ? await response.json() : null;
-      const orderId = orderResult?.order?.id || Math.floor(100000 + Math.random() * 900000);
+      const backendOrderId = orderResult?.order?.id || null;
 
       const orderSummaryObj = {
-        id: orderId,
+        id: publicOrderId,
+        backendOrderId,
         customerName: currentName,
         customerEmail: currentEmail,
         customerPhone: currentPhone,
@@ -180,7 +189,7 @@ export default function CheckoutModal({
       if (onOrderPlaced) onOrderPlaced(orderSummaryObj);
     } catch (err) {
       setPlacedOrderData({
-        id: Math.floor(100000 + Math.random() * 900000),
+        id: publicOrderId,
         customerName: currentName,
         paymentMethod:
           paymentMethod === 'cod'
@@ -928,7 +937,7 @@ export default function CheckoutModal({
 
             <div className="space-y-1.5">
               <span className="text-xs font-black uppercase tracking-widest text-[#E8262A]">
-                Order #{placedOrderData?.id} Placed Successfully
+                Order Placed Successfully
               </span>
               <h3 className="text-3xl font-black text-slate-900">Thank You For Your Order!</h3>
               <p className="text-xs text-slate-500 max-w-md mx-auto">
@@ -964,6 +973,7 @@ export default function CheckoutModal({
               </div>
 
               <div className="border-t border-slate-200 pt-3 text-xs space-y-1 text-slate-600">
+                <p><strong>Order ID:</strong> <span className="font-black tracking-wide text-[#E8262A]">{placedOrderData?.id}</span></p>
                 <p><strong>Customer:</strong> {placedOrderData?.customerName}</p>
                 <p><strong>Payment Method:</strong> {placedOrderData?.paymentMethod}</p>
                 <p><strong>Total Paid:</strong> <span className="font-black text-[#E8262A]">Rs {placedOrderData?.totalAmount?.toLocaleString('en-PK')}</span></p>
