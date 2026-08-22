@@ -146,11 +146,11 @@ export default function Header({
             <button
               type="button"
               onClick={onCartClick}
-              className="group relative flex h-14 w-14 items-center justify-center rounded-[18px] border border-white/5 bg-white/15 hover:bg-white/25 text-white shadow-sm transition active:scale-95 cursor-pointer shrink-0 backdrop-blur-md"
+              className="group relative flex h-11 w-11 items-center justify-center rounded-[16px] border border-white/5 bg-white/15 hover:bg-white/25 text-white shadow-sm transition active:scale-95 cursor-pointer shrink-0 backdrop-blur-md"
               title="Cart"
               aria-label="Cart"
             >
-              <ReferenceCartIcon className="h-[31px] w-[31px] text-white transition-transform group-hover:scale-105" />
+              <ReferenceCartIcon className="h-6 w-6 text-white transition-transform group-hover:scale-105" />
               {cartCount > 0 ? (
                 <span className="absolute -top-1 -right-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-white px-1 text-[9px] font-black text-[#E8262A] shadow-md animate-bounce">
                   {cartCount}
