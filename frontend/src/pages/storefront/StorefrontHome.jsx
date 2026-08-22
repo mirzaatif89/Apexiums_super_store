@@ -18,7 +18,6 @@ import {
   ChevronRight,
   Download,
   Headphones,
-  Heart,
   Info,
   LogIn,
   LogOut,
@@ -28,8 +27,6 @@ import {
   ShieldCheck,
   ShoppingBag,
   ShoppingCart,
-  Smartphone,
-  Store,
   Truck,
   Upload,
   User,
@@ -313,14 +310,6 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
       onClick: () => setCheckoutOpen(true)
     },
     {
-      label: 'Wishlist',
-      icon: <Heart size={18} />,
-      onClick: () => {
-        const el = document.getElementById('products-section');
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-      }
-    },
-    {
       label: 'About',
       icon: <Info size={18} />,
       onClick: () =>
@@ -328,27 +317,6 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
           title: 'About Apexiums',
           content:
             'Apexiums Technologies is your premier online e-commerce marketplace offering high-quality fashion, electronics, gadgets, and daily essentials with fast delivery and guaranteed satisfaction.'
-        })
-    },
-    {
-      label: 'Download the app',
-      icon: <Smartphone size={18} />,
-      onClick: () =>
-        setInfoModal({
-          title: 'Download Apexiums App',
-          content:
-            'Get exclusive discounts, real-time order tracking, and instant flash sale notifications! Available now on Android Play Store and Apple App Store.'
-        })
-    },
-    {
-      label: 'Become a Seller',
-      icon: <Store size={18} />,
-      onClick: () =>
-        setInfoModal({
-          title: 'Become a Seller',
-          type: 'seller-application',
-          content:
-            'Join thousands of successful merchants on Apexiums! List your products, reach millions of active shoppers across Pakistan, and grow your sales effortless.'
         })
     },
     {
