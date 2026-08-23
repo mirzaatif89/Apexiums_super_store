@@ -20,7 +20,9 @@ const emptySupplier = {
   address: "",
   products_supplied: "",
   description: "",
-  budget: "",
+  contact_date: new Date().toISOString().slice(0, 10),
+  supplier_payment_amount: "",
+  supplier_payment_date: new Date().toISOString().slice(0, 10),
   status: "Active",
 };
 const emptyPurchase = {
@@ -112,7 +114,7 @@ export default function SuppliersView() {
         body: JSON.stringify({
           ...supplierForm,
           name: supplierForm.contact_person,
-          budget: Number(supplierForm.budget || 0),
+          supplier_payment_amount: Number(supplierForm.supplier_payment_amount || 0),
           status: "Active",
           total_purchases: Number(editingSupplier?.total_purchases || 0),
           payment_due: Number(editingSupplier?.payment_due || 0),
@@ -362,7 +364,7 @@ export default function SuppliersView() {
                 "Products",
                 "Purchased",
                 "Payment Due",
-                "Budget / Description",
+                "Contact / Payment",
                 "Actions",
               ].map((heading) => (
                 <th key={heading} className="p-4">
@@ -396,7 +398,7 @@ export default function SuppliersView() {
                 <td className="p-4 font-black text-amber-700">
                   Rs {Number(supplier.payment_due || 0).toLocaleString("en-PK")}
                 </td>
-                <td className="p-4"><p className="font-black text-blue-700">Rs {Number(supplier.budget || 0).toLocaleString("en-PK")}</p><p className="max-w-xs text-[10px] text-slate-500">{supplier.description || "No description"}</p></td>
+                <td className="p-4"><p className="text-[10px] text-slate-500">Contact: {supplier.contact_date || "—"}</p><p className="font-black text-blue-700">Paid: Rs {Number(supplier.supplier_payment_amount || 0).toLocaleString("en-PK")}</p><p className="text-[10px] text-slate-500">Payment date: {supplier.supplier_payment_date || "—"}</p><p className="max-w-xs text-[10px] text-slate-500">{supplier.description || "No description"}</p></td>
                 <td className="p-4">
                   <div className="flex gap-1">
                     <button
@@ -520,7 +522,9 @@ export default function SuppliersView() {
                 ["email", "Email"],
                 ["products_supplied", "Products Supplied"],
                 ["address", "Address"],
-                ["budget", "Supplier Budget (Rs)"],
+                ["contact_date", "Contact Date"],
+                ["supplier_payment_amount", "Payment Amount (Rs)"],
+                ["supplier_payment_date", "Payment Date"],
               ].map(([key, label]) => (
                 <label
                   key={key}
@@ -528,6 +532,9 @@ export default function SuppliersView() {
                 >
                   {label}
                   <input
+                    type={key.includes("date") ? "date" : key === "supplier_payment_amount" ? "number" : "text"}
+                    min={key === "supplier_payment_amount" ? "0" : undefined}
+                    step={key === "supplier_payment_amount" ? "0.01" : undefined}
                     required={label.includes("*")}
                     value={supplierForm[key] || ""}
                     onChange={(e) =>

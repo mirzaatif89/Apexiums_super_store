@@ -517,7 +517,9 @@ const schemas = [
     username VARCHAR(120),
     password VARCHAR(255),
     products_supplied TEXT,
-    budget DECIMAL(12,2) DEFAULT 0,
+    contact_date DATE,
+    supplier_payment_amount DECIMAL(12,2) DEFAULT 0,
+    supplier_payment_date DATE,
     total_purchases DECIMAL(12,2) DEFAULT 0,
     payment_due DECIMAL(12,2) DEFAULT 0,
     status VARCHAR(40) DEFAULT 'Active'
@@ -683,7 +685,7 @@ const resources = {
   returns: ['order_id', 'product_id', 'customer_id', 'customer', 'product', 'reason', 'status', 'refund_amount', 'refund_method', 'created_at'],
   expenses: ['title', 'category', 'amount', 'payment_method', 'date', 'receipt_url', 'added_by', 'notes'],
   finance_transactions: ['title', 'type', 'category', 'amount', 'transaction_date', 'status', 'created_at'],
-  wholesellers: ['name', 'business_name', 'contact_person', 'phone', 'email', 'address', 'description', 'budget', 'seller_image', 'stock_seller_sell', 'username', 'password', 'products_supplied', 'total_purchases', 'payment_due', 'status'],
+  wholesellers: ['name', 'business_name', 'contact_person', 'phone', 'email', 'address', 'description', 'contact_date', 'supplier_payment_amount', 'supplier_payment_date', 'seller_image', 'stock_seller_sell', 'username', 'password', 'products_supplied', 'total_purchases', 'payment_due', 'status'],
   purchase_orders: ['wholeseller_id', 'items_json', 'total_amount', 'paid_amount', 'payment_method', 'payment_status', 'delivery_status', 'status', 'date'],
   staff: ['photo_url', 'name', 'email', 'phone', 'role', 'department', 'password_hash', 'status', 'last_login'],
   customers: ['avatar_url', 'name', 'username', 'password_hash', 'plain_password', 'email', 'phone', 'total_orders', 'total_spent', 'status', 'created_at'],
@@ -912,7 +914,9 @@ async function initializeDatabase() {
   await ensureColumn('wholesellers', 'stock_seller_sell', 'VARCHAR(180)');
   await ensureColumn('wholesellers', 'username', 'VARCHAR(120)');
   await ensureColumn('wholesellers', 'password', 'VARCHAR(255)');
-  await ensureColumn('wholesellers', 'budget', 'DECIMAL(12,2) DEFAULT 0');
+  await ensureColumn('wholesellers', 'contact_date', 'DATE');
+  await ensureColumn('wholesellers', 'supplier_payment_amount', 'DECIMAL(12,2) DEFAULT 0');
+  await ensureColumn('wholesellers', 'supplier_payment_date', 'DATE');
   await ensureColumn('purchase_orders', 'paid_amount', 'DECIMAL(12,2) DEFAULT 0');
   await ensureColumn('purchase_orders', 'payment_method', 'VARCHAR(60)');
   await ensureColumn('purchase_orders', 'payment_status', "VARCHAR(40) DEFAULT 'Pending'");

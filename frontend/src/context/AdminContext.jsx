@@ -1589,7 +1589,7 @@ export const AdminProvider = ({ children, session }) => {
     if (!response.ok)
       throw new Error(
         (await response.json().catch(() => ({}))).message ||
-          "Delivery company could not be saved.",
+          "Delivery expense could not be saved.",
       );
     const saved = await response.json();
     const normalized = { ...saved, amount: Number(saved.amount || 0) };
@@ -1600,7 +1600,7 @@ export const AdminProvider = ({ children, session }) => {
           )
         : [normalized, ...previous],
     );
-    addToast(`Delivery company "${company.courier}" saved.`, "success");
+    addToast("Delivery expense saved.", "success");
   };
 
   const deleteDeliveryCompany = async (id) => {
@@ -1608,11 +1608,11 @@ export const AdminProvider = ({ children, session }) => {
       method: "DELETE",
       headers: apiHeaders(),
     });
-    if (!response.ok) throw new Error("Delivery company could not be deleted.");
+    if (!response.ok) throw new Error("Delivery expense could not be deleted.");
     setDeliveryCompanies((previous) =>
       previous.filter((item) => String(item.id) !== String(id)),
     );
-    addToast("Delivery company removed.", "info");
+    addToast("Delivery expense removed.", "info");
   };
 
   // Permissions

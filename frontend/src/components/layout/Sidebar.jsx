@@ -20,7 +20,6 @@ import {
   UsersRound,
   Truck,
   Bell,
-  MessageSquare,
   KeyRound,
   BadgePercent,
   LogOut,
@@ -232,12 +231,6 @@ export const Sidebar = ({
       icon: Bell,
       type: "group",
       children: [
-        {
-          id: "chats",
-          label: "Chats",
-          icon: MessageSquare,
-          permission: "manageChats",
-        },
         {
           id: "sellers",
           label: "Become a Seller",
