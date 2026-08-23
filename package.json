@@ -21,9 +21,7 @@
     "mysql2": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "recharts": "3.10.0"
-  },
-  "devDependencies": {
+    "recharts": "3.10.0",
     "@vitejs/plugin-react": "latest",
     "@tailwindcss/vite": "^4.3.3",
     "autoprefixer": "^10.5.4",
