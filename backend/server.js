@@ -1712,7 +1712,7 @@ async function startServer() {
     // A missing build should produce a useful deployment error instead of a
     // misleading browser-level "Not Found" response.
     app.get('/', (_req, res) => {
-      res.status(503).send('Frontend build is missing. Run npm run build before starting the production app.');
+      res.status(503).send('Frontend build is missing. Build locally with npm run build, upload frontend/dist to this server, then restart the Node.js application.');
     });
   }
 
