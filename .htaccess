@@ -1,3 +1,10 @@
-# This site is served by the cPanel Node.js application (app.js).
-# Do not add Apache DirectoryIndex or rewrite rules here: they bypass the
-# Node application and cause a Not Found response when Vite output is ignored.
+# cPanel / CloudLinux Passenger configuration for the Node.js application.
+# This sends requests to app.js instead of exposing this project directory.
+PassengerAppRoot "/home/apexium2/elistin.com"
+PassengerBaseURI "/"
+PassengerNodejs "/home/apexium2/nodevenv/elistin.com/20/bin/node"
+PassengerAppType node
+PassengerStartupFile app.js
+
+# Never expose the repository directory if Passenger is unavailable.
+Options -Indexes
