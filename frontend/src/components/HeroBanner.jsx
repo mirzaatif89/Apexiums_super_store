@@ -1,9 +1,8 @@
 import React from 'react';
 
-const displaySlides = [
-  { id: 1, badge: 'Limited time!', subtitle: 'Get Special Offer', offerPrefix: 'Up to', offerMain: '40%', terms: 'All Services Available | T&C Applied', cta: 'Claim', image: 'https://images.unsplash.com/photo-1520045892732-304bc3ac5d8e?auto=format&fit=crop&w=1600&q=85' },
-  { id: 2, badge: 'New Season', subtitle: 'Exclusive Gadgets Deal', offerPrefix: 'Up to', offerMain: '50%', terms: 'Free Shipping Nationwide | T&C Applied', cta: 'Claim', image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1600&q=85' },
-  { id: 3, badge: 'Hot Offer', subtitle: 'Top Accessories Upgrade', offerPrefix: 'Up to', offerMain: '35%', terms: 'Cash on Delivery Available | T&C Applied', cta: 'Claim', image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=1600&q=85' }
+const fallbackSlides = [
+  { id: 1, title: 'Get Special Offer', eyebrow: 'Limited time offer', cta: 'Shop now', image: 'https://images.unsplash.com/photo-1520045892732-304bc3ac5d8e?auto=format&fit=crop&w=1600&q=85' },
+  { id: 2, title: 'Exclusive Gadgets Deal', eyebrow: 'New season', cta: 'Shop now', image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1600&q=85' }
 ];
 
 export default function HeroBanner({ slides = [] }) {
@@ -15,56 +14,17 @@ export default function HeroBanner({ slides = [] }) {
     fetch('/api/banners?limit=50').then((response) => response.ok ? response.json() : { rows: [] }).then((data) => {
       const today = new Date().toISOString().slice(0, 10);
       const rows = (data.rows || []).filter((row) => row.image_url && String(row.status || 'Active').toLowerCase() === 'active' && (!row.start_date || String(row.start_date).slice(0, 10) <= today) && (!row.end_date || String(row.end_date).slice(0, 10) >= today));
-      if (active) setLiveBanners(rows.map((row) => ({ id: row.id, badge: 'Special offer', subtitle: row.title || 'Special offer', offerPrefix: '', offerMain: '', terms: '', cta: 'Shop now', image: row.image_url, link: row.link })));
+      if (active) setLiveBanners(rows.sort((a, b) => Number(a.position || 0) - Number(b.position || 0)).map((row) => ({ id: row.id, title: row.title || 'Shop our latest offers', eyebrow: 'Special for you', cta: 'Shop now', image: row.image_url, link: row.link })));
     }).catch(() => { if (active) setLiveBanners([]); });
     return () => { active = false; };
   }, []);
 
-  const activeSlides = liveBanners.length ? liveBanners : (slides.length ? slides : displaySlides);
-
-  React.useEffect(() => {
-    if (activeSlides.length < 2) return undefined;
-    const timer = window.setInterval(() => setCurrentSlide((previous) => (previous + 1) % activeSlides.length), 4500);
-    return () => window.clearInterval(timer);
-  }, [activeSlides.length]);
-
-  const activeSlide = activeSlides[currentSlide] || activeSlides[0];
+  const suppliedSlides = slides.map((slide) => ({ id: slide.id, title: slide.subtitle || slide.title, eyebrow: slide.badge, cta: slide.cta || 'Shop now', image: slide.image, link: slide.link }));
+  const activeSlides = liveBanners.length ? liveBanners : (suppliedSlides.length ? suppliedSlides : fallbackSlides);
+  React.useEffect(() => { setCurrentSlide(0); if (activeSlides.length < 2) return undefined; const timer = window.setInterval(() => setCurrentSlide((value) => (value + 1) % activeSlides.length), 5000); return () => window.clearInterval(timer); }, [activeSlides.length]);
+  const slide = activeSlides[currentSlide] || activeSlides[0];
   const showProducts = () => document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth' });
-  const handleCta = () => activeSlide.link ? window.location.assign(activeSlide.link) : showProducts();
+  const handleCta = () => slide.link ? window.location.assign(slide.link) : showProducts();
 
-  return (
-    <section className="mx-auto w-full max-w-7xl px-3 pt-1 pb-0 sm:px-4 lg:px-6">
-      <div className="mb-1 flex items-center justify-between pb-1.5">
-        <h2 className="text-base font-black tracking-tight text-slate-900 sm:text-lg">#SpecialForYou</h2>
-        <button type="button" onClick={showProducts} className="cursor-pointer text-xs font-bold tracking-wide text-[#E8262A] transition hover:text-red-700 sm:text-sm">See All</button>
-      </div>
-
-      <div className="mx-auto w-full max-w-6xl md:px-3 lg:px-8">
-        <div className="group relative h-[210px] overflow-hidden rounded-2xl border border-slate-200/60 bg-slate-900 shadow-lg shadow-slate-900/10 sm:h-[260px] sm:rounded-[28px] md:h-[300px] lg:h-[320px] xl:h-[340px]">
-          <img key={activeSlide.id} src={activeSlide.image} alt={activeSlide.subtitle} className="absolute inset-0 h-full w-full object-cover object-center transition duration-700 group-hover:scale-[1.025]" />
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/72 via-slate-950/30 to-slate-950/5" />
-          <div className="absolute inset-x-0 bottom-0 h-[18%] bg-slate-950/45 backdrop-blur-[1px]" />
-
-          <span className="absolute left-[4%] top-[8%] z-10 inline-flex items-center rounded-full border border-white/70 bg-white/95 px-3 py-1 text-[9px] font-bold text-slate-900 shadow-sm sm:px-4 sm:py-2 sm:text-xs">{activeSlide.badge}</span>
-
-          <h3 className="absolute left-[4%] top-[34%] z-10 max-w-[70%] text-lg font-black leading-tight tracking-tight text-white drop-shadow-md sm:text-2xl md:text-3xl">{activeSlide.subtitle}</h3>
-
-          <div className="absolute left-[4%] top-[54%] z-10 flex items-baseline gap-1.5 sm:gap-3">
-            <span className="text-xs font-bold text-white sm:text-base md:text-lg">{activeSlide.offerPrefix}</span>
-            <span className="text-4xl font-black leading-none tracking-tight text-white drop-shadow-md sm:text-5xl md:text-6xl">{activeSlide.offerMain}</span>
-          </div>
-
-          <p className="absolute bottom-[5.5%] left-[4%] z-10 max-w-[58%] truncate text-[8px] font-medium leading-none text-white/80 sm:text-xs md:text-sm">{activeSlide.terms}</p>
-
-          <button type="button" onClick={handleCta} className="absolute bottom-[3.5%] right-[4%] z-20 inline-flex items-center justify-center rounded-full bg-[#E8262A] px-5 py-2 text-xs font-extrabold text-white shadow-lg shadow-red-950/30 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#d01f23] hover:shadow-xl active:scale-95 sm:px-8 sm:py-3 sm:text-sm md:px-9 md:text-base">{activeSlide.cta}</button>
-        </div>
-      </div>
-
-      <div className="mt-1.5 flex items-center justify-center gap-1.5">
-        {activeSlides.map((slide, index) => (
-          <button key={slide.id} type="button" onClick={() => setCurrentSlide(index)} className={`h-2 cursor-pointer rounded-full transition-all duration-300 ${index === currentSlide ? 'w-6 bg-[#E8262A]' : 'w-2 bg-slate-300 hover:bg-slate-400'}`} aria-label={`Go to slide ${index + 1}`} />
-        ))}
-      </div>
-    </section>
-  );
+  return <section className="mx-auto w-full max-w-7xl px-3 pt-2 sm:px-4 lg:px-6"><div className="mb-2 flex items-center justify-between"><h2 className="text-base font-black tracking-tight text-slate-900 sm:text-lg">#SpecialForYou</h2><button type="button" onClick={showProducts} className="text-xs font-bold text-[#E8262A] hover:text-red-700 sm:text-sm">See All</button></div><div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 shadow-md sm:rounded-3xl"><div className="relative h-[190px] sm:h-[260px] md:h-[310px]"><img key={slide.id} src={slide.image} alt={slide.title} className="absolute inset-0 h-full w-full object-cover object-center transition duration-700"/><div className="absolute inset-0 bg-gradient-to-r from-slate-950/75 via-slate-950/35 to-slate-950/5"/><div className="absolute inset-y-0 left-0 z-10 flex max-w-[78%] flex-col justify-center px-5 sm:px-9"><span className="mb-2 w-fit rounded-full bg-white/95 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-slate-800 sm:text-xs">{slide.eyebrow}</span><h3 className="text-xl font-black leading-tight text-white drop-shadow sm:text-3xl md:text-4xl">{slide.title}</h3><button type="button" onClick={handleCta} className="mt-4 w-fit rounded-xl bg-[#E8262A] px-4 py-2.5 text-xs font-black text-white shadow-lg hover:bg-red-700 sm:px-5 sm:text-sm">{slide.cta}</button></div></div>{activeSlides.length > 1 && <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 gap-1.5">{activeSlides.map((item, index) => <button key={item.id || index} onClick={() => setCurrentSlide(index)} aria-label={`Show banner ${index + 1}`} className={`h-2 rounded-full transition-all ${index === currentSlide ? 'w-6 bg-[#E8262A]' : 'w-2 bg-white/70'}`}/>)}</div>}</div></section>;
 }
