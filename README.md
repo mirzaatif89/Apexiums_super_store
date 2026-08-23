@@ -20,14 +20,33 @@ the MySQL environment variables to use the production database.
 ## Hostinger deployment
 
 - Runtime: Node.js 20.19 or newer
-- Build command: `npm run build`
+- Build command: run `npm run build` **locally or in CI only**; never run it on shared hosting.
 - Start command: `npm start`
 - Entry file: `app.js`
 - The application listens on Hostinger's `PORT` and binds to `0.0.0.0`.
 - Add all variables from `.env.example` in hPanel, using the real Hostinger MySQL host, database, user, password, and a strong admin password.
 - Do not set a custom `PORT` in hPanel unless Hostinger explicitly requires it; the platform-provided port takes precedence.
 
-This is a Node.js/React application, not a PHP/Laravel site. Do not deploy it as a PHP site directly into `public_html` and do not add a Laravel `.htaccess` rewrite. In Hostinger, create a Node.js application, set the application root to the repository root, set the startup file to `app.js`, and use `npm install` followed by `npm run build`. The app serves the built React frontend and API from the Node.js process.
+This is a Node.js/React application, not a PHP/Laravel site. Do not deploy it as a PHP site directly into `public_html` and do not add a Laravel `.htaccess` rewrite. In Hostinger, create a Node.js application, set the application root to the repository root, and set the startup file to `app.js`. The app serves the pre-built React frontend and API from the Node.js process.
+
+### Deploying the frontend build
+
+Shared hosting may not have enough RAM for Vite/esbuild. Before every deployment,
+run this on your development computer or CI runner:
+
+```bash
+npm ci
+npm run build
+```
+
+Upload the generated `frontend/dist/` folder to the server at
+`/home/apexium2/elistin.com/frontend/dist/` using cPanel File Manager or FTP.
+Although `frontend/dist` is intentionally ignored by Git, it is required at
+runtime on the server. Then update the source code, run **NPM Install** (which
+does not build the frontend), and restart the Node.js application.
+
+If the build folder is missing, production returns HTTP 503 with instructions
+to build locally and upload `frontend/dist` first.
 
 ## Setup
 

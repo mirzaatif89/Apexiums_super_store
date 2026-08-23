@@ -9,7 +9,6 @@
   "scripts": {
     "dev": "node backend/server.js",
     "build": "node --input-type=module -e \"import {existsSync} from 'node:fs'; import('vite').then(({build}) => { const root = process.env.PROJECT_ROOT || process.env.DEPLOY_ROOT || (existsSync('/home/apexium2/elistin.com') ? '/home/apexium2/elistin.com' : process.cwd()); return build({configFile: root + '/frontend/vite.config.js'}); })\"",
-    "postinstall": "node --input-type=module -e \"import {existsSync} from 'node:fs'; const root = process.env.PROJECT_ROOT || process.env.DEPLOY_ROOT || (existsSync('/home/apexium2/elistin.com') ? '/home/apexium2/elistin.com' : process.cwd()); if (!existsSync(root + '/frontend/dist/index.html')) { const {spawnSync} = await import('node:child_process'); const result = spawnSync('npm', ['run', 'build'], {stdio: 'inherit', cwd: root, shell: process.platform === 'win32'}); process.exit(result.status ?? 1); }\"",
     "start": "node backend/server.js",
     "preview": "node --input-type=module -e \"import {existsSync} from 'node:fs'; import('vite').then(async ({preview}) => { const root = process.env.PROJECT_ROOT || process.env.DEPLOY_ROOT || (existsSync('/home/apexium2/elistin.com') ? '/home/apexium2/elistin.com' : process.cwd()); const server = await preview({configFile: root + '/frontend/vite.config.js', preview: {host: '0.0.0.0', port: 3000}}); server.printUrls(); })\""
   },
@@ -21,7 +20,9 @@
     "mysql2": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "recharts": "3.10.0",
+    "recharts": "3.10.0"
+  },
+  "devDependencies": {
     "@vitejs/plugin-react": "latest",
     "@tailwindcss/vite": "^4.3.3",
     "autoprefixer": "^10.5.4",
