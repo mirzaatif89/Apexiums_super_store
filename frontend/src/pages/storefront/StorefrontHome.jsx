@@ -147,6 +147,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
   const [loginOpen, setLoginOpen] = React.useState(false);
   const [checkoutOpen, setCheckoutOpen] = React.useState(false);
   const [profileOpen, setProfileOpen] = React.useState(false);
+  const [profileOrdersOpen, setProfileOrdersOpen] = React.useState(false);
   const [authUser, setAuthUser] = React.useState(() => {
     if (session) return session;
     if (typeof localStorage !== 'undefined') {
@@ -309,7 +310,11 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
     {
       label: 'My Orders',
       icon: <Package size={18} />,
-      onClick: () => setCheckoutOpen(true)
+      onClick: () => {
+        if (!authUser) return setLoginOpen(true);
+        setProfileOrdersOpen(true);
+        setProfileOpen(true);
+      }
     },
     {
       label: 'About',
@@ -479,8 +484,8 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
               {/* Drawer Header */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-50 text-[#E8262A] font-black text-lg shadow-2xs">
-                    A
+                  <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xs">
+                    <img src={storeLogoSrc} alt={`${storeName} logo`} className="h-full w-full object-cover" />
                   </div>
                   <div>
                     <h2 className="font-black text-slate-900 text-base leading-tight">{storeName}</h2>
@@ -630,9 +635,6 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
           storeName={storeName}
           cartCount={cartCount}
           onOpenCart={() => {
-            if (selectedProduct) {
-              handleAddProductToCart(selectedProduct, modalQty);
-            }
             setSelectedProduct(null);
             setCheckoutOpen(true);
           }}
@@ -685,7 +687,8 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
         <div className="fixed inset-0 z-[90] bg-white overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
           <UserProfileView
             session={authUser}
-            onBack={() => setProfileOpen(false)}
+            initialOrders={profileOrdersOpen}
+            onBack={() => { setProfileOpen(false); setProfileOrdersOpen(false); }}
             onOpenLogin={() => {
               setProfileOpen(false);
               setLoginOpen(true);
@@ -693,6 +696,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
             onLogout={() => {
               handleLogout();
               setProfileOpen(false);
+              setProfileOrdersOpen(false);
             }}
             onNavigateTab={(tab, filter) => {
               setProfileOpen(false);

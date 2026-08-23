@@ -71,6 +71,7 @@ export const ProductListing = () => {
     price: '',
     realPrice: '',
     discountedPrice: '',
+    costPrice: '',
     discount: 0,
     stock: '',
     minStock: 10,
@@ -169,6 +170,7 @@ export const ProductListing = () => {
       price: p.price,
       realPrice: p.realPrice ?? p.price,
       discountedPrice: p.discountedPrice ?? p.price,
+      costPrice: p.costPrice ?? p.cost_price ?? '',
       discount: p.discount || 0,
       stock: p.stock,
       minStock: p.minStock || 10,
@@ -187,6 +189,21 @@ export const ProductListing = () => {
     e.preventDefault();
     if (!formData.name || !formData.category || !formData.realPrice || !formData.discountedPrice || formData.stock === '') {
       setSaveError('Please complete Product Name, Category, Subcategory, Sales Price, Discounted Price, and Stock.');
+      return;
+    }
+    const salesPrice = Number(formData.realPrice);
+    const discountedPrice = Number(formData.discountedPrice);
+    const acquisitionCost = Number(formData.costPrice || 0);
+    if (acquisitionCost > 0 && salesPrice <= acquisitionCost) {
+      setSaveError('Sales Price must be greater than the Cost of Acquisition.');
+      return;
+    }
+    if (discountedPrice >= salesPrice) {
+      setSaveError('Discounted Price must be less than the Sales Price.');
+      return;
+    }
+    if (acquisitionCost > 0 && discountedPrice < acquisitionCost) {
+      setSaveError('Discounted Price cannot be less than the Cost of Acquisition.');
       return;
     }
     setSaveError('');
@@ -517,7 +534,13 @@ export const ProductListing = () => {
 
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Discounted Price (PKR) *</label>
-                  <input type="number" step="0.01" value={formData.discountedPrice} onChange={(e) => setFormData({ ...formData, discountedPrice: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200" />
+                  <input type="number" min={formData.costPrice || 0} step="0.01" value={formData.discountedPrice} onChange={(e) => setFormData({ ...formData, discountedPrice: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200" />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Cost of Acquisition (PKR)</label>
+                  <input type="number" min="0" step="0.01" value={formData.costPrice} onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })} placeholder="Product purchase cost" className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200" />
+                  <p className="mt-1 text-[10px] font-medium text-slate-400">Only visible in the admin panel.</p>
                 </div>
 
                 <div>

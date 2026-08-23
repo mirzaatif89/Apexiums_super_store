@@ -367,6 +367,7 @@ const schemas = [
     actual_price DECIMAL(12,2) DEFAULT 0,
     base_price DECIMAL(12,2) DEFAULT 0,
     discounted_price DECIMAL(12,2) DEFAULT 0,
+    cost_price DECIMAL(12,2) DEFAULT 0,
     subcategory VARCHAR(160),
     sku VARCHAR(80),
     stock_qty INT DEFAULT 0,
@@ -679,7 +680,7 @@ const resources = {
   banners: ['image_url', 'title', 'link', 'position', 'status', 'start_date', 'end_date', 'click_count'],
   promotions: ['name', 'image_url', 'valid_from', 'valid_till', 'show_on_website', 'status', 'created_at'],
   categories: ['name', 'parent_id', 'image_url', 'description', 'subcategories', 'status'],
-  products: ['image_url', 'product_images', 'name', 'description', 'product_detail', 'category', 'subcategory', 'actual_price', 'base_price', 'discounted_price', 'sku', 'stock_qty', 'slug', 'meta_title', 'meta_desc', 'status', 'investor_id'],
+  products: ['image_url', 'product_images', 'name', 'description', 'product_detail', 'category', 'subcategory', 'actual_price', 'base_price', 'discounted_price', 'cost_price', 'sku', 'stock_qty', 'slug', 'meta_title', 'meta_desc', 'status', 'investor_id'],
   stock: ['product_id', 'product_name', 'total_items', 'stock_belong_to', 'investor_id', 'sku', 'category', 'quantity', 'reorder_level', 'description', 'warehouse'],
   orders: ['customer_id', 'customer_name', 'customer_email', 'customer_phone', 'items_count', 'total_amount', 'payment_method', 'payment_status', 'order_status', 'shipping_address', 'created_at'],
   returns: ['order_id', 'product_id', 'customer_id', 'customer', 'product', 'reason', 'status', 'refund_amount', 'refund_method', 'created_at'],
@@ -917,6 +918,7 @@ async function initializeDatabase() {
   await ensureColumn('wholesellers', 'contact_date', 'DATE');
   await ensureColumn('wholesellers', 'supplier_payment_amount', 'DECIMAL(12,2) DEFAULT 0');
   await ensureColumn('wholesellers', 'supplier_payment_date', 'DATE');
+  await ensureColumn('products', 'cost_price', 'DECIMAL(12,2) DEFAULT 0');
   await ensureColumn('purchase_orders', 'paid_amount', 'DECIMAL(12,2) DEFAULT 0');
   await ensureColumn('purchase_orders', 'payment_method', 'VARCHAR(60)');
   await ensureColumn('purchase_orders', 'payment_status', "VARCHAR(40) DEFAULT 'Pending'");
@@ -994,6 +996,10 @@ async function listRows(table, req, res, queryOverride = null) {
   );
   if (table === 'staff') rows.forEach((row) => delete row.password_hash);
   if (table === 'customers') rows.forEach((row) => delete row.password_hash);
+  if (table === 'products') {
+    const { role } = getContext(req);
+    if (!['Admin', 'BusinessAdmin', 'SuperAdmin'].includes(role)) rows.forEach((row) => delete row.cost_price);
+  }
   if (table === 'categories') rows.forEach((row) => {
     try { row.subcategories = row.subcategories ? JSON.parse(row.subcategories) : []; } catch { row.subcategories = []; }
   });
@@ -1338,12 +1344,16 @@ app.get('/api/dashboard/summary', async (req, res) => {
     const scopeStock = businessScope('stock', req);
     const scopeCoupons = businessScope('coupons', req);
     const scopeNotifications = businessScope('notifications', req);
+    const scopeOrderItems = businessScope('order_items', req);
     const productWhere = scopeProducts.clause ? `WHERE ${scopeProducts.clause}` : '';
     const orderWhere = scopeOrders.clause ? `WHERE ${scopeOrders.clause}` : '';
     const stockWhere = scopeStock.clause ? `WHERE ${scopeStock.clause}` : '';
     const couponWhere = scopeCoupons.clause ? `WHERE ${scopeCoupons.clause}` : '';
     const notificationWhere = scopeNotifications.clause ? `WHERE ${scopeNotifications.clause}` : '';
+    const orderItemWhere = scopeOrderItems.clause ? `WHERE ${scopeOrderItems.clause}` : '';
     const [products] = await pool.query(`SELECT COUNT(*) AS total, SUM(status = 'Live') AS active FROM products ${productWhere}`, scopeProducts.params);
+    const [productCosts] = await pool.query(`SELECT id, cost_price FROM products ${productWhere}`, scopeProducts.params);
+    const [orderItems] = await pool.query(`SELECT order_id, product_id, qty FROM order_items ${orderItemWhere}`, scopeOrderItems.params);
       const [orders] = await pool.query(`SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN order_status IN ('Shipped', 'Delivered', 'Received') THEN total_amount ELSE 0 END), 0) AS revenue, SUM(order_status = 'Pending') AS pending FROM orders ${orderWhere}`, scopeOrders.params);
     const [stock] = await pool.query(`SELECT COUNT(*) AS total, SUM(quantity <= reorder_level AND quantity > 0) AS low, SUM(quantity <= 0) AS out_of_stock FROM stock ${stockWhere}`, scopeStock.params);
     const [coupons] = await pool.query(`SELECT COUNT(*) AS total, SUM(status = 'Active') AS active FROM coupons ${couponWhere}`, scopeCoupons.params);
@@ -1562,24 +1572,33 @@ app.get('/api/revenue/summary', async (req, res) => {
     const orderScope = businessScope('orders', req);
     const expenseScope = businessScope('expenses', req);
     const ledgerScope = businessScope('finance_transactions', req);
+    const productScope = businessScope('products', req);
+    const itemScope = businessScope('order_items', req);
     const orderWhere = orderScope.clause ? `WHERE ${orderScope.clause}` : '';
     const expenseWhere = expenseScope.clause ? `WHERE ${expenseScope.clause}` : '';
     const ledgerWhere = ledgerScope.clause ? `WHERE ${ledgerScope.clause}` : '';
-    const [[orderResult], [expenseResult], [ledgerResult]] = await Promise.all([
+    const productWhere = productScope.clause ? `WHERE ${productScope.clause}` : '';
+    const itemWhere = itemScope.clause ? `WHERE ${itemScope.clause}` : '';
+    const [[orderResult], [expenseResult], [ledgerResult], [productResult], [orderItemResult]] = await Promise.all([
       pool.query(`SELECT * FROM orders ${orderWhere}`, orderScope.params),
       pool.query(`SELECT * FROM expenses ${expenseWhere}`, expenseScope.params),
-      pool.query(`SELECT * FROM finance_transactions ${ledgerWhere}`, ledgerScope.params)
+      pool.query(`SELECT * FROM finance_transactions ${ledgerWhere}`, ledgerScope.params),
+      pool.query(`SELECT id, cost_price FROM products ${productWhere}`, productScope.params),
+      pool.query(`SELECT order_id, product_id, qty FROM order_items ${itemWhere}`, itemScope.params)
     ]);
     const completedOrders = orderResult.filter((order) => ['Shipped', 'Delivered', 'Received'].includes(order.order_status));
     const orderRevenue = completedOrders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
     const manualRevenue = ledgerResult.filter((row) => row.type === 'Revenue').reduce((sum, row) => sum + Number(row.amount || 0), 0);
     const totalExpense = expenseResult.reduce((sum, row) => sum + Number(row.amount || 0), 0) + ledgerResult.filter((row) => row.type === 'Expense').reduce((sum, row) => sum + Number(row.amount || 0), 0);
+    const completedOrderIds = new Set(completedOrders.map((order) => String(order.id)));
+    const costByProduct = new Map(productResult.map((product) => [String(product.id), Number(product.cost_price || 0)]));
+    const costOfGoodsSold = orderItemResult.filter((item) => completedOrderIds.has(String(item.order_id))).reduce((sum, item) => sum + Number(costByProduct.get(String(item.product_id)) || 0) * Number(item.qty || 1), 0);
     const paymentTotals = completedOrders.reduce((groups, order) => { const method = order.payment_method || 'Other'; groups[method] = (groups[method] || 0) + Number(order.total_amount || 0); return groups; }, {});
     const payments = Object.entries(paymentTotals).map(([payment_method, amount]) => ({ payment_method, amount }));
     const totalRevenue = orderRevenue + manualRevenue;
     res.json({
       totalRevenue, orderRevenue, manualRevenue, totalExpense,
-      netProfit: totalRevenue - totalExpense,
+      costOfGoodsSold, netProfit: totalRevenue - totalExpense - costOfGoodsSold,
       avgOrderValue: completedOrders.length ? orderRevenue / completedOrders.length : 0,
       growth: 0, payments
     });
@@ -1770,6 +1789,11 @@ app.post('/api/customers/register', async (req, res) => {
       'INSERT INTO customers (business_id, name, username, password_hash, plain_password, email, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [DEFAULT_BUSINESS_ID, req.body.name, username, hashPassword(req.body.password), req.body.password, req.body.email || null, req.body.phone || null, 'Active']
     );
+    const activeOrderIds = new Set((orders || []).filter((order) => !['Cancelled', 'Canceled', 'Returned'].includes(order.order_status)).map((order) => String(order.id)));
+    const productCostMap = new Map((productCosts || []).map((product) => [String(product.id), Number(product.cost_price || 0)]));
+    const costOfGoodsSold = (orderItems || []).filter((item) => activeOrderIds.has(String(item.order_id))).reduce((total, item) => total + Number(productCostMap.get(String(item.product_id)) || 0) * Number(item.qty || 1), 0);
+    const dashboardRevenue = (orders || []).filter((order) => !['Cancelled', 'Canceled', 'Returned'].includes(order.order_status)).reduce((total, order) => total + Number(order.total_amount || 0), 0);
+    if (orders[0]) { orders[0].revenue = dashboardRevenue; orders[0].costOfGoodsSold = costOfGoodsSold; orders[0].netProfit = dashboardRevenue - costOfGoodsSold; }
     res.status(201).json({ id: result.insertId, name: req.body.name, username, email: req.body.email || null, phone: req.body.phone || null, status: 'Active' });
   } catch (error) {
     res.status(500).json({ message: error.message });

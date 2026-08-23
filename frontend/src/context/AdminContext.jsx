@@ -693,6 +693,7 @@ export const AdminProvider = ({ children, session }) => {
             discountedPrice: Number(
               row.discounted_price ?? row.base_price ?? 0,
             ),
+            costPrice: Number(row.cost_price ?? 0),
             stock: Number(
               row.stock_qty ??
                 stockRows.find(
@@ -815,6 +816,7 @@ export const AdminProvider = ({ children, session }) => {
         actual_price: Number(product.realPrice || product.price) || 0,
         base_price: Number(product.realPrice || product.price) || 0,
         discounted_price: Number(product.discountedPrice || product.price) || 0,
+        cost_price: Number(product.costPrice) || 0,
         stock_qty: Number(product.stock) || 0,
         image_url: product.image || null,
         status: product.status || "Active",
@@ -877,6 +879,7 @@ export const AdminProvider = ({ children, session }) => {
           base_price: Number(mergedFields.realPrice ?? mergedFields.price) || 0,
           discounted_price:
             Number(mergedFields.discountedPrice ?? mergedFields.price) || 0,
+          cost_price: Number(mergedFields.costPrice) || 0,
           stock_qty: Number(mergedFields.stock) || 0,
           image_url: mergedFields.image || null,
           status: effectiveStatus,

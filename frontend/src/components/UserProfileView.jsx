@@ -8,6 +8,7 @@ import {
   Lock,
   MapPin,
   Package,
+  PackageCheck,
   Pencil,
   Settings,
   ShieldCheck,
@@ -23,7 +24,8 @@ export default function UserProfileView({
   onBack,
   onLogout,
   onNavigateTab,
-  onOpenLogin
+  onOpenLogin,
+  initialOrders = false
 }) {
   const fileInputRef = useRef(null);
 
@@ -31,6 +33,33 @@ export default function UserProfileView({
   const [profileEmail, setProfileEmail] = useState(session?.email || 'esther.howard@example.com');
   const [trackId, setTrackId] = useState('');
   const [trackedOrder, setTrackedOrder] = useState(null);
+  const [ordersOpen, setOrdersOpen] = useState(initialOrders);
+  const [myOrders, setMyOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+
+  const loadMyOrders = React.useCallback(async () => {
+    const email = String(session?.email || profileEmail || '').trim().toLowerCase();
+    setOrdersLoading(true);
+    try {
+      const response = await fetch('/api/orders?limit=500');
+      const data = response.ok ? await response.json() : { rows: [] };
+      const apiOrders = (data.rows || []).filter((order) => email && String(order.customer_email || '').toLowerCase() === email);
+      const detailed = await Promise.all(apiOrders.map(async (order) => {
+        try { const detail = await fetch(`/api/orders/${order.id}`); const result = detail.ok ? await detail.json() : order; return { ...order, ...(result.order || result), items: result.items || order.items || [] }; } catch { return order; }
+      }));
+      const saved = JSON.parse(localStorage.getItem('apexiums-my-orders') || '[]');
+      const activeOrders = detailed.filter((order) => !['Cancelled', 'Canceled'].includes(order.order_status || order.status));
+      // Server-backed orders are the source of truth. Keep only offline orders
+      // that have not received a backend ID yet, preventing cancelled orders
+      // from reappearing through localStorage.
+      const localOnly = saved.filter((order) => !order.backendOrderId && !['Cancelled', 'Canceled'].includes(order.order_status || order.status));
+      setMyOrders([...activeOrders, ...localOnly]);
+    } catch {
+      setMyOrders(JSON.parse(localStorage.getItem('apexiums-my-orders') || '[]'));
+    } finally { setOrdersLoading(false); }
+  }, [session?.email, profileEmail]);
+
+  React.useEffect(() => { if (ordersOpen) loadMyOrders(); }, [ordersOpen, loadMyOrders]);
   const trackOrder = async (event) => {
     event.preventDefault();
     const id = trackId.trim();
@@ -216,6 +245,7 @@ export default function UserProfileView({
 
       <div className="mx-6 rounded-2xl border border-slate-200 bg-slate-50 p-4"><h3 className="text-sm font-black text-slate-900">Track Order</h3><form onSubmit={trackOrder} className="mt-3 flex gap-2"><input value={trackId} onChange={(e) => setTrackId(e.target.value)} placeholder="Enter Order ID e.g. ORD-12" className="min-w-0 flex-1 rounded-xl border bg-white px-3 py-2 text-xs outline-none" /><button className="rounded-xl bg-red-600 px-3 py-2 text-xs font-bold text-white">Track</button></form>{trackedOrder && <p className="mt-3 text-xs font-bold text-emerald-700">Order {trackedOrder.id}: {trackedOrder.status}</p>}</div>
 
+      {ordersOpen ? <div className="px-5 py-6"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-xl font-black text-slate-900">My Orders</h2><p className="mt-1 text-xs text-slate-500">Track your purchases and delivery progress.</p></div><button type="button" onClick={() => setOrdersOpen(false)} className="rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700">Back</button></div>{ordersLoading ? <p className="py-10 text-center text-xs font-semibold text-slate-400">Loading your orders...</p> : !myOrders.length ? <div className="rounded-2xl border border-dashed p-8 text-center"><Package className="mx-auto text-slate-300" size={34}/><p className="mt-3 text-sm font-bold text-slate-700">No orders yet</p><p className="mt-1 text-xs text-slate-500">Your placed orders will appear here.</p></div> : <div className="space-y-4">{myOrders.map((order) => { const status = order.order_status || order.status || 'Pending'; const displayStatus = status === 'Pending' ? 'Placed' : status; const items = order.items || []; const delivered = ['Delivered', 'Received'].includes(status); const shipped = ['Shipped', 'Delivered', 'Received'].includes(status); return <article key={order.id || order.backendOrderId} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="flex items-center justify-between border-b bg-slate-50 px-4 py-3"><div><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Order #{order.id || order.backendOrderId}</p><p className="mt-0.5 text-xs font-bold text-slate-700">{order.created_at ? new Date(order.created_at).toLocaleDateString('en-PK') : order.date || 'Recent order'}</p></div><span className="rounded-full bg-red-50 px-2.5 py-1 text-[10px] font-black text-red-600">{displayStatus}</span></div><div className="space-y-2 px-4 py-3">{items.slice(0, 2).map((item, index) => <div key={`${item.product_id || item.id}-${index}`} className="flex justify-between gap-3 text-xs"><span className="min-w-0 truncate font-semibold text-slate-800">{item.product_name || item.title || item.name || 'Product'} × {item.qty || 1}</span><span className="shrink-0 font-bold">Rs {Number(item.price || 0).toLocaleString('en-PK')}</span></div>)}<div className="flex justify-between border-t pt-3 text-xs"><span className="text-slate-500">{order.payment_method || order.paymentMethod || 'Cash on Delivery'}</span><strong className="text-red-600">Rs {Number(order.total_amount || order.totalAmount || 0).toLocaleString('en-PK')}</strong></div></div><div className="grid grid-cols-4 border-t px-3 py-3 text-center text-[9px] font-bold"><div className="text-red-600"><PackageCheck className="mx-auto mb-1" size={17}/>Placed</div><div className={status !== 'Pending' ? 'text-red-600' : 'text-slate-300'}><Package className="mx-auto mb-1" size={17}/>Processing</div><div className={shipped ? 'text-red-600' : 'text-slate-300'}><Truck className="mx-auto mb-1" size={17}/>Shipped</div><div className={delivered ? 'text-red-600' : 'text-slate-300'}><MapPin className="mx-auto mb-1" size={17}/>Delivered</div></div></article>; })}</div>}</div> : <>
       {/* User Avatar & Basic Info */}
       <div className="pt-6 pb-6 text-center px-4">
         <div className="relative inline-block group">
@@ -410,6 +440,7 @@ export default function UserProfileView({
           </button>
         </div>
       ) : null}
+      </>}
 
       {/* MODAL 1: EDIT PROFILE */}
       {activeModal === 'editProfile' ? (

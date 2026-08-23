@@ -13,6 +13,7 @@ import {
   ShoppingCart,
   Tag,
   Trash2,
+  Truck,
   User,
   Phone,
   X
@@ -281,6 +282,17 @@ export default function CheckoutModal({
     }
 
     setTrackingResult({ id: placedOrderData.id, status });
+  };
+
+  const printReceipt = () => {
+    if (!placedOrderData) return;
+    const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
+    const money = (value) => `Rs ${Number(value || 0).toLocaleString('en-PK')}`;
+    const itemRows = (placedOrderData.items || []).map((item) => `<tr><td><strong>${escapeHtml(item.title || item.name || 'Product')}</strong></td><td>${Number(item.qty || 1)}</td><td>${money(item.price)}</td><td class="amount">${money(Number(item.price || 0) * Number(item.qty || 1))}</td></tr>`).join('');
+    const receiptWindow = window.open('', '_blank', 'width=850,height=900');
+    if (!receiptWindow) return setError('Please allow pop-ups to print or save your receipt as PDF.');
+    receiptWindow.document.write(`<!doctype html><html><head><title>Receipt ${escapeHtml(placedOrderData.id)}</title><style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{margin:0;background:#f1f5f9;color:#172033;font:14px Arial,sans-serif}.receipt{width:100%;max-width:760px;margin:24px auto;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 12px 30px rgba(15,23,42,.14)}.head{background:linear-gradient(135deg,#e8262a,#ff5262);padding:30px 36px;color:#fff;display:flex;justify-content:space-between;align-items:flex-start}.brand-row{display:flex;align-items:center;gap:12px}.brand-logo{width:46px;height:46px;border-radius:12px;object-fit:cover;background:#fff;border:2px solid rgba(255,255,255,.65)}.brand{font-size:28px;font-weight:800}.tag{margin-top:5px;font-size:11px;letter-spacing:1.3px;font-weight:bold}.invoice{text-align:right}.invoice strong{font-size:18px}.content{padding:32px 36px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding-bottom:24px;border-bottom:1px solid #e2e8f0}.label{font-size:10px;font-weight:bold;letter-spacing:1px;color:#94a3b8;text-transform:uppercase}.value{margin-top:7px;font-weight:700;line-height:1.5}.table{width:100%;border-collapse:collapse;margin-top:26px}.table th{padding:11px 8px;text-align:left;background:#fff1f2;color:#e8262a;font-size:10px;letter-spacing:.8px;text-transform:uppercase}.table td{padding:15px 8px;border-bottom:1px solid #eef2f7}.amount{text-align:right;font-weight:700}.summary{margin:25px 0 4px auto;width:310px}.summary div{display:flex;justify-content:space-between;padding:8px 0;color:#64748b}.summary .total{margin-top:7px;padding:14px 0;border-top:2px solid #e8262a;color:#172033;font-weight:800;font-size:19px}.summary .total span:last-child{color:#e8262a}.footer{margin:28px -36px -32px;padding:22px 36px;background:#f8fafc;text-align:center;color:#64748b;font-size:12px}.footer strong{display:block;color:#e8262a;margin-bottom:5px}@media print{body{background:#fff}.receipt{box-shadow:none;margin:0;max-width:none}.head{-webkit-print-color-adjust:exact;print-color-adjust:exact}.table th{background:#fff1f2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><main class="receipt"><header class="head"><div><div class="brand-row">${logoSrc ? `<img class="brand-logo" src="${escapeHtml(logoSrc)}" alt="${escapeHtml(storeName || 'Elistin')} logo"/>` : ''}<div><div class="brand">${escapeHtml(storeName || 'Elistin')}</div><div class="tag">ONLINE MARKETPLACE</div></div></div></div><div class="invoice"><strong>ORDER RECEIPT</strong><div style="margin-top:8px">#${escapeHtml(placedOrderData.id)}</div></div></header><section class="content"><div class="meta"><div><div class="label">Billed To</div><div class="value">${escapeHtml(placedOrderData.customerName)}<br>${escapeHtml(placedOrderData.customerPhone || '')}<br>${escapeHtml(placedOrderData.shippingAddress || '')}</div></div><div><div class="label">Order Details</div><div class="value">Order date: ${escapeHtml(placedOrderData.date)}<br>Payment: ${escapeHtml(placedOrderData.paymentMethod)}<br>Status: Confirmed</div></div></div><table class="table"><thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th class="amount">Amount</th></tr></thead><tbody>${itemRows}</tbody></table><div class="summary"><div><span>Subtotal</span><span>${money(placedOrderData.subtotal)}</span></div><div><span>Delivery</span><span>${money(placedOrderData.shippingFee)}</span></div><div><span>Discount</span><span>- ${money(placedOrderData.discount)}</span></div><div class="total"><span>Total Paid</span><span>${money(placedOrderData.totalAmount)}</span></div></div></section><footer class="footer"><strong>Thank you for shopping with ${escapeHtml(storeName || 'Elistin')}!</strong>Keep this receipt for your records.</footer></main><script>window.onload=()=>setTimeout(()=>window.print(),250);</script></body></html>`);
+    receiptWindow.document.close();
   };
 
   return (
@@ -1080,6 +1092,14 @@ export default function CheckoutModal({
               >
                 <Truck size={18} />
                 <span>View Order</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={printReceipt}
+                className="px-6 h-12 inline-flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 text-[#E8262A] font-bold text-xs uppercase hover:bg-red-100 transition cursor-pointer"
+              >
+                <span>Print / Save PDF</span>
               </button>
             </div>
           </div>

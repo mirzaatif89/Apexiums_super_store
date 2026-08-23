@@ -72,7 +72,19 @@ export const DashboardView = ({ selectedDate = '' }) => {
   const revenueStatuses = ['Shipped', 'Delivered', 'Received'];
   const totalRevenue = Number(selectedDate ? orders.filter((order) => { const date = new Date(order.orderDate || order.created_at); return revenueStatuses.includes(order.orderStatus) && !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === selectedDate; }).reduce((sum, order) => sum + Number(order.totalAmount || 0), 0) : (liveSummary?.orders?.revenue ?? finance.summary?.totalRevenue ?? orders.filter((order) => revenueStatuses.includes(order.orderStatus)).reduce((sum, order) => sum + Number(order.totalAmount || 0), 0)));
   const totalExpenses = Number(selectedDate ? (finance.expensesList || []).filter((expense) => String(expense.date || '').startsWith(selectedDate)).reduce((sum, expense) => sum + Number(expense.amount || 0), 0) : (finance.expensesList || []).reduce((sum, expense) => sum + Number(expense.amount || 0), 0));
-  const netProfit = totalRevenue - totalExpenses;
+  // Revenue cards include every placed order; use the same order set for COGS
+  // so a pending order's product cost is never omitted from net profit.
+  const soldOrders = orders.filter((order) => {
+    if (['Cancelled', 'Returned'].includes(order.orderStatus)) return false;
+    if (!selectedDate) return true;
+    const date = new Date(order.orderDate || order.created_at);
+    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === selectedDate;
+  });
+  const costOfGoodsSold = soldOrders.reduce((total, order) => total + (order.products || []).reduce((orderCost, item) => {
+    const product = products.find((entry) => String(entry.id) === String(item.id));
+    return orderCost + Number(product?.costPrice ?? product?.cost_price ?? 0) * Number(item.qty || 1);
+  }, 0), 0);
+  const netProfit = Number(selectedDate ? totalRevenue - totalExpenses - costOfGoodsSold : (liveSummary?.orders?.netProfit ?? totalRevenue - totalExpenses - costOfGoodsSold));
   const totalOrders = Number(selectedDate ? orders.filter((order) => { const date = new Date(order.orderDate || order.created_at); return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === selectedDate; }).length : (liveSummary?.orders?.total ?? orders.length));
   const totalCustomers = customers.length;
   const totalProducts = Number(liveSummary?.products?.total ?? products.length);

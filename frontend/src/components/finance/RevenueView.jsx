@@ -36,13 +36,19 @@ export const RevenueView = () => {
   };
   const filteredTransactions = finance.transactions.filter((transaction) => matchesPeriod(transaction.date));
   const revenues = filteredTransactions.filter((transaction) => transaction.type === 'Revenue');
-  const completedOrderRevenue = orders
+  const productById = new Map(products.map((product) => [String(product.id), product]));
+  const completedOrders = orders
     .filter((order) => ['Shipped', 'Delivered', 'Received'].includes(order.orderStatus || order.order_status))
-    .filter((order) => matchesPeriod(order.orderDate || order.created_at || order.date))
+    .filter((order) => matchesPeriod(order.orderDate || order.created_at || order.date));
+  const completedOrderRevenue = completedOrders
     .reduce((sum, order) => sum + Number(order.totalAmount || order.total_amount || 0), 0);
+  const costOfGoodsSold = completedOrders.reduce((total, order) => total + (order.products || []).reduce((orderCost, item) => {
+    const product = productById.get(String(item.id));
+    return orderCost + Number(product?.costPrice ?? product?.cost_price ?? 0) * Number(item.qty || 1);
+  }, 0), 0);
   const totalRevenue = completedOrderRevenue + revenues.reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
   const totalExpenses = filteredTransactions.filter((transaction) => transaction.type === 'Expense').reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
-  const netProfit = totalRevenue - totalExpenses;
+  const netProfit = totalRevenue - totalExpenses - costOfGoodsSold;
 
   const monthlyProducts = {};
   orders
@@ -64,7 +70,6 @@ export const RevenueView = () => {
     return { month, ...topProduct };
   }).sort((a, b) => a.month.localeCompare(b.month));
 
-  const productById = new Map(products.map((product) => [String(product.id), product]));
   const categoryMonths = {};
   orders
     .filter((order) => ['Shipped', 'Delivered', 'Received'].includes(order.orderStatus || order.order_status))
@@ -149,7 +154,7 @@ export const RevenueView = () => {
           title="Net Profit"
           value={`Rs ${netProfit.toLocaleString('en-PK')}`}
           trend="up"
-          description="Revenue minus total expenses"
+          description="Revenue minus product costs and expenses"
           icon={TrendingUp}
           accentColor="purple"
         />
