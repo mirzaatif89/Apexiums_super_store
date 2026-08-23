@@ -146,6 +146,7 @@ export const ProductListing = () => {
       price: '',
       realPrice: '',
       discountedPrice: '',
+      costPrice: '',
       discount: 0,
       stock: '',
       minStock: 10,

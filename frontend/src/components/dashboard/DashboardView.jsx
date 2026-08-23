@@ -86,7 +86,7 @@ export const DashboardView = ({ selectedDate = '' }) => {
   }, 0), 0);
   const netProfit = Number(selectedDate ? totalRevenue - totalExpenses - costOfGoodsSold : (liveSummary?.orders?.netProfit ?? totalRevenue - totalExpenses - costOfGoodsSold));
   const totalOrders = Number(selectedDate ? orders.filter((order) => { const date = new Date(order.orderDate || order.created_at); return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === selectedDate; }).length : (liveSummary?.orders?.total ?? orders.length));
-  const totalCustomers = customers.length;
+  const totalCustomers = Number(liveSummary?.customers?.total ?? customers.length);
   const totalProducts = Number(liveSummary?.products?.total ?? products.length);
   const totalSellers = sellers.length;
   const totalInvestors = investors.length;

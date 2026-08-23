@@ -598,17 +598,7 @@ export const AdminProvider = ({ children, session }) => {
           city: row.city || "",
           joinDate: row.created_at || "",
         }));
-        setCustomers((current) => [
-          ...apiCustomers,
-          ...current.filter(
-            (item) =>
-              !apiCustomers.some(
-                (api) =>
-                  String(api.id) === String(item.id) ||
-                  (api.email && api.email === item.email),
-              ),
-          ),
-        ]);
+        setCustomers(apiCustomers);
       } catch {
         /* Keep local customer data when API is unavailable. */
       }

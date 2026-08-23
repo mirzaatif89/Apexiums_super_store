@@ -1345,16 +1345,20 @@ app.get('/api/dashboard/summary', async (req, res) => {
     const scopeCoupons = businessScope('coupons', req);
     const scopeNotifications = businessScope('notifications', req);
     const scopeOrderItems = businessScope('order_items', req);
+    const scopeCustomers = businessScope('customers', req);
     const productWhere = scopeProducts.clause ? `WHERE ${scopeProducts.clause}` : '';
     const orderWhere = scopeOrders.clause ? `WHERE ${scopeOrders.clause}` : '';
     const stockWhere = scopeStock.clause ? `WHERE ${scopeStock.clause}` : '';
     const couponWhere = scopeCoupons.clause ? `WHERE ${scopeCoupons.clause}` : '';
     const notificationWhere = scopeNotifications.clause ? `WHERE ${scopeNotifications.clause}` : '';
     const orderItemWhere = scopeOrderItems.clause ? `WHERE ${scopeOrderItems.clause}` : '';
+    const customerWhere = scopeCustomers.clause ? `WHERE ${scopeCustomers.clause}` : '';
     const [products] = await pool.query(`SELECT COUNT(*) AS total, SUM(status = 'Live') AS active FROM products ${productWhere}`, scopeProducts.params);
     const [productCosts] = await pool.query(`SELECT id, cost_price FROM products ${productWhere}`, scopeProducts.params);
     const [orderItems] = await pool.query(`SELECT order_id, product_id, qty FROM order_items ${orderItemWhere}`, scopeOrderItems.params);
-      const [orders] = await pool.query(`SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN order_status IN ('Shipped', 'Delivered', 'Received') THEN total_amount ELSE 0 END), 0) AS revenue, SUM(order_status = 'Pending') AS pending FROM orders ${orderWhere}`, scopeOrders.params);
+    const [orderRows] = await pool.query(`SELECT id, total_amount, order_status FROM orders ${orderWhere}`, scopeOrders.params);
+    const [orders] = await pool.query(`SELECT COUNT(*) AS total, COALESCE(SUM(total_amount), 0) AS revenue, SUM(order_status = 'Pending') AS pending FROM orders ${orderWhere}`, scopeOrders.params);
+    const [customers] = await pool.query(`SELECT COUNT(*) AS total FROM customers ${customerWhere}`, scopeCustomers.params);
     const [stock] = await pool.query(`SELECT COUNT(*) AS total, SUM(quantity <= reorder_level AND quantity > 0) AS low, SUM(quantity <= 0) AS out_of_stock FROM stock ${stockWhere}`, scopeStock.params);
     const [coupons] = await pool.query(`SELECT COUNT(*) AS total, SUM(status = 'Active') AS active FROM coupons ${couponWhere}`, scopeCoupons.params);
     const [notifications] = await pool.query(`SELECT COUNT(*) AS total, SUM(is_read = 0) AS unread FROM notifications ${notificationWhere}`, scopeNotifications.params);
@@ -1364,9 +1368,15 @@ app.get('/api/dashboard/summary', async (req, res) => {
       `SELECT product_name, sku, quantity, reorder_level, warehouse FROM stock ${lowStockWhere} ORDER BY quantity ASC LIMIT 5`,
       scopeStock.params
     );
+    const activeOrderIds = new Set((orderRows || []).filter((order) => !['Cancelled', 'Canceled', 'Returned'].includes(order.order_status)).map((order) => String(order.id)));
+    const productCostMap = new Map((productCosts || []).map((product) => [String(product.id), Number(product.cost_price || 0)]));
+    const costOfGoodsSold = (orderItems || []).filter((item) => activeOrderIds.has(String(item.order_id))).reduce((total, item) => total + Number(productCostMap.get(String(item.product_id)) || 0) * Number(item.qty || 1), 0);
+    const dashboardRevenue = (orderRows || []).filter((order) => !['Cancelled', 'Canceled', 'Returned'].includes(order.order_status)).reduce((total, order) => total + Number(order.total_amount || 0), 0);
+    if (orders[0]) { orders[0].revenue = dashboardRevenue; orders[0].costOfGoodsSold = costOfGoodsSold; orders[0].netProfit = dashboardRevenue - costOfGoodsSold; }
     res.json({
       products: products[0] || {},
       orders: orders[0] || {},
+      customers: customers[0] || {},
       stock: stock[0] || {},
       coupons: coupons[0] || {},
       notifications: notifications[0] || {},
@@ -1789,11 +1799,6 @@ app.post('/api/customers/register', async (req, res) => {
       'INSERT INTO customers (business_id, name, username, password_hash, plain_password, email, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [DEFAULT_BUSINESS_ID, req.body.name, username, hashPassword(req.body.password), req.body.password, req.body.email || null, req.body.phone || null, 'Active']
     );
-    const activeOrderIds = new Set((orders || []).filter((order) => !['Cancelled', 'Canceled', 'Returned'].includes(order.order_status)).map((order) => String(order.id)));
-    const productCostMap = new Map((productCosts || []).map((product) => [String(product.id), Number(product.cost_price || 0)]));
-    const costOfGoodsSold = (orderItems || []).filter((item) => activeOrderIds.has(String(item.order_id))).reduce((total, item) => total + Number(productCostMap.get(String(item.product_id)) || 0) * Number(item.qty || 1), 0);
-    const dashboardRevenue = (orders || []).filter((order) => !['Cancelled', 'Canceled', 'Returned'].includes(order.order_status)).reduce((total, order) => total + Number(order.total_amount || 0), 0);
-    if (orders[0]) { orders[0].revenue = dashboardRevenue; orders[0].costOfGoodsSold = costOfGoodsSold; orders[0].netProfit = dashboardRevenue - costOfGoodsSold; }
     res.status(201).json({ id: result.insertId, name: req.body.name, username, email: req.body.email || null, phone: req.body.phone || null, status: 'Active' });
   } catch (error) {
     res.status(500).json({ message: error.message });
