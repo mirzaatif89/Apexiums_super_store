@@ -44,6 +44,8 @@ export default function ProductDetailsModal({
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [reviews, setReviews] = useState([]);
+  const averageRating = reviews.length ? reviews.reduce((total, review) => total + Number(review.rating || 0), 0) / reviews.length : 0;
 
   const handleAddToCart = () => {
     if (onAddToCart) onAddToCart(quantity);
@@ -74,6 +76,15 @@ export default function ProductDetailsModal({
     setQuantity(1);
     setSelectedColor('');
     setSelectedSize('');
+  }, [product?.id]);
+
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/reviews?product_id=${encodeURIComponent(product?.id || '')}&limit=100`)
+      .then((response) => response.ok ? response.json() : { rows: [] })
+      .then((data) => { if (active) setReviews((data.rows || []).filter((review) => String(review.product_id) === String(product?.id))); })
+      .catch(() => { if (active) setReviews([]); });
+    return () => { active = false; };
   }, [product?.id]);
 
   // Derive Brand name dynamically if not supplied
@@ -555,13 +566,13 @@ export default function ProductDetailsModal({
               <p className="text-[11px] text-slate-500 font-medium">Quality verified product review score</p>
             </div>
             <div className="flex items-center gap-3 bg-amber-50/90 px-4 py-2 rounded-xl border border-amber-200/80">
-              <span className="text-lg font-black text-amber-700">4.8</span>
+              <span className="text-lg font-black text-amber-700">{averageRating.toFixed(1)}</span>
               <div className="flex items-center gap-1">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={16} fill="currentColor" className="text-amber-500" />
+                  <Star key={i} size={16} fill={i < Math.round(averageRating) ? 'currentColor' : 'none'} className="text-amber-500" />
                 ))}
               </div>
-              <span className="text-xs font-bold text-amber-800">(4.8 / 5.0)</span>
+              <span className="text-xs font-bold text-amber-800">({averageRating.toFixed(1)} / 5.0)</span>
             </div>
           </div>
 
@@ -596,55 +607,8 @@ export default function ProductDetailsModal({
 
             {/* Reviews Cards List */}
             <div className="space-y-3 pt-1">
-              <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-100 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="h-7 w-7 rounded-full bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center">
-                      AH
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-800">Ali Hassan</p>
-                      <div className="flex items-center gap-1">
-                        <span className="text-[10px] font-black text-amber-600">5.0</span>
-                        <div className="flex items-center gap-0.5">
-                          {[...Array(5)].map((_, i) => (
-                            <Star key={i} size={11} fill="currentColor" className="text-amber-500" />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <span className="text-[10px] text-slate-400 font-medium">2 days ago</span>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Boht zabardast quality product hai! Packing bhi boht achi thi aur delivery fast mili. Highly recommended.
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-100 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="h-7 w-7 rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center justify-center">
-                      FA
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-800">Fatima Ahmed</p>
-                      <div className="flex items-center gap-1">
-                        <span className="text-[10px] font-black text-amber-600">4.5</span>
-                        <div className="flex items-center gap-0.5">
-                          {[...Array(5)].map((_, i) => (
-                            <Star key={i} size={11} fill="currentColor" className="text-amber-500" />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <span className="text-[10px] text-slate-400 font-medium">5 days ago</span>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Exactly same as shown in picture. 100% genuine product and value for money!
-                </p>
-              </div>
+              {!reviews.length && <p className="py-4 text-center text-xs font-medium text-slate-400">No reviews yet.</p>}
+              {reviews.map((review) => <article key={review.id} className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3.5"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-black text-slate-900">{review.reviewer_name}</p><div className="mt-0.5 flex items-center gap-0.5">{[...Array(5)].map((_, index) => <Star key={index} size={13} fill={index < Number(review.rating) ? 'currentColor' : 'none'} className="text-amber-500" />)}</div></div><time className="shrink-0 text-[10px] font-medium text-slate-400">{review.created_at ? new Date(review.created_at).toLocaleDateString('en-GB') : ''}</time></div><p className="mt-2 text-xs leading-relaxed text-slate-600">{review.comment}</p></article>)}
             </div>
           </div>
 

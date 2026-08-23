@@ -49,6 +49,7 @@ const businessScopedTables = new Set([
   'orders',
   'order_items',
   'products',
+  'reviews',
   'promotions',
   'product_variants',
   'purchase_orders',
@@ -492,6 +493,16 @@ const schemas = [
     added_by VARCHAR(120),
     notes TEXT
   )`,
+  `CREATE TABLE IF NOT EXISTS reviews (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    business_id INT DEFAULT 1,
+    product_id INT NOT NULL,
+    reviewer_name VARCHAR(180) NOT NULL,
+    rating TINYINT NOT NULL,
+    comment TEXT,
+    source VARCHAR(30) DEFAULT 'manual',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
   `CREATE TABLE IF NOT EXISTS finance_transactions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     business_id INT DEFAULT 1,
@@ -681,6 +692,7 @@ const resources = {
   promotions: ['name', 'image_url', 'valid_from', 'valid_till', 'show_on_website', 'status', 'created_at'],
   categories: ['name', 'parent_id', 'image_url', 'description', 'subcategories', 'status'],
   products: ['image_url', 'product_images', 'name', 'description', 'product_detail', 'category', 'subcategory', 'actual_price', 'base_price', 'discounted_price', 'cost_price', 'sku', 'stock_qty', 'slug', 'meta_title', 'meta_desc', 'status', 'investor_id'],
+  reviews: ['product_id', 'reviewer_name', 'rating', 'comment', 'source', 'created_at'],
   stock: ['product_id', 'product_name', 'total_items', 'stock_belong_to', 'investor_id', 'sku', 'category', 'quantity', 'reorder_level', 'description', 'warehouse'],
   orders: ['customer_id', 'customer_name', 'customer_email', 'customer_phone', 'items_count', 'total_amount', 'payment_method', 'payment_status', 'order_status', 'shipping_address', 'created_at'],
   returns: ['order_id', 'product_id', 'customer_id', 'customer', 'product', 'reason', 'status', 'refund_amount', 'refund_method', 'created_at'],
@@ -881,7 +893,7 @@ async function initializeDatabase() {
   }
 
   await pool.query(`CREATE TABLE IF NOT EXISTS site_visits (id INT AUTO_INCREMENT PRIMARY KEY, visitor_key VARCHAR(180) NOT NULL, visited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
-  const businessTables = ['banners', 'promotions', 'coupons', 'categories', 'products', 'product_variants', 'stock', 'stock_history', 'orders', 'order_items', 'returns', 'staff', 'customers', 'expenses', 'finance_transactions', 'wholesellers', 'purchase_orders', 'notifications', 'investors', 'permissions', 'software_fees', 'staff_salaries', 'delivery_expenses', 'chats', 'seller_applications', 'investor_applications'];
+  const businessTables = ['banners', 'promotions', 'coupons', 'categories', 'products', 'reviews', 'product_variants', 'stock', 'stock_history', 'orders', 'order_items', 'returns', 'staff', 'customers', 'expenses', 'finance_transactions', 'wholesellers', 'purchase_orders', 'notifications', 'investors', 'permissions', 'software_fees', 'staff_salaries', 'delivery_expenses', 'chats', 'seller_applications', 'investor_applications'];
   for (const table of businessTables) {
     await ensureColumn(table, 'business_id', 'INT DEFAULT 1');
     await pool.query(`UPDATE ${backtick(table)} SET business_id = ${DEFAULT_BUSINESS_ID} WHERE business_id IS NULL`);
@@ -901,6 +913,7 @@ async function initializeDatabase() {
   await ensureColumn('products', 'actual_price', 'DECIMAL(12,2) DEFAULT 0');
   await ensureColumn('products', 'subcategory', 'VARCHAR(160)');
   await ensureColumn('products', 'investor_id', 'INT NULL');
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_reviews_product_created ON reviews (product_id, created_at)');
   await ensureColumn('orders', 'customer_email', 'VARCHAR(180)');
   await ensureColumn('orders', 'customer_phone', 'VARCHAR(60)');
   await ensureColumn('customers', 'username', 'VARCHAR(120)');
@@ -1022,6 +1035,10 @@ function crudRoutes(resource, required = []) {
     try {
       const validation = requireFields(req.body, required);
       if (validation) return res.status(400).json({ message: validation });
+      if (resource === 'reviews') {
+        const rating = Number(req.body.rating);
+        if (!Number.isInteger(rating) || rating < 1 || rating > 5) return res.status(400).json({ message: 'Rating must be a whole number from 1 to 5.' });
+      }
       const data = cleanPayload(req.body, fields);
       if (resource === 'categories' && Object.prototype.hasOwnProperty.call(data, 'subcategories')) {
         data.subcategories = JSON.stringify(Array.isArray(req.body.subcategories) ? req.body.subcategories : (() => { try { return JSON.parse(req.body.subcategories || '[]'); } catch { return []; } })());
@@ -1402,6 +1419,7 @@ Object.entries({
   staff: ['name'],
   finance_transactions: ['title'],
   coupons: ['code'],
+  reviews: ['product_id', 'reviewer_name', 'rating'],
   investors: ['name'],
   permissions: ['staff_id', 'module'],
   software_fees: ['service_name'],
@@ -1411,6 +1429,7 @@ Object.entries({
   seller_applications: ['applicant_name'],
   investor_applications: ['applicant_name']
 }).forEach(([resource, required]) => crudRoutes(resource, required));
+
 
 app.post('/api/coupons/validate', async (req, res) => {
   try {

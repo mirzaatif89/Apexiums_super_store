@@ -6,16 +6,31 @@ const displaySlides = [
   { id: 3, badge: 'Hot Offer', subtitle: 'Top Accessories Upgrade', offerPrefix: 'Up to', offerMain: '35%', terms: 'Cash on Delivery Available | T&C Applied', cta: 'Claim', image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=1600&q=85' }
 ];
 
-export default function HeroBanner() {
+export default function HeroBanner({ slides = [] }) {
+  const [liveBanners, setLiveBanners] = React.useState([]);
   const [currentSlide, setCurrentSlide] = React.useState(0);
 
   React.useEffect(() => {
-    const timer = window.setInterval(() => setCurrentSlide((previous) => (previous + 1) % displaySlides.length), 4500);
-    return () => window.clearInterval(timer);
+    let active = true;
+    fetch('/api/banners?limit=50').then((response) => response.ok ? response.json() : { rows: [] }).then((data) => {
+      const today = new Date().toISOString().slice(0, 10);
+      const rows = (data.rows || []).filter((row) => row.image_url && String(row.status || 'Active').toLowerCase() === 'active' && (!row.start_date || String(row.start_date).slice(0, 10) <= today) && (!row.end_date || String(row.end_date).slice(0, 10) >= today));
+      if (active) setLiveBanners(rows.map((row) => ({ id: row.id, badge: 'Special offer', subtitle: row.title || 'Special offer', offerPrefix: '', offerMain: '', terms: '', cta: 'Shop now', image: row.image_url, link: row.link })));
+    }).catch(() => { if (active) setLiveBanners([]); });
+    return () => { active = false; };
   }, []);
 
-  const activeSlide = displaySlides[currentSlide];
+  const activeSlides = liveBanners.length ? liveBanners : (slides.length ? slides : displaySlides);
+
+  React.useEffect(() => {
+    if (activeSlides.length < 2) return undefined;
+    const timer = window.setInterval(() => setCurrentSlide((previous) => (previous + 1) % activeSlides.length), 4500);
+    return () => window.clearInterval(timer);
+  }, [activeSlides.length]);
+
+  const activeSlide = activeSlides[currentSlide] || activeSlides[0];
   const showProducts = () => document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth' });
+  const handleCta = () => activeSlide.link ? window.location.assign(activeSlide.link) : showProducts();
 
   return (
     <section className="mx-auto w-full max-w-7xl px-3 pt-1 pb-0 sm:px-4 lg:px-6">
@@ -41,12 +56,12 @@ export default function HeroBanner() {
 
           <p className="absolute bottom-[5.5%] left-[4%] z-10 max-w-[58%] truncate text-[8px] font-medium leading-none text-white/80 sm:text-xs md:text-sm">{activeSlide.terms}</p>
 
-          <button type="button" onClick={showProducts} className="absolute bottom-[3.5%] right-[4%] z-20 inline-flex items-center justify-center rounded-full bg-[#E8262A] px-5 py-2 text-xs font-extrabold text-white shadow-lg shadow-red-950/30 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#d01f23] hover:shadow-xl active:scale-95 sm:px-8 sm:py-3 sm:text-sm md:px-9 md:text-base">{activeSlide.cta}</button>
+          <button type="button" onClick={handleCta} className="absolute bottom-[3.5%] right-[4%] z-20 inline-flex items-center justify-center rounded-full bg-[#E8262A] px-5 py-2 text-xs font-extrabold text-white shadow-lg shadow-red-950/30 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#d01f23] hover:shadow-xl active:scale-95 sm:px-8 sm:py-3 sm:text-sm md:px-9 md:text-base">{activeSlide.cta}</button>
         </div>
       </div>
 
       <div className="mt-1.5 flex items-center justify-center gap-1.5">
-        {displaySlides.map((slide, index) => (
+        {activeSlides.map((slide, index) => (
           <button key={slide.id} type="button" onClick={() => setCurrentSlide(index)} className={`h-2 cursor-pointer rounded-full transition-all duration-300 ${index === currentSlide ? 'w-6 bg-[#E8262A]' : 'w-2 bg-slate-300 hover:bg-slate-400'}`} aria-label={`Go to slide ${index + 1}`} />
         ))}
       </div>

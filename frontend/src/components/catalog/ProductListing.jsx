@@ -78,7 +78,7 @@ export const ProductListing = () => {
     status: 'Active',
     brand: '',
     image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80',
-    description: '', investorId: ''
+    description: '', investorId: '', initialRating: '', initialReview: ''
     ,colors: '', sizes: ''
   });
 
@@ -154,7 +154,7 @@ export const ProductListing = () => {
       brand: 'Apexium',
       image: '',
       description: ''
-      ,colors: '', sizes: '', investorId: ''
+      ,colors: '', sizes: '', investorId: '', initialRating: '', initialReview: ''
     });
     setUploadPreview('');
     setIsModalOpen(true);
@@ -565,6 +565,11 @@ export const ProductListing = () => {
                 </div>
 
                 <div>
+                  <label className="block font-bold text-slate-700 mb-1">Initial Rating <span className="font-normal text-slate-400">(optional)</span></label>
+                  <select value={formData.initialRating} onChange={(e) => setFormData({ ...formData, initialRating: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold"><option value="">No initial review</option>{[5,4,3,2,1].map((rating) => <option key={rating} value={rating}>{rating} stars</option>)}</select>
+                </div>
+
+                <div>
                   <label className="block font-bold text-slate-700 mb-1">Status</label>
                   <select
                     value={formData.status}
@@ -581,6 +586,7 @@ export const ProductListing = () => {
                   <label className="block font-bold text-slate-700 mb-1">Colors <span className="font-normal text-slate-400">(optional, comma separated)</span></label>
                   <input value={formData.colors} onChange={(e) => setFormData({ ...formData, colors: e.target.value })} placeholder="Black, White, Blue" className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none" />
                 </div>
+                <div className="sm:col-span-2"><label className="block font-bold text-slate-700 mb-1">Initial Review Comment <span className="font-normal text-slate-400">(optional)</span></label><textarea value={formData.initialReview} onChange={(e) => setFormData({ ...formData, initialReview: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs" placeholder="Optional review to publish with this product" /></div>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">

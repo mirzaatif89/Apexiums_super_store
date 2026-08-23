@@ -17,6 +17,7 @@ import ReturnsView from "../../components/sales/ReturnsView";
 import CustomersView from "../../components/sales/CustomersView";
 import BannersView from "../../components/marketing/BannersView";
 import CouponsView from "../../components/marketing/CouponsView";
+import ReviewsView from "../../components/marketing/ReviewsView";
 import InvestorsView from "../../components/marketplace/InvestorsView";
 import StaffView from "../../components/marketplace/StaffView";
 import SellersView from "../../components/marketplace/SellersView";
@@ -49,6 +50,7 @@ const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
     customers: "customers",
     banners: "banners",
     coupons: "coupons",
+    reviews: "reviews",
     investors: "investors",
     staff: "staff",
     sellers: "sellers",
@@ -135,6 +137,7 @@ const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
       banners: "manageMarketing",
       ads: "manageMarketing",
       coupons: "manageMarketing",
+      reviews: "manageMarketing",
       investors: "manageInvestors",
       staff: "manageStaff",
       sellers: "manageSellers",
@@ -196,6 +199,8 @@ const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
         return <BannersView />;
       case "coupons":
         return <CouponsView />;
+      case "reviews":
+        return <ReviewsView />;
       case "investors":
         return <InvestorsView />;
       case "staff":
@@ -262,11 +267,11 @@ const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
               >
                 <CalendarDays size={18} className="text-slate-500" />
                 <input
-                  type="date"
+                  type="month"
                   value={selectedDate}
                   onChange={(event) => setSelectedDate(event.target.value)}
                   className="absolute inset-0 cursor-pointer opacity-0"
-                  aria-label="Filter by date"
+                  aria-label="Filter by month"
                 />
               </label>
             </div>

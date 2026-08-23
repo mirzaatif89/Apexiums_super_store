@@ -822,6 +822,13 @@ export const AdminProvider = ({ children, session }) => {
           "Product could not be saved to the database.",
       );
     const saved = await response.json();
+    if (product.initialRating && product.initialReview) {
+      const reviewResponse = await fetch('/api/reviews', {
+        method: 'POST', headers: apiHeaders(),
+        body: JSON.stringify({ product_id: saved.id, reviewer_name: 'Store Admin', rating: Number(product.initialRating), comment: product.initialReview, source: 'manual' })
+      });
+      if (!reviewResponse.ok) throw new Error((await reviewResponse.json().catch(() => ({}))).message || 'Product saved, but the initial review could not be created.');
+    }
     setProducts((prev) => [
       {
         ...product,

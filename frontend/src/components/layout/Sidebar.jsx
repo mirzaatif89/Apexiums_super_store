@@ -22,6 +22,7 @@ import {
   Bell,
   KeyRound,
   BadgePercent,
+  Star,
   LogOut,
   ChevronDown,
   ChevronRight,
@@ -156,6 +157,7 @@ export const Sidebar = ({
           icon: BadgePercent,
           permission: "manageMarketing",
         },
+        { id: "reviews", label: "Customer Reviews", icon: Star, permission: "manageMarketing" },
       ],
     },
     {

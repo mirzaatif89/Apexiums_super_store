@@ -97,7 +97,7 @@ export const DashboardView = ({ selectedDate = '' }) => {
   const matchesSelectedDate = (value) => {
     if (!selectedDate) return true;
     const date = new Date(value);
-    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === selectedDate;
+    return !Number.isNaN(date.getTime()) && (selectedDate.length === 7 ? date.toISOString().slice(0, 7) === selectedDate : date.toISOString().slice(0, 10) === selectedDate);
   };
   const filteredOrders = orders.filter((order) => matchesSelectedDate(order.orderDate || order.created_at));
   const filteredExpenses = (finance.expensesList || []).filter((expense) => matchesSelectedDate(expense.date));

@@ -2,6 +2,21 @@
 
 React + Node.js + Express + MySQL admin panel for Apexiums ecommerce store.
 
+## Project structure
+
+```
+app.js                 Hostinger production entry point
+backend/server.js      Express API, database setup, and uploaded assets
+backend/uploads/       Runtime uploads (not application source)
+frontend/src/          React storefront and admin UI source
+frontend/dist/         Generated Vite output (ignored; run npm run build)
+```
+
+The React application is the source of truth for storefront and admin routes.
+The legacy standalone build/archive directories are intentionally ignored and
+should not be committed. Local mock data is a development fallback only; set
+the MySQL environment variables to use the production database.
+
 ## Hostinger deployment
 
 - Runtime: Node.js 20.19 or newer

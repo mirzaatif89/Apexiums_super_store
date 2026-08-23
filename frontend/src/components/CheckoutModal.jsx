@@ -188,7 +188,7 @@ export default function CheckoutModal({
 
     try {
       const orderPayload = {
-        payment_method: paymentMethod.toUpperCase(),
+        payment_method: paymentMethod === 'cod' ? 'Cash on Delivery' : paymentMethod === 'wallet' ? 'Paid Online (Mobile Wallet)' : 'Paid Online (Card)',
         customer_name: currentName,
         customer_email: currentEmail,
         customer_phone: currentPhone,

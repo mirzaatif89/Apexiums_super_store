@@ -2,3 +2,7 @@ node_modules/
 .env
 npm-debug.log*
 dev-server.*.log
+frontend/dist/
+_build_archive/
+_legacy/
+backend/uploads/**/*.tmp
