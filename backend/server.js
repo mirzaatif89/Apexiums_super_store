@@ -783,6 +783,15 @@ function persistImageDataUrl(dataUrl, folder = 'categories') {
   return `/uploads/${folder}/${filename}`;
 }
 
+function persistProductGallery(value) {
+  let images = [];
+  try { images = Array.isArray(value) ? value : JSON.parse(value || '[]'); } catch { images = []; }
+  return JSON.stringify(images.slice(0, 4).map((image) => {
+    if (typeof image === 'string') return persistImageDataUrl(image, 'products');
+    return { ...image, url: persistImageDataUrl(image?.url, 'products') };
+  }).filter((image) => typeof image === 'string' ? image : image?.url));
+}
+
 function businessScope(table, req, alias = '') {
   const { businessId, role } = getContext(req);
   const investorId = Number(req.headers['x-investor-id'] || 0) || null;
@@ -1044,6 +1053,7 @@ function crudRoutes(resource, required = []) {
         data.subcategories = JSON.stringify(Array.isArray(req.body.subcategories) ? req.body.subcategories : (() => { try { return JSON.parse(req.body.subcategories || '[]'); } catch { return []; } })());
       }
       if ((resource === 'categories' || resource === 'products') && data.image_url) data.image_url = persistImageDataUrl(data.image_url, resource === 'products' ? 'products' : 'categories');
+      if (resource === 'products' && Object.prototype.hasOwnProperty.call(data, 'product_images')) data.product_images = persistProductGallery(data.product_images);
       if (resource === 'investor_applications' && data.document_url) data.document_url = persistImageDataUrl(data.document_url, 'investor-documents');
       if (resource === 'seller_applications' && data.product_image_url) data.product_image_url = persistImageDataUrl(data.product_image_url, 'seller-products');
       if (resource === 'staff' && data.password_hash) data.password_hash = hashPassword(data.password_hash);
@@ -1127,6 +1137,7 @@ function crudRoutes(resource, required = []) {
         data.subcategories = JSON.stringify(Array.isArray(req.body.subcategories) ? req.body.subcategories : (() => { try { return JSON.parse(req.body.subcategories || '[]'); } catch { return []; } })());
       }
       if ((resource === 'categories' || resource === 'products') && data.image_url) data.image_url = persistImageDataUrl(data.image_url, resource === 'products' ? 'products' : 'categories');
+      if (resource === 'products' && Object.prototype.hasOwnProperty.call(data, 'product_images')) data.product_images = persistProductGallery(data.product_images);
       if (resource === 'staff' && data.password_hash) data.password_hash = hashPassword(data.password_hash);
       const columns = Object.keys(data);
       if (!columns.length) return res.status(400).json({ message: 'No valid fields supplied' });

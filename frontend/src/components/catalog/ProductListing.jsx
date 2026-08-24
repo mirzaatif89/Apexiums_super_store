@@ -211,7 +211,7 @@ export const ProductListing = () => {
     setProductSaved(false);
     setIsSaving(true);
 
-    const image = formData.images?.[0]?.url || formData.image || uploadPreview || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80';
+    const image = formData.image || formData.images?.[0]?.url || uploadPreview || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80';
     const payload = { ...formData, price: formData.discountedPrice, image, images: formData.images || [], status: Number(formData.stock) === 0 ? 'Out of Stock' : formData.status };
 
     try {
@@ -478,15 +478,17 @@ export const ProductListing = () => {
               {saveError && <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{saveError}</p>}
               <div>
                 <label className="block font-bold text-slate-700 text-xs mb-1">Product Images (up to 5) *</label>
-                <label title="Upload up to 5 product images" className="relative flex h-28 w-28 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-red-200 bg-red-50/40 text-center transition hover:border-red-400 hover:bg-red-50">
+                <label title="Add up to 5 product images" className="relative flex h-28 w-28 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-red-200 bg-red-50/40 text-center transition hover:border-red-400 hover:bg-red-50">
                   <ImageIcon size={34} className="text-red-500" />
                   <input type="file" accept="image/*" multiple required={!editingProduct && !formData.image} className="absolute inset-0 cursor-pointer opacity-0" onChange={(e) => {
-                    const files = Array.from(e.target.files || []).slice(0, 5);
-                    Promise.all(files.map((file) => new Promise((resolve) => { const reader = new FileReader(); reader.onload = () => resolve({ url: String(reader.result || ''), style: file.name.replace(/\.[^.]+$/, '') }); reader.readAsDataURL(file); }))).then((images) => setFormData({ ...formData, image: images[0]?.url || formData.image, images: images.slice(1) }));
+                    const current = [formData.image, ...(formData.images || []).map((item) => item.url)].filter(Boolean);
+                    const files = Array.from(e.target.files || []).slice(0, Math.max(0, 5 - current.length));
+                    Promise.all(files.map((file) => new Promise((resolve) => { const reader = new FileReader(); reader.onload = () => resolve({ url: String(reader.result || ''), style: file.name.replace(/\.[^.]+$/, '') }); reader.readAsDataURL(file); }))).then((newImages) => { const combined = [...current, ...newImages.map((item) => item.url)].slice(0, 5); setFormData({ ...formData, image: combined[0] || '', images: combined.slice(1).map((url, index) => ({ url, style: `Image ${index + 2}` })) }); e.target.value = ''; });
                   }} />
                 </label>
+                <p className="mt-2 text-[11px] font-semibold text-slate-500">{[formData.image, ...(formData.images || []).map((item) => item.url)].filter(Boolean).length} / 5 images added. First image is the cover.</p>
                 {Boolean(formData.image || formData.images?.length) && <div className="mt-3 flex flex-wrap gap-2">
-                  {[formData.image, ...(formData.images || []).map((item) => item.url)].filter(Boolean).slice(0, 5).map((src, index) => <img key={`${src}-${index}`} src={src} alt={`Product ${index + 1}`} className="h-16 w-16 rounded-xl border border-red-100 object-cover shadow-sm" />)}
+                  {[formData.image, ...(formData.images || []).map((item) => item.url)].filter(Boolean).slice(0, 5).map((src, index) => <div key={`${src}-${index}`} className="relative"><img src={src} alt={`Product ${index + 1}`} className="h-16 w-16 rounded-xl border border-red-100 object-cover shadow-sm"/>{index === 0 && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded bg-slate-900 px-1 text-[8px] font-bold text-white">Cover</span>}<button type="button" onClick={() => { const remaining = [formData.image, ...(formData.images || []).map((item) => item.url)].filter(Boolean).filter((_, itemIndex) => itemIndex !== index); setFormData({ ...formData, image: remaining[0] || '', images: remaining.slice(1).map((url, itemIndex) => ({ url, style: `Image ${itemIndex + 2}` })) }); }} className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">×</button></div>)}
                 </div>}
               </div>
               <div>
