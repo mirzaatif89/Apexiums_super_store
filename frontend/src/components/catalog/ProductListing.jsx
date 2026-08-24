@@ -568,7 +568,7 @@ export const ProductListing = () => {
 
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Initial Rating <span className="font-normal text-slate-400">(optional)</span></label>
-                  <select value={formData.initialRating} onChange={(e) => setFormData({ ...formData, initialRating: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold"><option value="">No initial review</option>{[5,4,3,2,1].map((rating) => <option key={rating} value={rating}>{rating} stars</option>)}</select>
+                  <input type="number" min="1" max="5" step="0.1" value={formData.initialRating} onChange={(e) => setFormData({ ...formData, initialRating: e.target.value })} placeholder="e.g. 4.8" className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold"/>
                 </div>
 
                 <div>

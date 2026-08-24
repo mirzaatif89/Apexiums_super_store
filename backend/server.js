@@ -498,7 +498,7 @@ const schemas = [
     business_id INT DEFAULT 1,
     product_id INT NOT NULL,
     reviewer_name VARCHAR(180) NOT NULL,
-    rating TINYINT NOT NULL,
+    rating DECIMAL(3,1) NOT NULL,
     comment TEXT,
     source VARCHAR(30) DEFAULT 'manual',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -922,6 +922,7 @@ async function initializeDatabase() {
   await ensureColumn('products', 'actual_price', 'DECIMAL(12,2) DEFAULT 0');
   await ensureColumn('products', 'subcategory', 'VARCHAR(160)');
   await ensureColumn('products', 'investor_id', 'INT NULL');
+  await pool.query(`ALTER TABLE ${backtick('reviews')} MODIFY COLUMN ${backtick('rating')} DECIMAL(3,1) NOT NULL`);
   await pool.query('CREATE INDEX IF NOT EXISTS idx_reviews_product_created ON reviews (product_id, created_at)');
   await ensureColumn('orders', 'customer_email', 'VARCHAR(180)');
   await ensureColumn('orders', 'customer_phone', 'VARCHAR(60)');
@@ -1046,7 +1047,7 @@ function crudRoutes(resource, required = []) {
       if (validation) return res.status(400).json({ message: validation });
       if (resource === 'reviews') {
         const rating = Number(req.body.rating);
-        if (!Number.isInteger(rating) || rating < 1 || rating > 5) return res.status(400).json({ message: 'Rating must be a whole number from 1 to 5.' });
+        if (!Number.isFinite(rating) || rating < 1 || rating > 5) return res.status(400).json({ message: 'Rating must be between 1.0 and 5.0.' });
       }
       const data = cleanPayload(req.body, fields);
       if (resource === 'categories' && Object.prototype.hasOwnProperty.call(data, 'subcategories')) {
