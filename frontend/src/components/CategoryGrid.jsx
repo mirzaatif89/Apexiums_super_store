@@ -1,7 +1,8 @@
 import React from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function CategoryGrid({ categories = [], selectedCategory = 'All', onSelectCategory }) {
+  const categoryRowRef = React.useRef(null);
   const fallbackCategories = [{ label: 'All', displayName: 'All', image: '' }];
   const primaryCategories = categories.length
     ? [{ label: 'All', displayName: 'All', image: '' }, ...categories.map((category) => ({
@@ -17,6 +18,16 @@ export default function CategoryGrid({ categories = [], selectedCategory = 'All'
     }
     const el = document.getElementById('products-section');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const slideCategories = (direction) => {
+    categoryRowRef.current?.scrollBy({ left: direction * 280, behavior: 'smooth' });
+  };
+
+  const handleWheel = (event) => {
+    const row = categoryRowRef.current;
+    if (!row || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+    row.scrollLeft += event.deltaY;
   };
 
   return (
@@ -37,7 +48,13 @@ export default function CategoryGrid({ categories = [], selectedCategory = 'All'
       </div>
 
       {/* Category Circles with Photos */}
-      <div className="grid grid-cols-5 gap-2 sm:gap-5 justify-items-center bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/80 shadow-2xs">
+      <div className="relative">
+        <div
+          ref={categoryRowRef}
+          onWheel={handleWheel}
+          className="category-slider flex flex-nowrap items-start gap-4 overflow-x-auto scroll-smooth rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-7 sm:p-5"
+          aria-label="Product categories"
+        >
         {primaryCategories.map((cat) => {
           const isSelected = selectedCategory?.toLowerCase() === cat.label.toLowerCase() || (cat.label === 'All' && selectedCategory === 'All');
 
@@ -46,7 +63,7 @@ export default function CategoryGrid({ categories = [], selectedCategory = 'All'
               key={cat.label}
               type="button"
               onClick={() => handleCategoryClick(cat.label)}
-              className="group flex flex-col items-center justify-center cursor-pointer transition-transform active:scale-95"
+              className="category-slider-item group flex w-16 shrink-0 flex-col items-center justify-center cursor-pointer transition-transform active:scale-95 sm:w-20"
             >
               {/* Photo Circle Container */}
               <div
@@ -70,6 +87,11 @@ export default function CategoryGrid({ categories = [], selectedCategory = 'All'
             </button>
           );
         })}
+        </div>
+        {primaryCategories.length > 5 && <>
+          <button type="button" onClick={() => slideCategories(-1)} aria-label="Previous categories" className="absolute left-1 top-1/2 z-10 hidden -translate-y-1/2 rounded-full border border-slate-200 bg-white/95 p-1.5 text-slate-700 shadow-md hover:text-red-600 md:block"><ChevronLeft size={18} /></button>
+          <button type="button" onClick={() => slideCategories(1)} aria-label="Next categories" className="absolute right-1 top-1/2 z-10 hidden -translate-y-1/2 rounded-full border border-slate-200 bg-white/95 p-1.5 text-slate-700 shadow-md hover:text-red-600 md:block"><ChevronRight size={18} /></button>
+        </>}
       </div>
     </section>
   );
