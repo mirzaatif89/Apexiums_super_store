@@ -132,3 +132,4 @@ The backend derives the investor and business scopes from the signed token.
 Dashboard, Banners, Adds, Categories, Stock, Orders, Returns, Staff, Customers, Product Listing, Expense, Whole Sellers, Revenue, and Notifications are included with reusable tables, filters, stats, modals, pagination, loading states, empty states, status badges, and toast notifications.
 
 The backend auto-creates the MySQL database/tables on startup when the configured MySQL user has permission.
+# Apexiums_Elistin
