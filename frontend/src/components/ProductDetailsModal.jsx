@@ -139,11 +139,6 @@ export default function ProductDetailsModal({
     } else {
       details.push({ label: 'Package Contents', value: `1x ${product.title}` });
     }
-    if (product.warranty) {
-      details.push({ label: 'Warranty', value: product.warranty });
-    } else {
-      details.push({ label: 'Warranty', value: '1 Year Official Warranty' });
-    }
     details.push({ label: 'Condition', value: '100% Brand New & Authentic' });
     return details;
   }, [product, brandName, selectedColor, selectedSize]);
@@ -397,7 +392,7 @@ export default function ProductDetailsModal({
                   </div>
                   <p className="mt-1 text-[11px] text-red-800 font-semibold flex items-center gap-1">
                     <CheckCircle2 size={13} className="text-red-600 shrink-0" />
-                    Inclusive of all taxes & 7-Day Easy Replacement Warranty
+                    Inclusive of all taxes
                   </p>
                 </div>
 
