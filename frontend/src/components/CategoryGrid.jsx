@@ -1,7 +1,7 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-export default function CategoryGrid({ categories = [], selectedCategory = 'All', onSelectCategory }) {
+export default function CategoryGrid({ categories = [], selectedCategory = 'All', onSelectCategory, onViewAll }) {
   const categoryRowRef = React.useRef(null);
   const fallbackCategories = [{ label: 'All', displayName: 'All', image: '' }];
   const primaryCategories = categories.length
@@ -39,7 +39,7 @@ export default function CategoryGrid({ categories = [], selectedCategory = 'All'
         </h2>
         <button
           type="button"
-          onClick={() => handleCategoryClick('All')}
+          onClick={() => onViewAll ? onViewAll() : handleCategoryClick('All')}
           className="inline-flex items-center gap-0.5 text-[#E8262A] hover:text-red-700 text-xs sm:text-sm font-bold tracking-tight cursor-pointer transition-colors active:scale-95"
         >
           <span>See All</span>
@@ -63,22 +63,22 @@ export default function CategoryGrid({ categories = [], selectedCategory = 'All'
               key={cat.label}
               type="button"
               onClick={() => handleCategoryClick(cat.label)}
-              className="category-slider-item group flex w-16 shrink-0 flex-col items-center justify-center cursor-pointer transition-transform active:scale-95 sm:w-20"
+              className="category-slider-item group flex w-20 shrink-0 flex-col items-center justify-center cursor-pointer transition-transform active:scale-95 sm:w-24"
             >
               {/* Photo Circle Container */}
               <div
-                className={`relative flex h-13 w-13 xs:h-15 xs:w-15 sm:h-18 sm:w-18 items-center justify-center rounded-full p-0.5 shadow-2xs transition-all duration-300 group-hover:scale-105 overflow-hidden border-2 ${
+                className={`relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full p-0.5 shadow-2xs transition-all duration-300 group-hover:scale-105 overflow-hidden border-2 ${
                   isSelected
-                    ? 'border-[#E8262A] ring-4 ring-red-100/80 bg-red-50'
+                  ? 'border-[#E8262A] ring-4 ring-red-100/80 bg-red-50'
                     : 'border-slate-200 group-hover:border-red-300 bg-slate-100'
                 }`}
               >
-                {cat.image ? <img src={cat.image} alt={cat.displayName} loading="lazy" className="h-full w-full object-cover object-center rounded-full transition-transform duration-500 group-hover:scale-110" /> : <span className="text-lg font-black text-slate-400">{cat.displayName.charAt(0)}</span>}
+                {cat.image ? <img src={cat.image} alt={cat.displayName} loading="lazy" className="h-full w-full object-cover object-center rounded-full transition-transform duration-500 group-hover:scale-110" /> : <span className="text-xl font-black text-slate-400">{cat.displayName.charAt(0)}</span>}
               </div>
 
               {/* Label Text Below */}
               <span
-                className={`mt-2 text-xs transition-colors text-center tracking-tight ${
+                className={`mt-2 line-clamp-2 min-h-8 text-xs transition-colors text-center tracking-tight sm:text-sm ${
                   isSelected ? 'font-black text-[#E8262A]' : 'font-bold text-[#1E1E1E] group-hover:text-[#E8262A]'
                 }`}
               >

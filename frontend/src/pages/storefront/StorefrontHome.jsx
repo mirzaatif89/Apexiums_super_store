@@ -396,12 +396,12 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
         {categoryPage ? (
           <section className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-6 py-5 space-y-4">
             <button type="button" onClick={() => { setCategoryPage(null); setSelectedCategory('All'); window.history.pushState({}, '', '/'); window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); }} className="text-sm font-bold text-red-600">← Back to Home</button>
-            <div className="rounded-2xl bg-white border border-slate-200 p-5">
+            {categoryPage === '__all_categories__' ? <><div className="rounded-2xl border border-slate-200 bg-white p-5"><h1 className="text-2xl font-black text-slate-900">All Categories</h1><p className="mt-1 text-sm text-slate-500">Browse every category available in our store.</p></div><div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">{websiteCategories.map((category) => <button key={category.id || category.name} type="button" onClick={() => { setSelectedCategory(category.name); setCategoryPage(category.name); window.history.pushState({}, '', `/category/${encodeURIComponent(category.name)}`); }} className="group rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm transition hover:-translate-y-0.5 hover:border-red-300 hover:shadow-md"><div className="mx-auto h-20 w-20 overflow-hidden rounded-full border-2 border-slate-100 bg-slate-50 p-0.5 group-hover:border-red-200">{category.image_url || category.image ? <img src={category.image_url || category.image} alt={category.name} className="h-full w-full rounded-full object-cover" /> : <span className="flex h-full items-center justify-center text-2xl font-black text-slate-400">{category.name?.charAt(0)}</span>}</div><p className="mt-3 text-sm font-black text-slate-800 group-hover:text-red-600">{category.name}</p></button>)}</div></> : <><div className="rounded-2xl bg-white border border-slate-200 p-5">
               <h1 className="text-2xl font-black text-slate-900">{categoryPage}</h1>
               <p className="mt-1 text-sm text-slate-500">Products in {categoryPage} category</p>
               {websiteCategories.find((c) => c.name === categoryPage)?.subcategories?.length ? <div className="mt-4 flex flex-wrap gap-2">{websiteCategories.find((c) => c.name === categoryPage).subcategories.map((sub) => <button key={sub} type="button" onClick={() => setSelectedCategory(sub)} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold hover:bg-red-50 hover:text-red-600">{sub}</button>)}</div> : null}
             </div>
-            <ProductGrid sections={filteredSections} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} onSelectProduct={(p) => { setSelectedProduct(p); setModalQty(1); }} onAddToCart={(p) => handleAddProductToCart(p, 1)} />
+            <ProductGrid sections={filteredSections} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} onSelectProduct={(p) => { setSelectedProduct(p); setModalQty(1); }} onAddToCart={(p) => handleAddProductToCart(p, 1)} /></>}
           </section>
         ) : <>
         <HeroBanner slides={heroSlides} promoBanners={promoBanners} />
@@ -409,6 +409,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
           categories={websiteCategories}
           selectedCategory={selectedCategory}
           onSelectCategory={(cat) => { setSelectedCategory(cat); if (cat !== 'All') { setCategoryPage(cat); window.history.pushState({}, '', `/category/${encodeURIComponent(cat)}`); } }}
+          onViewAll={() => { setCategoryPage('__all_categories__'); window.history.pushState({}, '', '/categories'); window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); }}
         />
         <FlashSale
           products={filteredFlashSale}
