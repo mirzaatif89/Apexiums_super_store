@@ -963,6 +963,21 @@ async function syncLowStockAlerts(businessId = null) {
   }
 }
 
+async function seedDefaultMarketingBanners() {
+  const [existingBanners] = await pool.query('SELECT id FROM banners LIMIT 1');
+  if (!existingBanners.length) {
+    for (const [title, imageUrl, position] of [
+      ['Big Summer Electronics Sale', 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1400&q=80', 1],
+      ['Fashion That Feels Premium', 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1400&q=80', 2],
+      ['Home Deals You Cannot Miss', 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=1400&q=80', 3]
+    ]) await pool.query('INSERT INTO banners (business_id, title, image_url, link, position, status) VALUES (?, ?, ?, ?, ?, ?)', [DEFAULT_BUSINESS_ID, title, imageUrl, '/catalog', position, 'Active']);
+  }
+  const [existingPromotions] = await pool.query('SELECT id FROM promotions LIMIT 1');
+  if (!existingPromotions.length) {
+    for (const [name, imageUrl] of [['Fast Delivery', 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=900&q=80'], ['Cash on Delivery', 'https://images.unsplash.com/photo-1607082350899-7e105aa886ae?auto=format&fit=crop&w=900&q=80']]) await pool.query('INSERT INTO promotions (business_id, name, image_url, show_on_website, status) VALUES (?, ?, ?, ?, ?)', [DEFAULT_BUSINESS_ID, name, imageUrl, 'Yes', 'Active']);
+  }
+}
+
 async function initializeDatabase() {
   try {
     if (!process.env.DB_HOST) {
@@ -1009,6 +1024,7 @@ async function initializeDatabase() {
   await ensureColumn('customers', 'username', 'VARCHAR(120)');
   await ensureColumn('customers', 'password_hash', 'VARCHAR(255)');
   await ensureColumn('customers', 'plain_password', 'VARCHAR(255)');
+  await seedDefaultMarketingBanners();
   await ensureColumn('stock', 'total_items', 'INT DEFAULT 0');
   await ensureColumn('stock', 'stock_belong_to', 'VARCHAR(180)');
   await ensureColumn('stock', 'description', 'TEXT');
