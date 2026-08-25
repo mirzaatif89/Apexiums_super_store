@@ -64,7 +64,7 @@ export const BannersView = () => {
     reader.readAsDataURL(file);
   };
 
-  const saveBanner = (event) => {
+  const saveBanner = async (event) => {
     event.preventDefault();
     if (!form.title.trim() || !form.image) return;
     const shared = {
@@ -73,8 +73,9 @@ export const BannersView = () => {
       visible: form.active,
       status: form.active ? "Active" : "Inactive",
     };
+    try {
     if (form.destination !== "App Only")
-      addBanner({
+      await addBanner({
         ...shared,
         title: form.title.trim(),
         description: "",
@@ -82,7 +83,7 @@ export const BannersView = () => {
         ctaUrl: "/catalog",
       });
     if (form.destination !== "Website Only")
-      addAd({
+      await addAd({
         ...shared,
         name: form.title.trim(),
         placement: "Mobile App Banner",
@@ -90,12 +91,15 @@ export const BannersView = () => {
         budget: 0,
       });
     resetForm();
+    } catch (error) { window.alert(error.message || 'Banner could not be saved.'); }
   };
 
-  const removeBanner = (item) =>
-    item.sourceType === "website" ? deleteBanner(item.id) : deleteAd(item.id);
-  const changeVisibility = (item) =>
-    item.sourceType === "website" ? toggleBanner(item.id) : toggleAd(item.id);
+  const removeBanner = async (item) => {
+    try { await (item.sourceType === "website" ? deleteBanner(item.id) : deleteAd(item.id)); } catch (error) { window.alert(error.message || 'Banner could not be deleted.'); }
+  };
+  const changeVisibility = async (item) => {
+    try { await (item.sourceType === "website" ? toggleBanner(item.id) : toggleAd(item.id)); } catch (error) { window.alert(error.message || 'Banner status could not be updated.'); }
+  };
 
   return (
     <div className="space-y-5">

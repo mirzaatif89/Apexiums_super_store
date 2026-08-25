@@ -1641,56 +1641,32 @@ export const AdminProvider = ({ children, session }) => {
     addToast(`Permission updated for role: ${roleName}`, "success");
   };
 
-  // Banners & Ads
-  const addBanner = (bannerData) => {
-    const newBan = {
-      ...bannerData,
-      id: `ban-${Date.now()}`,
-      visible: bannerData.visible !== false,
-      device: "desktop",
-    };
-    setBanners((prev) => [newBan, ...prev]);
-    addToast("New marketing banner published.", "success");
-  };
+  // Banners & app banners are persisted so their active state controls the storefront.
+  const loadMarketingBanners = React.useCallback(async () => {
+    const [websiteResponse, appResponse] = await Promise.all([fetch('/api/banners?limit=100', { headers: apiHeaders() }), fetch('/api/promotions?limit=100', { headers: apiHeaders() })]);
+    const website = websiteResponse.ok ? await websiteResponse.json() : { rows: [] };
+    const app = appResponse.ok ? await appResponse.json() : { rows: [] };
+    setBanners((website.rows || []).map((row) => ({ ...row, image: row.image_url, visible: String(row.status || 'Active').toLowerCase() === 'active', order: row.position || 1 })));
+    setAds((app.rows || []).map((row) => ({ ...row, image: row.image_url, visible: String(row.status || 'Active').toLowerCase() === 'active', name: row.name, order: 1 })));
+  }, [session?.role, session?.businessId]);
 
-  const deleteBanner = (id) => {
-    setBanners((prev) => prev.filter((b) => b.id !== id));
-    addToast("Banner removed.", "info");
-  };
-  const toggleBanner = (id) =>
-    setBanners((prev) =>
-      prev.map((banner) =>
-        banner.id === id
-          ? { ...banner, visible: banner.visible === false }
-          : banner,
-      ),
-    );
+  useEffect(() => { loadMarketingBanners().catch(() => {}); }, [loadMarketingBanners]);
 
-  const addAd = (adData) => {
-    const newAd = {
-      ...adData,
-      id: `ad-${Date.now()}`,
-      visible: adData.visible !== false,
-      device: "mobile",
-      spent: 0,
-      impressions: 0,
-      clicks: 0,
-      ctr: "0.00%",
-    };
-    setAds((prev) => [newAd, ...prev]);
-    addToast("New ad campaign initialized.", "success");
+  const addBanner = async (bannerData) => {
+    const response = await fetch('/api/banners', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ image_url: bannerData.image, title: bannerData.title, link: bannerData.ctaUrl || null, position: Number(bannerData.order || 1), status: bannerData.visible === false ? 'Inactive' : 'Active' }) });
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Website banner could not be saved.');
+    await loadMarketingBanners(); addToast('Website banner saved.', 'success');
   };
+  const deleteBanner = async (id) => { const response = await fetch(`/api/banners/${id}`, { method: 'DELETE', headers: apiHeaders() }); if (!response.ok) throw new Error('Website banner could not be deleted.'); await loadMarketingBanners(); addToast('Banner removed.', 'info'); };
+  const toggleBanner = async (id) => { const banner = banners.find((item) => String(item.id) === String(id)); if (!banner) return; const response = await fetch(`/api/banners/${id}`, { method: 'PUT', headers: apiHeaders(), body: JSON.stringify({ status: banner.visible ? 'Inactive' : 'Active' }) }); if (!response.ok) throw new Error('Banner status could not be updated.'); await loadMarketingBanners(); };
 
-  const deleteAd = (id) => {
-    setAds((prev) => prev.filter((a) => a.id !== id));
-    addToast("Ad campaign deleted.", "info");
+  const addAd = async (adData) => {
+    const response = await fetch('/api/promotions', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ name: adData.name, image_url: adData.image, valid_from: null, valid_till: null, show_on_website: 'Yes', status: adData.visible === false ? 'Inactive' : 'Active' }) });
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'App banner could not be saved.');
+    await loadMarketingBanners(); addToast('App banner saved.', 'success');
   };
-  const toggleAd = (id) =>
-    setAds((prev) =>
-      prev.map((ad) =>
-        ad.id === id ? { ...ad, visible: ad.visible === false } : ad,
-      ),
-    );
+  const deleteAd = async (id) => { const response = await fetch(`/api/promotions/${id}`, { method: 'DELETE', headers: apiHeaders() }); if (!response.ok) throw new Error('App banner could not be deleted.'); await loadMarketingBanners(); addToast('App banner removed.', 'info'); };
+  const toggleAd = async (id) => { const ad = ads.find((item) => String(item.id) === String(id)); if (!ad) return; const response = await fetch(`/api/promotions/${id}`, { method: 'PUT', headers: apiHeaders(), body: JSON.stringify({ status: ad.visible ? 'Inactive' : 'Active' }) }); if (!response.ok) throw new Error('App banner status could not be updated.'); await loadMarketingBanners(); };
 
   // Finance
   const addTransaction = async (transaction) => {

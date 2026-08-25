@@ -4,6 +4,7 @@ import express from 'express';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import crypto from 'crypto';
 import mysql from 'mysql2/promise';
+import nodemailer from 'nodemailer';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -30,6 +31,7 @@ const dbConfig = {
 };
 
 let pool;
+const customerSessions = new Map();
 const DEFAULT_BUSINESS_ID = 1;
 const businessScopedTables = new Set([
   'banners',
@@ -61,7 +63,7 @@ const businessScopedTables = new Set([
   'wholesellers'
 ]);
 
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '25mb' }));
 app.use('/uploads', express.static(uploadsPath));
 
@@ -226,6 +228,10 @@ class MockPool {
           if (queryStr.includes('username = ?')) {
             const targetUsername = params[paramIdx++];
             rows = rows.filter(r => r.username === targetUsername);
+          }
+          if (queryStr.includes('email = ?')) {
+            const targetEmail = params[paramIdx++];
+            rows = rows.filter(r => r.email === targetEmail);
           }
           if (queryStr.includes('alert_key = ?')) {
             const targetAlertKey = params[paramIdx++];
@@ -493,6 +499,16 @@ const schemas = [
     added_by VARCHAR(120),
     notes TEXT
   )`,
+  `CREATE TABLE IF NOT EXISTS customer_email_verifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(180) NOT NULL UNIQUE,
+    name VARCHAR(160) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    otp_hash VARCHAR(255) NOT NULL,
+    expires_at DATETIME NOT NULL,
+    attempts INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
   `CREATE TABLE IF NOT EXISTS reviews (
     id INT AUTO_INCREMENT PRIMARY KEY,
     business_id INT DEFAULT 1,
@@ -739,6 +755,64 @@ function getContext(req) {
       : rawRole;
   const businessId = Number(req.headers['x-business-id'] || 0) || null;
   return { role, businessId };
+}
+
+function normalizeEmail(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function getCookies(req) {
+  return Object.fromEntries(String(req.headers.cookie || '').split(';').map(part => part.trim().split(/=(.*)/s)).filter(([key]) => key));
+}
+
+function createCustomerSession(res, customer) {
+  const token = crypto.randomBytes(32).toString('hex');
+  customerSessions.set(token, { customerId: customer.id, expiresAt: Date.now() + 1000 * 60 * 60 * 24 * 14 });
+  res.setHeader('Set-Cookie', `apexiums_customer_session=${token}; HttpOnly; Path=/; Max-Age=${60 * 60 * 24 * 14}; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+}
+
+async function getCurrentCustomer(req) {
+  const token = getCookies(req).apexiums_customer_session;
+  const session = token && customerSessions.get(token);
+  if (!session || session.expiresAt < Date.now()) {
+    if (token) customerSessions.delete(token);
+    return null;
+  }
+  const [[customer]] = await pool.query('SELECT * FROM customers WHERE id = ? LIMIT 1', [session.customerId]);
+  return customer || null;
+}
+
+function createOtp() {
+  return crypto.randomInt(100000, 1000000).toString();
+}
+
+function createOtpEmail({ name, otp }) {
+  const safeName = String(name || 'Customer').replace(/[<>&"']/g, '');
+  return `<!doctype html><html><body style="margin:0;background:#f8fafc;font-family:Arial,sans-serif;color:#0f172a">
+    <div style="max-width:560px;margin:32px auto;background:#fff;border:1px solid #e2e8f0;border-radius:18px;overflow:hidden">
+      <div style="padding:28px 32px;background:linear-gradient(135deg,#e8262a,#be123c);color:#fff"><div style="font-size:22px;font-weight:800">Apexiums</div><div style="margin-top:6px;font-size:14px;opacity:.9">Confirm your email address</div></div>
+      <div style="padding:30px 32px"><p style="margin:0 0 16px;font-size:16px">Hi ${safeName},</p><p style="margin:0 0 22px;line-height:1.6;color:#475569">Welcome to Apexiums. Use this one-time code to complete your registration and start shopping.</p>
+      <div style="margin:0 0 22px;padding:18px;text-align:center;border-radius:12px;background:#fff1f2;border:1px dashed #fda4af;color:#be123c;font-size:30px;font-weight:800;letter-spacing:8px">${otp}</div>
+      <p style="margin:0;line-height:1.6;font-size:13px;color:#64748b">This code expires in 10 minutes. Do not share it with anyone. If you did not create an Apexiums account, you can safely ignore this email.</p></div>
+      <div style="padding:18px 32px;background:#f8fafc;text-align:center;font-size:12px;color:#94a3b8">© ${new Date().getFullYear()} Apexiums. Shop with confidence.</div>
+    </div></body></html>`;
+}
+
+function getMailTransport() {
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!user || !pass) throw new Error('Email service is not configured. Set SMTP_USER and SMTP_PASS in .env.');
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: Number(process.env.SMTP_PORT || 465),
+    secure: String(process.env.SMTP_SECURE || 'true') === 'true',
+    auth: { user, pass }
+  });
+}
+
+async function sendRegistrationOtp({ email, name, otp }) {
+  const from = process.env.SMTP_FROM || `Apexiums <${process.env.SMTP_USER}>`;
+  await getMailTransport().sendMail({ from, to: email, subject: `${otp} is your Apexiums verification code`, html: createOtpEmail({ name, otp }) });
 }
 
 const TOKEN_SECRET = process.env.JWT_SECRET || 'local-development-secret-change-me';
@@ -1054,6 +1128,7 @@ function crudRoutes(resource, required = []) {
         data.subcategories = JSON.stringify(Array.isArray(req.body.subcategories) ? req.body.subcategories : (() => { try { return JSON.parse(req.body.subcategories || '[]'); } catch { return []; } })());
       }
       if ((resource === 'categories' || resource === 'products') && data.image_url) data.image_url = persistImageDataUrl(data.image_url, resource === 'products' ? 'products' : 'categories');
+      if ((resource === 'banners' || resource === 'promotions') && data.image_url) data.image_url = persistImageDataUrl(data.image_url, 'banners');
       if (resource === 'products' && Object.prototype.hasOwnProperty.call(data, 'product_images')) data.product_images = persistProductGallery(data.product_images);
       if (resource === 'investor_applications' && data.document_url) data.document_url = persistImageDataUrl(data.document_url, 'investor-documents');
       if (resource === 'seller_applications' && data.product_image_url) data.product_image_url = persistImageDataUrl(data.product_image_url, 'seller-products');
@@ -1138,6 +1213,7 @@ function crudRoutes(resource, required = []) {
         data.subcategories = JSON.stringify(Array.isArray(req.body.subcategories) ? req.body.subcategories : (() => { try { return JSON.parse(req.body.subcategories || '[]'); } catch { return []; } })());
       }
       if ((resource === 'categories' || resource === 'products') && data.image_url) data.image_url = persistImageDataUrl(data.image_url, resource === 'products' ? 'products' : 'categories');
+      if ((resource === 'banners' || resource === 'promotions') && data.image_url) data.image_url = persistImageDataUrl(data.image_url, 'banners');
       if (resource === 'products' && Object.prototype.hasOwnProperty.call(data, 'product_images')) data.product_images = persistProductGallery(data.product_images);
       if (resource === 'staff' && data.password_hash) data.password_hash = hashPassword(data.password_hash);
       const columns = Object.keys(data);
@@ -1218,11 +1294,70 @@ function safeBusinessAccount(account) {
   return safe;
 }
 
+app.post('/api/auth/customer-registration/start', async (req, res) => {
+  try {
+    const name = String(req.body.name || '').trim();
+    const email = normalizeEmail(req.body.email);
+    const password = String(req.body.password || '');
+    if (!name || !email || !password) return res.status(400).json({ message: 'Name, email and password are required.' });
+    if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ message: 'Please enter a valid email address.' });
+    if (password.length < 6) return res.status(400).json({ message: 'Password must contain at least 6 characters.' });
+    const [[existingCustomer]] = await pool.query('SELECT id FROM customers WHERE username = ? OR email = ? LIMIT 1', [email, email]);
+    if (existingCustomer) return res.status(409).json({ message: 'An account with this email already exists. Please sign in.' });
+
+    const otp = createOtp();
+    const otpHash = hashPassword(otp);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    const [[pending]] = await pool.query('SELECT id FROM customer_email_verifications WHERE email = ? LIMIT 1', [email]);
+    if (pending) {
+      await pool.query('UPDATE customer_email_verifications SET name = ?, password_hash = ?, otp_hash = ?, expires_at = ?, attempts = ? WHERE id = ?', [name, hashPassword(password), otpHash, expiresAt, 0, pending.id]);
+    } else {
+      await pool.query('INSERT INTO customer_email_verifications (email, name, password_hash, otp_hash, expires_at, attempts) VALUES (?, ?, ?, ?, ?, ?)', [email, name, hashPassword(password), otpHash, expiresAt, 0]);
+    }
+    await sendRegistrationOtp({ email, name, otp });
+    res.status(202).json({ message: 'Verification code sent. Please check your inbox.', email });
+  } catch (error) {
+    console.error('Registration OTP error:', error.message);
+    res.status(500).json({ message: error.message.includes('Email service') ? error.message : 'Unable to send verification email. Please try again.' });
+  }
+});
+
+app.post('/api/auth/customer-registration/verify', async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body.email);
+    const otp = String(req.body.otp || '').replace(/\s/g, '');
+    if (!email || !/^\d{6}$/.test(otp)) return res.status(400).json({ message: 'Enter the 6-digit verification code.' });
+    const [[pending]] = await pool.query('SELECT * FROM customer_email_verifications WHERE email = ? LIMIT 1', [email]);
+    if (!pending) return res.status(400).json({ message: 'No active verification was found. Please register again.' });
+    if (Number(pending.attempts || 0) >= 5) return res.status(429).json({ message: 'Too many incorrect attempts. Please request a new code.' });
+    if (new Date(pending.expires_at).getTime() < Date.now()) return res.status(400).json({ message: 'This code has expired. Please request a new code.' });
+    if (!verifyPassword(otp, pending.otp_hash)) {
+      await pool.query('UPDATE customer_email_verifications SET attempts = ? WHERE id = ?', [Number(pending.attempts || 0) + 1, pending.id]);
+      return res.status(400).json({ message: 'That verification code is incorrect.' });
+    }
+    const [result] = await pool.query('INSERT INTO customers (business_id, name, username, password_hash, email, status) VALUES (?, ?, ?, ?, ?, ?)', [DEFAULT_BUSINESS_ID, pending.name, email, pending.password_hash, email, 'Active']);
+    await pool.query('DELETE FROM customer_email_verifications WHERE id = ?', [pending.id]);
+    createCustomerSession(res, { id: result.insertId });
+    res.status(201).json({ user: { id: result.insertId, name: pending.name, username: email, email, role: 'User', loginType: 'user' }, role: 'User', token: `customer-${result.insertId}` });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'An account with this email already exists. Please sign in.' });
+    console.error('Registration verification error:', error.message);
+    res.status(500).json({ message: 'Unable to verify your code. Please try again.' });
+  }
+});
+
 app.post('/api/auth/login', async (req, res) => {
   try {
     const username = String(req.body.username || '').trim();
     const password = String(req.body.password || '');
     if (!username || !password) return res.status(400).json({ message: 'Username and password required' });
+    const [[customer]] = await pool.query('SELECT * FROM customers WHERE username = ? OR email = ? LIMIT 1', [username, normalizeEmail(username)]);
+    if (customer) {
+      if (customer.status === 'Inactive' || !verifyPassword(password, customer.password_hash)) return res.status(401).json({ message: 'Invalid username or password' });
+      const { password_hash, plain_password, ...safeCustomer } = customer;
+      createCustomerSession(res, customer);
+      return res.json({ user: { ...safeCustomer, role: 'User', loginType: 'user' }, role: 'User', token: `customer-${customer.id}` });
+    }
     const [[account]] = await pool.query('SELECT * FROM business_accounts WHERE username = ? LIMIT 1', [username]);
     if (!account) {
       const [[investor]] = await pool.query('SELECT * FROM investors WHERE username = ? LIMIT 1', [username]);
@@ -1246,6 +1381,35 @@ app.post('/api/auth/login', async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+});
+
+app.get('/api/auth/session', async (req, res) => {
+  try {
+    const customer = await getCurrentCustomer(req);
+    if (!customer) return res.status(401).json({ message: 'No active customer session.' });
+    const { password_hash, plain_password, ...safeCustomer } = customer;
+    res.json({ user: { ...safeCustomer, avatar: safeCustomer.avatar_url || null, role: 'User', loginType: 'user' } });
+  } catch (error) { res.status(500).json({ message: 'Unable to restore session.' }); }
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  const token = getCookies(req).apexiums_customer_session;
+  if (token) customerSessions.delete(token);
+  res.setHeader('Set-Cookie', 'apexiums_customer_session=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax');
+  res.status(204).end();
+});
+
+app.put('/api/customers/me', async (req, res) => {
+  try {
+    const customer = await getCurrentCustomer(req);
+    if (!customer) return res.status(401).json({ message: 'Please sign in to update your profile.' });
+    const name = String(req.body.name || customer.name).trim();
+    const phone = String(req.body.phone || '').trim();
+    const avatarUrl = String(req.body.avatar_url || '').trim() || null;
+    if (!name) return res.status(400).json({ message: 'Name is required.' });
+    await pool.query('UPDATE customers SET name = ?, phone = ?, avatar_url = ? WHERE id = ?', [name, phone || null, avatarUrl, customer.id]);
+    res.json({ user: { id: customer.id, name, username: customer.username, email: customer.email, phone: phone || null, avatar: avatarUrl, role: 'User', loginType: 'user' } });
+  } catch (error) { res.status(500).json({ message: 'Unable to save profile.' }); }
 });
 
 app.put('/api/auth/change-password', async (req, res) => {

@@ -238,7 +238,6 @@ export default function CheckoutModal({
       };
 
       setPlacedOrderData(orderSummaryObj);
-      localStorage.setItem('apexiums-my-orders', JSON.stringify([orderSummaryObj, ...JSON.parse(localStorage.getItem('apexiums-my-orders') || '[]')]));
       setStep('success');
       if (onOrderPlaced) onOrderPlaced(orderSummaryObj);
     } catch (err) {

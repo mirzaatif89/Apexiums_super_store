@@ -18,13 +18,14 @@
     "express": "latest",
     "lucide-react": "latest",
     "mysql2": "latest",
+    "nodemailer": "^9.0.5",
     "react": "latest",
     "react-dom": "latest",
     "recharts": "3.10.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "latest",
     "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-react": "latest",
     "autoprefixer": "^10.5.4",
     "postcss": "^8.5.25",
     "tailwindcss": "^4.3.3",

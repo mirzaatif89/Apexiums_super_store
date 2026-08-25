@@ -148,16 +148,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
   const [checkoutOpen, setCheckoutOpen] = React.useState(false);
   const [profileOpen, setProfileOpen] = React.useState(false);
   const [profileOrdersOpen, setProfileOrdersOpen] = React.useState(false);
-  const [authUser, setAuthUser] = React.useState(() => {
-    if (session) return session;
-    if (typeof localStorage !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('apexiums-auth-session');
-        if (saved) return JSON.parse(saved);
-      } catch (e) {}
-    }
-    return null;
-  });
+  const [authUser, setAuthUser] = React.useState(session || null);
 
   React.useEffect(() => {
     if (session) {
@@ -262,19 +253,13 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
 
   function handleLogin(user) {
     setAuthUser(user);
-    if (typeof localStorage !== 'undefined' && user) {
-      localStorage.setItem('apexiums-auth-session', JSON.stringify(user));
-    }
     if (onLogin) onLogin(user);
     setLoginOpen(false);
     setProfileOpen(true);
   }
 
   const handleAccountClick = () => {
-    let currentUser = authUser;
-    if (!currentUser) {
-      try { currentUser = JSON.parse(localStorage.getItem('apexiums-auth-session') || 'null'); } catch { currentUser = null; }
-    }
+    const currentUser = authUser;
 
     if (currentUser && (isAdminRole(currentUser.role) || currentUser.loginType === 'admin')) {
       window.location.assign('/dashboard');
@@ -288,10 +273,6 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
 
   function handleLogout() {
     setAuthUser(null);
-    if (typeof localStorage !== 'undefined') {
-      localStorage.removeItem('apexiums-auth-session');
-      localStorage.removeItem('apexiums-user-avatar');
-    }
     if (onLogout) {
       onLogout();
     }
@@ -566,7 +547,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
       ) : null}
 
       {/* Dynamic Info Popup Modal */}
-      {chatOpen ? <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"><form onSubmit={async(e)=>{e.preventDefault();if(!chatMessage.trim())return;const chat={id:`chat-${Date.now()}`,customerName:authUser?.name||'Guest Customer',customerEmail:authUser?.email||'',message:chatMessage.trim(),reply:'',status:'Open',date:new Date().toLocaleString()};const chats=JSON.parse(localStorage.getItem('apexiums-support-chats')||'[]');localStorage.setItem('apexiums-support-chats',JSON.stringify([chat,...chats]));window.dispatchEvent(new Event('apexiums-chat-created'));try{await fetch('/api/chats',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sender_name:chat.customerName,sender_type:'Customer',subject:'Customer Support',message:chat.message,status:'Open'})})}catch{}setChatMessage('');setChatSent(true)}} className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"><div className="flex items-center justify-between border-b pb-3"><div className="flex items-center gap-2"><Headphones className="text-red-600" size={20}/><h3 className="font-black">Chat with Support</h3></div><button type="button" onClick={()=>setChatOpen(false)}><X size={18}/></button></div>{chatSent&&<div className="mt-4 rounded-xl bg-emerald-50 p-3 text-xs font-bold text-emerald-700">Message sent. Admin will reply from Customer Chats.</div>}<label className="mt-4 block text-xs font-bold">Your question<textarea required rows="5" value={chatMessage} onChange={(e)=>setChatMessage(e.target.value)} placeholder="Write your question here..." className="mt-1 w-full rounded-xl border p-3 font-medium outline-none focus:border-red-500"/></label><button className="mt-4 w-full rounded-xl bg-red-600 py-3 text-xs font-black text-white">Send Message</button></form></div> : null}
+      {chatOpen ? <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"><form onSubmit={async(e)=>{e.preventDefault();if(!chatMessage.trim())return;const chat={customerName:authUser?.name||'Guest Customer',message:chatMessage.trim()};try{const response=await fetch('/api/chats',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sender_name:chat.customerName,sender_type:'Customer',subject:'Customer Support',message:chat.message,status:'Open'})});if(!response.ok)throw new Error()}catch{return;}setChatMessage('');setChatSent(true)}} className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"><div className="flex items-center justify-between border-b pb-3"><div className="flex items-center gap-2"><Headphones className="text-red-600" size={20}/><h3 className="font-black">Chat with Support</h3></div><button type="button" onClick={()=>setChatOpen(false)}><X size={18}/></button></div>{chatSent&&<div className="mt-4 rounded-xl bg-emerald-50 p-3 text-xs font-bold text-emerald-700">Message sent. Admin will reply from Customer Chats.</div>}<label className="mt-4 block text-xs font-bold">Your question<textarea required rows="5" value={chatMessage} onChange={(e)=>setChatMessage(e.target.value)} placeholder="Write your question here..." className="mt-1 w-full rounded-xl border p-3 font-medium outline-none focus:border-red-500"/></label><button className="mt-4 w-full rounded-xl bg-red-600 py-3 text-xs font-black text-white">Send Message</button></form></div> : null}
 
       {infoModal ? (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/60 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:p-4 backdrop-blur-xs">

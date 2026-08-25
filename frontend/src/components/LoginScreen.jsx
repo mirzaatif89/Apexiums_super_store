@@ -100,12 +100,13 @@ export default function LoginScreen({ logoSrc, storeName, onLogin }) {
 
     setLoading(true);
     try {
-      const registeredUser = { id: Date.now(), name: signupName.trim(), username: signupEmail.trim(), email: signupEmail.trim(), password: signupPassword, joinDate: new Date().toISOString().split('T')[0], role: 'User', loginType: 'user' };
-      const registeredUsers = JSON.parse(localStorage.getItem('apexiums-registered-users') || '[]');
-      localStorage.setItem('apexiums-registered-users', JSON.stringify([...registeredUsers.filter((user) => user.email !== registeredUser.email), registeredUser]));
-      try {
-        await fetch('/api/customers/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: registeredUser.name, username: registeredUser.username, email: registeredUser.email, password: registeredUser.password }) });
-      } catch (e) {}
+      const registration = await fetch('/api/auth/customer-registration/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: signupName.trim(), email: signupEmail.trim(), password: signupPassword }) });
+      if (!registration.ok) {
+        const data = await registration.json().catch(() => ({}));
+        throw new Error(data.message || 'Unable to send verification code.');
+      }
+      setSuccessMsg('Verification code sent. Please complete registration from the main sign-up window.');
+      return;
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

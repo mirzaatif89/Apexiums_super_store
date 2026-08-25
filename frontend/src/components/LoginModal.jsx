@@ -43,6 +43,8 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
   const [signupConfirmPassword, setSignupConfirmPassword] = React.useState('');
   const [showSignupPassword, setShowSignupPassword] = React.useState(false);
   const [termsAccepted, setTermsAccepted] = React.useState(false);
+  const [signupStep, setSignupStep] = React.useState('details');
+  const [verificationCode, setVerificationCode] = React.useState('');
 
   // Status state
   const [loading, setLoading] = React.useState(false);
@@ -60,6 +62,8 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
       setLoading(false);
       setShowSuccessPopup(false);
       setRegisteredUser(null);
+      setSignupStep('details');
+      setVerificationCode('');
       return;
     }
     setTab(initialTab || 'login');
@@ -179,28 +183,6 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
       });
       onClose();
     } catch (err) {
-      if (username) {
-        let matchedUser = null;
-        try {
-          const listStr = localStorage.getItem('apexiums-registered-users');
-          if (listStr) {
-            const list = JSON.parse(listStr);
-            matchedUser = list.find(u => u.email === username || u.username === username);
-          }
-        } catch (e) {}
-
-        const userObj = matchedUser || {
-          id: Date.now(),
-          name: username.split('@')[0] || username,
-          username: username,
-          email: username.includes('@') ? username : `${username}@example.com`,
-          role: 'User',
-          loginType: 'user'
-        };
-
-        setError(err.message || 'Login service is unavailable. Please try again after the server is restarted.');
-        return;
-      }
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
@@ -227,61 +209,38 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
 
     setLoading(true);
     try {
-      const newUser = {
-        id: Date.now(),
-        name: signupName.trim(),
-        username: signupEmail.trim(),
-        email: signupEmail.trim(),
-        password: signupPassword,
-        joinDate: new Date().toISOString().split('T')[0],
-        role: 'User',
-        loginType: 'user'
-      };
-
-      try {
-        const existing = JSON.parse(localStorage.getItem('apexiums-registered-users') || '[]');
-        existing.push(newUser);
-        localStorage.setItem('apexiums-registered-users', JSON.stringify(existing));
-      } catch (e) {}
-
-      try {
-        await fetch('/api/customers/register', {
+      const response = await fetchWithTimeout('/api/auth/customer-registration/start', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: newUser.name, username: newUser.username, email: newUser.email, password: newUser.password })
-        });
-      } catch (e) {}
-
-      try {
-        const response = await fetchWithTimeout('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: signupEmail.trim(), password: signupPassword })
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const registered = {
-            ...newUser,
-            ...data.user,
-            role: data.user?.role || 'User',
-            loginType: 'user'
-          };
-          setRegisteredUser(registered);
-          setShowSuccessPopup(true);
-          return;
-        }
-      } catch (err) {
-        // Fallthrough to client registration
-      }
-
-      setRegisteredUser(newUser);
-      setShowSuccessPopup(true);
+          body: JSON.stringify({ name: signupName.trim(), email: signupEmail.trim(), password: signupPassword })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Unable to send verification code.');
+      setSignupStep('verify');
+      setSuccessMsg(`We sent a 6-digit code to ${signupEmail.trim()}.`);
     } catch (err) {
-      setError('Registration failed. Please try again.');
+      setError(err.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleVerificationSubmit(event) {
+    event.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const response = await fetchWithTimeout('/api/auth/customer-registration/verify', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: signupEmail.trim(), otp: verificationCode })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Unable to verify code.');
+      onLogin({ ...data.user, token: data.token || null, role: 'User', loginType: 'user' });
+      onClose();
+    } catch (err) {
+      setError(err.message || 'Verification failed.');
+    } finally { setLoading(false); }
   }
 
   return (
@@ -471,6 +430,14 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
                     <p className="text-xs text-slate-500">Join Apexiums Super Store</p>
                   </div>
 
+                  {signupStep === 'verify' ? (
+                    <form onSubmit={handleVerificationSubmit} className="space-y-4 rounded-2xl border border-red-100 bg-red-50/40 p-4">
+                      <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 text-[#E8262A]"><Mail size={19} /></div><div><p className="text-sm font-extrabold text-slate-900">Check your inbox</p><p className="text-[11px] text-slate-500">Enter the code sent to {signupEmail}</p></div></div>
+                      <input autoFocus inputMode="numeric" maxLength={6} value={verificationCode} onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))} placeholder="000000" className="h-12 w-full rounded-xl border border-slate-200 bg-white text-center text-xl font-black tracking-[0.45em] text-slate-900 outline-none focus:border-[#E8262A] focus:ring-2 focus:ring-red-100" required />
+                      <button type="submit" disabled={loading || verificationCode.length !== 6} className="w-full h-11 rounded-xl bg-[#E8262A] text-xs font-bold uppercase tracking-wider text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-70">{loading ? 'Verifying...' : 'Verify & Start Shopping'}</button>
+                      <button type="button" onClick={() => { setSignupStep('details'); setVerificationCode(''); setError(''); }} className="w-full text-xs font-bold text-slate-500 hover:text-[#E8262A]">Use a different email</button>
+                    </form>
+                  ) : (
                   <form onSubmit={handleSignupSubmit} className="space-y-3">
                     {/* Full Name */}
                     <div>
@@ -490,14 +457,14 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
 
                     {/* Email / Username */}
                     <div>
-                      <label className="block mb-1 text-xs font-bold text-slate-700">Email or Mobile</label>
+                      <label className="block mb-1 text-xs font-bold text-slate-700">Email Address</label>
                       <div className="relative flex items-center">
                         <Mail size={16} className="absolute left-3 text-slate-400" />
                         <input
-                          type="text"
+                          type="email"
                           value={signupEmail}
                           onChange={(e) => setSignupEmail(e.target.value)}
-                          placeholder="name@example.com or username"
+                          placeholder="name@example.com"
                           className="w-full h-10 pl-9 pr-3 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-[#E8262A] focus:ring-2 focus:ring-red-100 transition"
                           required
                         />
@@ -580,6 +547,7 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
                       <span>{loading ? 'Creating Account...' : 'Create Account'}</span>
                     </button>
                   </form>
+                  )}
 
                   <div className="text-center pt-2">
                     <p className="text-xs text-slate-500">

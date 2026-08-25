@@ -47,15 +47,10 @@ export default function UserProfileView({
       const detailed = await Promise.all(apiOrders.map(async (order) => {
         try { const detail = await fetch(`/api/orders/${order.id}`); const result = detail.ok ? await detail.json() : order; return { ...order, ...(result.order || result), items: result.items || order.items || [] }; } catch { return order; }
       }));
-      const saved = JSON.parse(localStorage.getItem('apexiums-my-orders') || '[]');
       const activeOrders = detailed.filter((order) => !['Cancelled', 'Canceled'].includes(order.order_status || order.status));
-      // Server-backed orders are the source of truth. Keep only offline orders
-      // that have not received a backend ID yet, preventing cancelled orders
-      // from reappearing through localStorage.
-      const localOnly = saved.filter((order) => !order.backendOrderId && !['Cancelled', 'Canceled'].includes(order.order_status || order.status));
-      setMyOrders([...activeOrders, ...localOnly]);
+      setMyOrders(activeOrders);
     } catch {
-      setMyOrders(JSON.parse(localStorage.getItem('apexiums-my-orders') || '[]'));
+      setMyOrders([]);
     } finally { setOrdersLoading(false); }
   }, [session?.email, profileEmail]);
 
@@ -64,26 +59,11 @@ export default function UserProfileView({
     event.preventDefault();
     const id = trackId.trim();
     if (!id) return;
-    const local = JSON.parse(localStorage.getItem('apexiums-my-orders') || '[]').find((order) => String(order.id) === id);
-    const lookupId = local?.backendOrderId || id.replace(/^ORD-/i, '');
-    try { const response = await fetch(`/api/orders/${lookupId}`); const data = response.ok ? await response.json() : null; const status = data?.order?.order_status || data?.order_status || local?.status || 'Placed'; setTrackedOrder({ id, status: status === 'Pending' ? 'Placed' : status }); } catch { setTrackedOrder({ id, status: local?.status || 'Placed' }); }
+    const lookupId = id.replace(/^ORD-/i, '');
+    try { const response = await fetch(`/api/orders/${lookupId}`); const data = response.ok ? await response.json() : null; const status = data?.order?.order_status || data?.order_status || 'Placed'; setTrackedOrder({ id, status: status === 'Pending' ? 'Placed' : status }); } catch { setTrackedOrder(null); }
   };
   const [profilePhone, setProfilePhone] = useState(session?.phone || '603.555.0123');
-  const [avatarUrl, setAvatarUrl] = useState(() => {
-    if (session?.avatar) return session.avatar;
-    if (typeof localStorage !== 'undefined') {
-      const savedAvatar = localStorage.getItem('apexiums-user-avatar');
-      if (savedAvatar) return savedAvatar;
-      try {
-        const savedSession = localStorage.getItem('apexiums-auth-session');
-        if (savedSession) {
-          const parsed = JSON.parse(savedSession);
-          if (parsed.avatar) return parsed.avatar;
-        }
-      } catch (e) {}
-    }
-    return 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=400&q=80';
-  });
+  const [avatarUrl, setAvatarUrl] = useState(session?.avatar || 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=400&q=80');
 
   React.useEffect(() => {
     if (session) {
@@ -92,9 +72,6 @@ export default function UserProfileView({
       if (session.phone) setProfilePhone(session.phone);
       if (session.avatar) {
         setAvatarUrl(session.avatar);
-      } else if (typeof localStorage !== 'undefined') {
-        const savedAvatar = localStorage.getItem('apexiums-user-avatar');
-        if (savedAvatar) setAvatarUrl(savedAvatar);
       }
     }
   }, [session]);
@@ -123,42 +100,9 @@ export default function UserProfileView({
     setTimeout(() => setToastMessage(''), 3000);
   };
 
-  const persistProfileData = (newAvatar, newName, newEmail, newPhone) => {
-    try {
-      const currentAvatar = newAvatar !== undefined ? newAvatar : avatarUrl;
-      const currentName = newName !== undefined ? newName : profileName;
-      const currentEmail = newEmail !== undefined ? newEmail : profileEmail;
-      const currentPhone = newPhone !== undefined ? newPhone : profilePhone;
-
-      if (currentAvatar) {
-        localStorage.setItem('apexiums-user-avatar', currentAvatar);
-      }
-
-      const savedSessionStr = localStorage.getItem('apexiums-auth-session');
-      let currentSession = savedSessionStr ? JSON.parse(savedSessionStr) : (session || {});
-      const updatedSession = {
-        ...currentSession,
-        name: currentName,
-        email: currentEmail,
-        phone: currentPhone,
-        avatar: currentAvatar
-      };
-      localStorage.setItem('apexiums-auth-session', JSON.stringify(updatedSession));
-
-      const regUsersStr = localStorage.getItem('apexiums-registered-users');
-      if (regUsersStr) {
-        const usersList = JSON.parse(regUsersStr);
-        const updatedUsers = usersList.map((u) => {
-          if (u.email === currentEmail || u.username === currentSession?.username || u.id === currentSession?.id) {
-            return { ...u, name: currentName, phone: currentPhone, avatar: currentAvatar };
-          }
-          return u;
-        });
-        localStorage.setItem('apexiums-registered-users', JSON.stringify(updatedUsers));
-      }
-    } catch (e) {
-      console.error('Failed to persist profile picture', e);
-    }
+  const persistProfileData = async (newAvatar, newName, _newEmail, newPhone) => {
+    const response = await fetch('/api/customers/me', { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newName, phone: newPhone, avatar_url: newAvatar }) });
+    if (!response.ok) throw new Error('Unable to save profile to server.');
   };
 
   const handleFileUpload = (e) => {

@@ -7,46 +7,18 @@ import { isAdminRole, isSuperAdminRole, roleKey } from './utils/roles';
 import InvestorPortal from './pages/investor/InvestorPortal.jsx';
 import PrivacyPolicyModal from './components/PrivacyPolicyModal.jsx';
 
-const AUTH_KEY = 'apexiums-auth-session';
-
-function readSession() {
-  try {
-    return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
-  } catch {
-    return null;
-  }
-}
-
-function saveSession(session) {
-  if (!session) {
-    localStorage.removeItem(AUTH_KEY);
-    return;
-  }
-
-  localStorage.setItem(AUTH_KEY, JSON.stringify(session));
-}
-
 function AppContent() {
-  const [session, setSession] = React.useState(() => readSession());
+  const [session, setSession] = React.useState(null);
 
   React.useEffect(() => {
-    const syncSessionAcrossTabs = (event) => {
-      if (event.key === AUTH_KEY || event.key === null) {
-        setSession(readSession());
-      }
-    };
-
-    window.addEventListener('storage', syncSessionAcrossTabs);
-    return () => window.removeEventListener('storage', syncSessionAcrossTabs);
+    fetch('/api/auth/session', { credentials: 'include' })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => { if (data?.user) setSession(data.user); })
+      .catch(() => {});
   }, []);
 
   React.useEffect(() => {
-    const keyName = 'elistin-visitor-key';
-    let visitorKey = localStorage.getItem(keyName);
-    if (!visitorKey) {
-      visitorKey = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      localStorage.setItem(keyName, visitorKey);
-    }
+    const visitorKey = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     fetch('/api/analytics/visit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ visitorKey }) }).catch(() => {});
   }, []);
 
@@ -59,7 +31,6 @@ function AppContent() {
           : user.businessId || user.id || null,
     };
 
-    saveSession(nextSession);
     setSession(nextSession);
     if (isAdminRole(user.role) || user.loginType === 'admin') {
       window.history.pushState({ page: 'dashboard' }, '', '/dashboard');
@@ -67,7 +38,7 @@ function AppContent() {
   }
 
   function handleLogout() {
-    saveSession(null);
+    fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
     setSession(null);
     window.history.pushState({}, '', '/');
   }
