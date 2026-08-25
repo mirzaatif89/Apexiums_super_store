@@ -802,10 +802,17 @@ function getMailTransport() {
   // Environment-variable editors sometimes preserve an invisible leading or
   // trailing space. Gmail treats that as a different username/password.
   const user = String(process.env.SMTP_USER || '').trim();
-  const pass = String(process.env.SMTP_PASS || '').trim();
+  const host = String(process.env.SMTP_HOST || 'smtp.gmail.com').trim();
+  const rawPass = String(process.env.SMTP_PASS || '');
+  // Google displays App Passwords in four groups. Accept either the displayed
+  // `xxxx xxxx xxxx xxxx` form or the compact 16-character form. Do not alter
+  // meaningful internal spaces for non-Gmail SMTP providers.
+  const pass = /(^|\.)smtp\.gmail\.com$/i.test(host)
+    ? rawPass.replace(/\s+/g, '')
+    : rawPass.trim();
   if (!user || !pass) throw new Error('Email service is not configured. Set SMTP_USER and SMTP_PASS in .env.');
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    host,
     port: Number(process.env.SMTP_PORT || 465),
     secure: String(process.env.SMTP_SECURE || 'true') === 'true',
     auth: { user, pass },
