@@ -814,7 +814,10 @@ function getMailTransport() {
 }
 
 async function sendRegistrationOtp({ email, name, otp }) {
-  const from = process.env.SMTP_FROM || `Apexiums <${process.env.SMTP_USER}>`;
+  const configuredFrom = String(process.env.SMTP_FROM || '').trim();
+  // cPanel's variable editor can accidentally save only the display name.
+  // Always fall back to the authenticated Gmail address if no email is present.
+  const from = configuredFrom.includes('@') ? configuredFrom : `Apexiums <${process.env.SMTP_USER}>`;
   await getMailTransport().sendMail({ from, to: email, subject: `${otp} is your Apexiums verification code`, html: createOtpEmail({ name, otp }) });
 }
 
