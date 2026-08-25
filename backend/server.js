@@ -806,7 +806,10 @@ function getMailTransport() {
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: Number(process.env.SMTP_PORT || 465),
     secure: String(process.env.SMTP_SECURE || 'true') === 'true',
-    auth: { user, pass }
+    auth: { user, pass },
+    // Some shared hosts intercept outbound SMTP and present their own TLS
+    // certificate. Allow this only when explicitly enabled in environment.
+    tls: { rejectUnauthorized: String(process.env.SMTP_REJECT_UNAUTHORIZED || 'false') === 'true' }
   });
 }
 
