@@ -822,6 +822,16 @@ function getMailTransport() {
   });
 }
 
+function smtpCredentialTag() {
+  // This is deliberately a one-way, short identifier—not the password. It
+  // lets us compare the credential used by a running server with the intended
+  // one when cPanel/Passenger keeps an old environment in memory.
+  const host = String(process.env.SMTP_HOST || 'smtp.gmail.com').trim();
+  const rawPass = String(process.env.SMTP_PASS || '');
+  const pass = /(^|\.)smtp\.gmail\.com$/i.test(host) ? rawPass.replace(/\s+/g, '') : rawPass.trim();
+  return crypto.createHash('sha256').update(pass).digest('hex').slice(0, 12);
+}
+
 async function sendRegistrationOtp({ email, name, otp }) {
   const configuredFrom = String(process.env.SMTP_FROM || '').trim();
   // cPanel's variable editor can accidentally save only the display name.
@@ -834,7 +844,7 @@ async function sendRegistrationOtp({ email, name, otp }) {
     // recipient or OTP. Keep the provider response out of the public UI and
     // show the administrator the exact remediation.
     if (error?.code === 'EAUTH' || Number(error?.responseCode) === 535) {
-      throw new Error('Gmail rejected SMTP authentication. Generate a new Google App Password for SMTP_USER, save its 16 characters as SMTP_PASS (without spaces), then restart the Node.js app.');
+      throw new Error(`Gmail rejected SMTP authentication (server credential tag: ${smtpCredentialTag()}). The server is not using the intended App Password; stop and start the Node.js app after saving SMTP_PASS.`);
     }
     throw error;
   }
