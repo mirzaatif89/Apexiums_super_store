@@ -799,8 +799,10 @@ function createOtpEmail({ name, otp }) {
 }
 
 function getMailTransport() {
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  // Environment-variable editors sometimes preserve an invisible leading or
+  // trailing space. Gmail treats that as a different username/password.
+  const user = String(process.env.SMTP_USER || '').trim();
+  const pass = String(process.env.SMTP_PASS || '').trim();
   if (!user || !pass) throw new Error('Email service is not configured. Set SMTP_USER and SMTP_PASS in .env.');
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
@@ -818,7 +820,17 @@ async function sendRegistrationOtp({ email, name, otp }) {
   // cPanel's variable editor can accidentally save only the display name.
   // Always fall back to the authenticated Gmail address if no email is present.
   const from = configuredFrom.includes('@') ? configuredFrom : `Apexiums <${process.env.SMTP_USER}>`;
-  await getMailTransport().sendMail({ from, to: email, subject: `${otp} is your Apexiums verification code`, html: createOtpEmail({ name, otp }) });
+  try {
+    await getMailTransport().sendMail({ from, to: email, subject: `${otp} is your Apexiums verification code`, html: createOtpEmail({ name, otp }) });
+  } catch (error) {
+    // Gmail's 535 is an authentication rejection, not an issue with the
+    // recipient or OTP. Keep the provider response out of the public UI and
+    // show the administrator the exact remediation.
+    if (error?.code === 'EAUTH' || Number(error?.responseCode) === 535) {
+      throw new Error('Gmail rejected SMTP authentication. Generate a new Google App Password for SMTP_USER, save its 16 characters as SMTP_PASS (without spaces), then restart the Node.js app.');
+    }
+    throw error;
+  }
 }
 
 const TOKEN_SECRET = process.env.JWT_SECRET || 'local-development-secret-change-me';
