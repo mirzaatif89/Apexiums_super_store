@@ -1321,7 +1321,7 @@ app.post('/api/auth/customer-registration/start', async (req, res) => {
     res.status(202).json({ message: 'Verification code sent. Please check your inbox.', email });
   } catch (error) {
     console.error('Registration OTP error:', error.message);
-    res.status(500).json({ message: error.message.includes('Email service') ? error.message : 'Unable to send verification email. Please try again.' });
+    res.status(500).json({ message: error.message.includes('Email service') ? error.message : `Unable to send verification email: ${error.message}` });
   }
 });
 
