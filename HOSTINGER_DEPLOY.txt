@@ -1,0 +1,20 @@
+HOSTINGER DEPLOYMENT (simple)
+
+1. Upload this ZIP to the Node.js application's ROOT folder:
+   /home/apexium2/elistin.com
+
+2. Extract it there. The extracted folder must contain app.js, package.json,
+   .env, backend/, frontend/, and .htaccess directly in the application root.
+
+3. In hPanel -> Node.js:
+   - Node.js version: 20 or higher
+   - Application root: /home/apexium2/elistin.com
+   - Application startup file: app.js
+   - Click NPM Install, then Restart.
+
+4. Do not upload node_modules. Hostinger creates it when you click NPM Install.
+
+5. The ready-made frontend build is already included at frontend/dist.
+
+If your Hostinger application root differs, update both PassengerAppRoot and
+PassengerNodejs in .htaccess to the paths shown by hPanel, then restart.
