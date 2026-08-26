@@ -798,6 +798,22 @@ function createOtpEmail({ name, otp }) {
     </div></body></html>`;
 }
 
+function createElistinOtpEmail({ name, otp }) {
+  const safeName = String(name || 'Customer').replace(/[<>&"']/g, '');
+  return `<!doctype html><html><body style="margin:0;padding:0;background:#f3f6fb;font-family:Arial,Helvetica,sans-serif;color:#172033">
+    <div style="padding:28px 12px"><div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e5eaf2;border-radius:20px;overflow:hidden;box-shadow:0 8px 28px rgba(15,23,42,.08)">
+      <div style="padding:28px 32px 26px;text-align:center;background:linear-gradient(135deg,#ed1c3a 0%,#c70f34 100%);color:#ffffff">
+        <img src="cid:elistin-logo" width="106" alt="Elistin" style="display:block;width:106px;max-width:106px;height:auto;margin:0 auto 14px;border:0;border-radius:10px;background:#ffffff" />
+        <div style="font-size:24px;font-weight:800;letter-spacing:.2px">Verify your email</div>
+        <div style="margin-top:7px;font-size:14px;line-height:20px;color:#ffe8ed">One quick step to secure your Elistin account</div>
+      </div>
+      <div style="padding:32px"><p style="margin:0 0 14px;font-size:17px;font-weight:700">Hi ${safeName},</p><p style="margin:0 0 25px;line-height:24px;font-size:15px;color:#526075">Welcome to Elistin. Enter the verification code below to complete your registration and start shopping.</p>
+      <div style="margin:0 0 24px;padding:19px 16px;text-align:center;border-radius:14px;background:#fff4f6;border:1px dashed #f38aa0;color:#c70f34;font-size:32px;font-weight:800;letter-spacing:9px">${otp}</div>
+      <p style="margin:0;padding:14px 16px;border-radius:10px;background:#f8fafc;line-height:21px;font-size:13px;color:#64748b"><strong style="color:#334155">For your security:</strong> this code expires in 10 minutes. Never share it with anyone. If you did not create an Elistin account, you can safely ignore this email.</p></div>
+      <div style="padding:18px 32px;background:#f8fafc;border-top:1px solid #edf1f6;text-align:center;font-size:12px;color:#94a3b8">&copy; ${new Date().getFullYear()} Elistin. Shop with confidence.</div>
+    </div></div></body></html>`;
+}
+
 function getMailTransport() {
   // Environment-variable editors sometimes preserve an invisible leading or
   // trailing space. Gmail treats that as a different username/password.
@@ -836,9 +852,15 @@ async function sendRegistrationOtp({ email, name, otp }) {
   const configuredFrom = String(process.env.SMTP_FROM || '').trim();
   // cPanel's variable editor can accidentally save only the display name.
   // Always fall back to the authenticated Gmail address if no email is present.
-  const from = configuredFrom.includes('@') ? configuredFrom : `Apexiums <${process.env.SMTP_USER}>`;
+  const from = configuredFrom.includes('@') ? configuredFrom : `Elistin <${process.env.SMTP_USER}>`;
   try {
-    await getMailTransport().sendMail({ from, to: email, subject: `${otp} is your Apexiums verification code`, html: createOtpEmail({ name, otp }) });
+    await getMailTransport().sendMail({
+      from,
+      to: email,
+      subject: `${otp} is your Elistin verification code`,
+      html: createElistinOtpEmail({ name, otp }),
+      attachments: [{ filename: 'elistin-logo.jpg', path: path.join(frontendPath, 'images', 'logo.jpg'), cid: 'elistin-logo' }]
+    });
   } catch (error) {
     // Gmail's 535 is an authentication rejection, not an issue with the
     // recipient or OTP. Keep the provider response out of the public UI and
