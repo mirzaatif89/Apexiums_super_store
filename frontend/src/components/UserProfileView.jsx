@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import { openPrivacyPolicy, PrivacyPolicyContent } from './PrivacyPolicyModal';
 import {
   ArrowLeft,
-  Camera,
   ChevronRight,
   CreditCard,
   Lock,
@@ -63,7 +62,9 @@ export default function UserProfileView({
     try { const response = await fetch(`/api/orders/${lookupId}`); const data = response.ok ? await response.json() : null; const status = data?.order?.order_status || data?.order_status || 'Placed'; setTrackedOrder({ id, status: status === 'Pending' ? 'Placed' : status }); } catch { setTrackedOrder(null); }
   };
   const [profilePhone, setProfilePhone] = useState(session?.phone || '603.555.0123');
-  const [avatarUrl, setAvatarUrl] = useState(session?.avatar || 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=400&q=80');
+  // Start with a clean placeholder. A remote stock image can fail to load and
+  // leaves the browser's broken-image text over the profile card.
+  const [avatarUrl, setAvatarUrl] = useState(session?.avatar || null);
 
   React.useEffect(() => {
     if (session) {
@@ -198,22 +199,12 @@ export default function UserProfileView({
             className="h-24 w-24 overflow-hidden rounded-full bg-slate-100 ring-4 ring-red-50 shadow-md mx-auto flex items-center justify-center cursor-pointer relative"
           >
             {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt={profileName}
-                className="w-full h-full object-cover"
-              />
+              <img src={avatarUrl} alt="" onError={() => setAvatarUrl(null)} className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-300">
-                <User className="w-11 h-11" />
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 text-slate-400">
+                <User className="h-11 w-11 stroke-[1.5]" />
               </div>
             )}
-
-            {/* Hover overlay for upload prompt */}
-            <div className="absolute inset-0 bg-slate-900/30 text-white opacity-0 group-hover:opacity-100 transition flex flex-col items-center justify-center gap-1 text-[11px] font-semibold">
-              <Camera className="w-5 h-5 text-white" />
-              <span>Upload</span>
-            </div>
           </div>
 
           {/* Red Edit Pencil Floating Button */}
@@ -315,13 +306,13 @@ export default function UserProfileView({
           onClick={() => setActiveModal('address')}
           className="w-full flex items-center justify-between py-4 border-b border-slate-100 hover:bg-slate-50/80 px-2 rounded-xl transition cursor-pointer group"
         >
-          <div className="flex items-center gap-4">
-            <MapPin className="w-5 h-5 text-[#E8262A] stroke-[2]" />
+          <div className="flex items-center gap-3">
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-red-50 text-[#E8262A]"><MapPin className="h-4 w-4 stroke-[2]" /></span>
             <span className="text-sm font-semibold text-slate-800 group-hover:text-slate-900">
               Manage address
             </span>
           </div>
-          <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-slate-500 transition" />
+          <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-[#E8262A] transition" />
         </button>
 
         {/* Payment method */}
@@ -330,13 +321,13 @@ export default function UserProfileView({
           onClick={() => setActiveModal('payment')}
           className="w-full flex items-center justify-between py-4 border-b border-slate-100 hover:bg-slate-50/80 px-2 rounded-xl transition cursor-pointer group"
         >
-          <div className="flex items-center gap-4">
-            <CreditCard className="w-5 h-5 text-[#E8262A] stroke-[2]" />
+          <div className="flex items-center gap-3">
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-red-50 text-[#E8262A]"><CreditCard className="h-4 w-4 stroke-[2]" /></span>
             <span className="text-sm font-semibold text-slate-800 group-hover:text-slate-900">
               Payment method
             </span>
           </div>
-          <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-slate-500 transition" />
+          <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-[#E8262A] transition" />
         </button>
 
         {/* Privacy Policy */}
@@ -345,13 +336,13 @@ export default function UserProfileView({
           onClick={openPrivacyPolicy}
           className="w-full flex items-center justify-between py-4 border-b border-slate-100 hover:bg-slate-50/80 px-2 rounded-xl transition cursor-pointer group"
         >
-          <div className="flex items-center gap-4">
-            <ShieldCheck className="w-5 h-5 text-[#E8262A] stroke-[2]" />
+          <div className="flex items-center gap-3">
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-red-50 text-[#E8262A]"><ShieldCheck className="h-4 w-4 stroke-[2]" /></span>
             <span className="text-sm font-semibold text-slate-800 group-hover:text-slate-900">
               Privacy Policy
             </span>
           </div>
-          <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-slate-500 transition" />
+          <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-[#E8262A] transition" />
         </button>
 
         {/* Setting */}
@@ -360,13 +351,13 @@ export default function UserProfileView({
           onClick={() => setActiveModal('settings')}
           className="w-full flex items-center justify-between py-4 hover:bg-slate-50/80 px-2 rounded-xl transition cursor-pointer group"
         >
-          <div className="flex items-center gap-4">
-            <Settings className="w-5 h-5 text-[#E8262A] stroke-[2]" />
+          <div className="flex items-center gap-3">
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-red-50 text-[#E8262A]"><Settings className="h-4 w-4 stroke-[2]" /></span>
             <span className="text-sm font-semibold text-slate-800 group-hover:text-slate-900">
               Setting
             </span>
           </div>
-          <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-slate-500 transition" />
+          <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-[#E8262A] transition" />
         </button>
       </div>
 

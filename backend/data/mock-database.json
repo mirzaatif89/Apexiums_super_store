@@ -1,7 +1,57 @@
 {
   "tables": {
-    "banners": [],
-    "promotions": [],
+    "banners": [
+      {
+        "id": 1,
+        "created_at": "2026-08-26T11:07:00.769Z",
+        "business_id": 1,
+        "title": "Big Summer Electronics Sale",
+        "image_url": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1400&q=80",
+        "link": "/catalog",
+        "position": 1,
+        "status": "Active"
+      },
+      {
+        "id": 2,
+        "created_at": "2026-08-26T11:07:00.773Z",
+        "business_id": 1,
+        "title": "Fashion That Feels Premium",
+        "image_url": "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1400&q=80",
+        "link": "/catalog",
+        "position": 2,
+        "status": "Active"
+      },
+      {
+        "id": 3,
+        "created_at": "2026-08-26T11:07:00.777Z",
+        "business_id": 1,
+        "title": "Home Deals You Cannot Miss",
+        "image_url": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=1400&q=80",
+        "link": "/catalog",
+        "position": 3,
+        "status": "Active"
+      }
+    ],
+    "promotions": [
+      {
+        "id": 1,
+        "created_at": "2026-08-26T11:07:00.780Z",
+        "business_id": 1,
+        "name": "Fast Delivery",
+        "image_url": "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=900&q=80",
+        "show_on_website": "Yes",
+        "status": "Active"
+      },
+      {
+        "id": 2,
+        "created_at": "2026-08-26T11:07:00.784Z",
+        "business_id": 1,
+        "name": "Cash on Delivery",
+        "image_url": "https://images.unsplash.com/photo-1607082350899-7e105aa886ae?auto=format&fit=crop&w=900&q=80",
+        "show_on_website": "Yes",
+        "status": "Active"
+      }
+    ],
     "coupons": [],
     "categories": [
       {
@@ -349,11 +399,12 @@
         "comment": "Its really real",
         "source": "manual"
       }
-    ]
+    ],
+    "customer_email_verifications": []
   },
   "autoIncrement": {
-    "banners": 1,
-    "promotions": 1,
+    "banners": 4,
+    "promotions": 3,
     "coupons": 1,
     "categories": 2,
     "products": 3,
@@ -381,6 +432,7 @@
     "business_accounts": 2,
     "site_visits": 2,
     "finance_transactions": 1,
-    "reviews": 2
+    "reviews": 2,
+    "customer_email_verifications": 1
   }
 }
