@@ -12,12 +12,13 @@ function AppContent() {
   const [session, setSession] = React.useState(null);
 
   React.useEffect(() => {
-    // Customer sessions use the secure HTTP-only cookie. Seller, investor and
-    // admin portals use their own signed/login token, so retain that session
-    // client-side to survive a browser refresh.
+    // Customer and seller sessions use secure HTTP-only cookies backed by the
+    // server database. Only the remaining legacy business portals are retained
+    // client-side while they use their existing token flow.
     try {
       const stored = JSON.parse(localStorage.getItem('elistin-portal-session') || 'null');
-      if (stored?.user && stored?.savedAt && Date.now() - stored.savedAt < 1000 * 60 * 60 * 24 * 7) setSession(stored.user);
+      if (roleKey(stored?.user?.role) === 'seller') localStorage.removeItem('elistin-portal-session');
+      if (stored?.user && roleKey(stored.user.role) !== 'seller' && stored?.savedAt && Date.now() - stored.savedAt < 1000 * 60 * 60 * 24 * 7) setSession(stored.user);
     } catch {}
     fetch('/api/auth/session', { credentials: 'include' })
       .then((response) => response.ok ? response.json() : null)
@@ -40,7 +41,7 @@ function AppContent() {
     };
 
     setSession(nextSession);
-    if (roleKey(nextSession.role) !== 'user') {
+    if (!['user', 'seller'].includes(roleKey(nextSession.role))) {
       localStorage.setItem('elistin-portal-session', JSON.stringify({ user: nextSession, savedAt: Date.now() }));
     } else {
       localStorage.removeItem('elistin-portal-session');

@@ -9,11 +9,10 @@ export default function SellerPortal({ session, onLogout }) {
   const [error, setError] = React.useState('');
 
   React.useEffect(() => {
-    if (!session?.token) return undefined;
     let mounted = true;
     const load = async () => {
       try {
-        const response = await fetch('/api/seller/me/dashboard', { headers: { Authorization: `Bearer ${session.token}` } });
+        const response = await fetch('/api/seller/me/dashboard', { credentials: 'include' });
         if (!response.ok) throw new Error('Could not load your seller workspace.');
         const next = await response.json();
         if (mounted) { setData(next); setError(''); }
@@ -22,7 +21,7 @@ export default function SellerPortal({ session, onLogout }) {
     load();
     const interval = window.setInterval(load, 30000);
     return () => { mounted = false; window.clearInterval(interval); };
-  }, [session?.token]);
+  }, []);
 
   const views = {
     dashboard: <Dashboard summary={data.summary} profile={data.profile} />,

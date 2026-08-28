@@ -161,6 +161,31 @@ export const AdminProvider = ({ children, session }) => {
   });
   const [settings, setSettings] = useState(initialSettings);
 
+  // Sellers are always loaded from the database. This keeps the management
+  // table accurate after a browser refresh or when another admin adds a seller.
+  useEffect(() => {
+    let active = true;
+    fetch("/api/wholesellers?limit=500", { headers: apiHeaders() })
+      .then((response) => (response.ok ? response.json() : { rows: [] }))
+      .then((data) => {
+        if (!active) return;
+        setSellers((data.rows || []).map((row) => ({
+          ...row,
+          storeName: row.business_name || "Seller store",
+          sellerName: row.name || row.contact_person || "Seller",
+          contact: row.contact_person || row.name || "",
+          productsCount: Number(row.products_supplied ? String(row.products_supplied).split(',').filter(Boolean).length : 0),
+          ordersCount: Number(row.total_purchases || 0),
+          revenue: Number(row.total_purchases || 0),
+          ratings: 5,
+          joinedDate: row.created_at ? String(row.created_at).slice(0, 10) : "-",
+          verificationStatus: row.status === "Active" ? "Verified" : "Pending",
+        })));
+      })
+      .catch(() => { if (active) setSellers([]); });
+    return () => { active = false; };
+  }, [session?.role, session?.businessId]);
+
   useEffect(() => {
     let active = true;
     fetch("/api/investors?limit=500", { headers: apiHeaders() })
@@ -1224,7 +1249,6 @@ export const AdminProvider = ({ children, session }) => {
       ratings: 5.0,
       joinedDate: new Date().toISOString().split("T")[0],
     };
-    setSellers((prev) => [newSeller, ...prev]);
     const sellerResponse = await fetch("/api/wholesellers", {
       method: "POST",
       headers: apiHeaders(),
@@ -1261,6 +1285,14 @@ export const AdminProvider = ({ children, session }) => {
       })
     });
     if (!accountResponse.ok) throw new Error((await accountResponse.json().catch(() => ({}))).message || 'Seller portal account could not be created.');
+    const savedSeller = await sellerResponse.json();
+    setSellers((prev) => [{
+      ...newSeller,
+      ...savedSeller,
+      id: savedSeller.id,
+      storeName: savedSeller.business_name || newSeller.storeName,
+      sellerName: savedSeller.name || newSeller.sellerName,
+    }, ...prev]);
     addToast(`New seller "${newSeller.storeName}" registered!`, "success");
   };
 

@@ -528,6 +528,18 @@ const schemas = [
     INDEX idx_customer_sessions_customer (customer_id),
     INDEX idx_customer_sessions_expiry (expires_at)
   )`,
+  `CREATE TABLE IF NOT EXISTS business_sessions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    business_account_id INT NOT NULL,
+    token_hash CHAR(64) NOT NULL UNIQUE,
+    user_agent VARCHAR(500),
+    ip_address VARCHAR(64),
+    expires_at DATETIME NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_business_sessions_account (business_account_id),
+    INDEX idx_business_sessions_expiry (expires_at)
+  )`,
   `CREATE TABLE IF NOT EXISTS customer_login_history (
     id INT AUTO_INCREMENT PRIMARY KEY,
     customer_id INT NOT NULL,
@@ -805,6 +817,32 @@ function getCustomerToken(req) {
   return bearer || getCookies(req).apexiums_customer_session || '';
 }
 
+function getPortalToken(req) {
+  return getCookies(req).elistin_portal_session || '';
+}
+
+async function createPortalSession(req, res, account) {
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
+  const userAgent = String(req.headers['user-agent'] || '').slice(0, 500) || null;
+  const ipAddress = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '').split(',')[0].trim().slice(0, 64) || null;
+  await pool.query('INSERT INTO business_sessions (business_account_id, token_hash, user_agent, ip_address, expires_at) VALUES (?, ?, ?, ?, ?)', [account.id, sessionTokenHash(token), userAgent, ipAddress, expiresAt]);
+  res.setHeader('Set-Cookie', `elistin_portal_session=${token}; HttpOnly; Path=/; Max-Age=${60 * 60 * 24 * 7}; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+}
+
+async function getCurrentPortalAccount(req) {
+  const token = getPortalToken(req);
+  if (!token) return null;
+  const [[session]] = await pool.query('SELECT * FROM business_sessions WHERE token_hash = ? LIMIT 1', [sessionTokenHash(token)]);
+  if (!session || new Date(session.expires_at).getTime() < Date.now()) {
+    if (session) await pool.query('DELETE FROM business_sessions WHERE id = ?', [session.id]);
+    return null;
+  }
+  await pool.query('UPDATE business_sessions SET last_used_at = NOW() WHERE id = ?', [session.id]);
+  const [[account]] = await pool.query('SELECT * FROM business_accounts WHERE id = ? LIMIT 1', [session.business_account_id]);
+  return account || null;
+}
+
 async function createCustomerSession(req, res, customer) {
   const token = crypto.randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 14);
@@ -955,7 +993,14 @@ function createSellerToken(account) {
   return `${payload}.${signature}`;
 }
 
-function requireSeller(req, res, next) {
+async function requireSeller(req, res, next) {
+  try {
+    const account = await getCurrentPortalAccount(req);
+    if (account && String(account.role || '').toLowerCase() === 'seller' && account.status === 'Active') {
+      req.sellerAuth = { sub: Number(account.id), role: 'Seller', businessId: Number(account.id) };
+      return next();
+    }
+  } catch { /* fall back to the legacy bearer token during a rolling update */ }
   const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
   const [payload, signature] = token.split('.');
   if (!payload || !signature) return res.status(401).json({ message: 'A valid seller session is required.' });
@@ -1524,11 +1569,11 @@ app.post('/api/auth/login', async (req, res) => {
     if (!verifyPassword(password, account.password_hash)) return res.status(401).json({ message: 'Invalid credentials' });
     await pool.query('UPDATE business_accounts SET last_login = NOW() WHERE id = ?', [account.id]);
     if (String(account.role || '').replace(/[\s_-]+/g, '').toLowerCase() === 'seller') {
+      await createPortalSession(req, res, account);
       return res.json({
         user: { ...safeBusinessAccount(account), role: 'Seller', businessId: account.id, sellerId: account.id },
         businessId: account.id,
-        role: 'Seller',
-        token: createSellerToken(account)
+        role: 'Seller'
       });
     }
     res.json({
@@ -1558,16 +1603,25 @@ app.get('/api/seller/me/dashboard', requireSeller, async (req, res) => {
 app.get('/api/auth/session', async (req, res) => {
   try {
     const customer = await getCurrentCustomer(req);
-    if (!customer) return res.status(401).json({ message: 'No active customer session.' });
-    const { password_hash, plain_password, ...safeCustomer } = customer;
-    res.json({ user: { ...safeCustomer, avatar: safeCustomer.avatar_url || null, role: 'User', loginType: 'user' } });
+    if (customer) {
+      const { password_hash, plain_password, ...safeCustomer } = customer;
+      return res.json({ user: { ...safeCustomer, avatar: safeCustomer.avatar_url || null, role: 'User', loginType: 'user' } });
+    }
+    const account = await getCurrentPortalAccount(req);
+    if (account && account.status === 'Active' && String(account.role || '').toLowerCase() === 'seller') {
+      return res.json({ user: { ...safeBusinessAccount(account), role: 'Seller', businessId: account.id, sellerId: account.id } });
+    }
+    return res.status(401).json({ message: 'No active session.' });
   } catch (error) { res.status(500).json({ message: 'Unable to restore session.' }); }
 });
 
 app.post('/api/auth/logout', async (req, res) => {
   const token = getCustomerToken(req);
   if (token) await pool.query('DELETE FROM customer_sessions WHERE token_hash = ?', [sessionTokenHash(token)]);
+  const portalToken = getPortalToken(req);
+  if (portalToken) await pool.query('DELETE FROM business_sessions WHERE token_hash = ?', [sessionTokenHash(portalToken)]);
   res.setHeader('Set-Cookie', 'apexiums_customer_session=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax');
+  res.append('Set-Cookie', 'elistin_portal_session=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax');
   res.status(204).end();
 });
 
