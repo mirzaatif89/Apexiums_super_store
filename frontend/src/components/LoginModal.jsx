@@ -162,9 +162,16 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
 
   async function handleLoginSubmit(event) {
     event.preventDefault();
-    setLoading(true);
     setError('');
     setSuccessMsg('');
+    const loginIdentifier = username.trim();
+    const isEmailLogin = /^\S+@\S+\.\S+$/.test(loginIdentifier);
+    const isPhoneLogin = /^[+\d][\d\s()-]{6,19}$/.test(loginIdentifier);
+    if (!isEmailLogin && !isPhoneLogin) {
+      setError('Please enter your registered email or contact number, not your full name.');
+      return;
+    }
+    setLoading(true);
     try {
       const response = await fetchWithTimeout('/api/auth/login', {
         method: 'POST',
@@ -172,7 +179,7 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
         body: JSON.stringify({ username, password })
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Invalid username or password');
+      if (!response.ok) throw new Error('Registered email/contact number or password is incorrect.');
       const userRole = data.user?.role || data.role || 'User';
       onLogin({
         ...data.user,
@@ -361,7 +368,7 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
                           type="text"
                           value={username}
                           onChange={(e) => setUsername(e.target.value)}
-                          placeholder="Enter email or contact number"
+                          placeholder="Registered email or contact number"
                           className="w-full h-11 pl-9 pr-3 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-[#E8262A] focus:ring-2 focus:ring-red-100 transition"
                           required
                         />
