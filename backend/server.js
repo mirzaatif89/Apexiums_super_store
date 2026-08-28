@@ -1416,17 +1416,22 @@ function safeBusinessAccount(account) {
 app.post('/api/auth/customer-registration/start', async (req, res) => {
   try {
     const name = String(req.body.name || '').trim();
-    const email = normalizeEmail(req.body.email);
-    const phone = String(req.body.phone || '').trim();
+    const identifier = String(req.body.identifier || req.body.email || req.body.phone || '').trim();
+    const isEmail = /^\S+@\S+\.\S+$/.test(identifier);
+    const isPhone = /^[+\d][\d\s()-]{6,19}$/.test(identifier);
+    const email = isEmail ? normalizeEmail(identifier) : null;
+    const phone = isPhone ? identifier : null;
+    const username = email || phone;
     const password = String(req.body.password || '');
-    if (!name || !email || !phone || !password) return res.status(400).json({ message: 'Name, email, contact number and password are required.' });
-    if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ message: 'Please enter a valid email address.' });
-    if (!/^[+\d][\d\s()-]{6,19}$/.test(phone)) return res.status(400).json({ message: 'Please enter a valid contact number.' });
+    if (!name || !identifier || !password) return res.status(400).json({ message: 'Name, email or contact number, and password are required.' });
+    if (!isEmail && !isPhone) return res.status(400).json({ message: 'Please enter a valid email address or contact number.' });
     if (password.length < 6) return res.status(400).json({ message: 'Password must contain at least 6 characters.' });
-    const [[existingCustomer]] = await pool.query('SELECT id FROM customers WHERE username = ? OR email = ? LIMIT 1', [email, email]);
-    if (existingCustomer) return res.status(409).json({ message: 'An account with this email already exists. Please sign in.' });
-    const [result] = await pool.query('INSERT INTO customers (business_id, name, username, password_hash, email, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?)', [DEFAULT_BUSINESS_ID, name, email, hashPassword(password), email, phone, 'Active']);
-    const user = { id: result.insertId, name, username: email, email, phone, role: 'User', loginType: 'user' };
+    const [[existingCustomer]] = isEmail
+      ? await pool.query('SELECT id FROM customers WHERE username = ? OR email = ? LIMIT 1', [username, email])
+      : await pool.query('SELECT id FROM customers WHERE username = ? OR phone = ? LIMIT 1', [username, phone]);
+    if (existingCustomer) return res.status(409).json({ message: 'An account with this email or contact number already exists. Please sign in.' });
+    const [result] = await pool.query('INSERT INTO customers (business_id, name, username, password_hash, email, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?)', [DEFAULT_BUSINESS_ID, name, username, hashPassword(password), email, phone, 'Active']);
+    const user = { id: result.insertId, name, username, email, phone, role: 'User', loginType: 'user' };
     const token = await createCustomerSession(req, res, user);
     res.status(201).json({ message: 'Account created successfully.', user, role: 'User', token });
   } catch (error) {
@@ -1465,7 +1470,11 @@ app.post('/api/auth/login', async (req, res) => {
     const username = String(req.body.username || '').trim();
     const password = String(req.body.password || '');
     if (!username || !password) return res.status(400).json({ message: 'Username and password required' });
-    const [[customer]] = await pool.query('SELECT * FROM customers WHERE username = ? OR email = ? LIMIT 1', [username, normalizeEmail(username)]);
+    const normalizedUsername = normalizeEmail(username);
+    const isEmailLogin = username.includes('@');
+    const [[customer]] = isEmailLogin
+      ? await pool.query('SELECT * FROM customers WHERE username = ? OR email = ? LIMIT 1', [normalizedUsername, normalizedUsername])
+      : await pool.query('SELECT * FROM customers WHERE username = ? OR phone = ? LIMIT 1', [username, username]);
     if (customer) {
       if (customer.status === 'Inactive' || !verifyPassword(password, customer.password_hash)) return res.status(401).json({ message: 'Invalid username or password' });
       const { password_hash, plain_password, ...safeCustomer } = customer;

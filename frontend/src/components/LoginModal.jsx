@@ -8,7 +8,6 @@ import {
   Lock,
   LogIn,
   Mail,
-  Phone,
   Shield,
   ShieldCheck,
   Sparkles,
@@ -40,7 +39,6 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
   // Signup fields
   const [signupName, setSignupName] = React.useState('');
   const [signupEmail, setSignupEmail] = React.useState('');
-  const [signupPhone, setSignupPhone] = React.useState('');
   const [signupPassword, setSignupPassword] = React.useState('');
   const [signupConfirmPassword, setSignupConfirmPassword] = React.useState('');
   const [showSignupPassword, setShowSignupPassword] = React.useState(false);
@@ -196,7 +194,7 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
     setError('');
     setSuccessMsg('');
 
-    if (!signupName.trim() || !signupEmail.trim() || !signupPhone.trim() || !signupPassword) {
+    if (!signupName.trim() || !signupEmail.trim() || !signupPassword) {
       setError('Please fill in all required fields.');
       return;
     }
@@ -214,7 +212,7 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
       const response = await fetchWithTimeout('/api/auth/customer-registration/start', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: signupName.trim(), email: signupEmail.trim(), phone: signupPhone.trim(), password: signupPassword })
+          body: JSON.stringify({ name: signupName.trim(), identifier: signupEmail.trim(), password: signupPassword })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Unable to create account.');
@@ -340,7 +338,7 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
                     {/* Username or Email Input */}
                     <div>
                       <label className="block mb-1 text-xs font-bold text-slate-700">
-                        Username or Email
+                        Email or Contact Number
                       </label>
                       <div className="relative flex items-center">
                         <User size={16} className="absolute left-3 text-slate-400" />
@@ -348,7 +346,7 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
                           type="text"
                           value={username}
                           onChange={(e) => setUsername(e.target.value)}
-                          placeholder="Enter username or email"
+                          placeholder="Enter email or contact number"
                           className="w-full h-11 pl-9 pr-3 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-[#E8262A] focus:ring-2 focus:ring-red-100 transition"
                           required
                         />
@@ -457,32 +455,16 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
                       </div>
                     </div>
 
-                    {/* Email / Username */}
+                    {/* Email or Contact Number */}
                     <div>
-                      <label className="block mb-1 text-xs font-bold text-slate-700">Email Address</label>
+                      <label className="block mb-1 text-xs font-bold text-slate-700">Email or Contact Number</label>
                       <div className="relative flex items-center">
                         <Mail size={16} className="absolute left-3 text-slate-400" />
                         <input
-                          type="email"
+                          type="text"
                           value={signupEmail}
                           onChange={(e) => setSignupEmail(e.target.value)}
-                          placeholder="name@example.com"
-                          className="w-full h-10 pl-9 pr-3 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-[#E8262A] focus:ring-2 focus:ring-red-100 transition"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    {/* Contact Number */}
-                    <div>
-                      <label className="block mb-1 text-xs font-bold text-slate-700">Contact Number</label>
-                      <div className="relative flex items-center">
-                        <Phone size={16} className="absolute left-3 text-slate-400" />
-                        <input
-                          type="tel"
-                          value={signupPhone}
-                          onChange={(e) => setSignupPhone(e.target.value)}
-                          placeholder="e.g. 0300 1234567"
+                          placeholder="name@example.com or 0300 1234567"
                           className="w-full h-10 pl-9 pr-3 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-[#E8262A] focus:ring-2 focus:ring-red-100 transition"
                           required
                         />
