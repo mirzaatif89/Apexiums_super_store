@@ -16,6 +16,7 @@
     "cors": "latest",
     "dotenv": "latest",
     "express": "latest",
+    "jspdf": "^3.0.4",
     "lucide-react": "latest",
     "mysql2": "latest",
     "nodemailer": "^9.0.5",

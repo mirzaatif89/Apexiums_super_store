@@ -294,6 +294,93 @@ export default function CheckoutModal({
     receiptWindow.document.close();
   };
 
+  const saveReceiptPdf = async () => {
+    if (!placedOrderData) return;
+    try {
+      const { jsPDF } = await import('jspdf');
+      const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
+      const money = (value) => `Rs ${Number(value || 0).toLocaleString('en-PK')}`;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const left = 18;
+      const right = pageWidth - 18;
+
+      pdf.setFillColor(232, 38, 42);
+      pdf.roundedRect(12, 12, pageWidth - 24, 32, 4, 4, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(21);
+      pdf.text(storeName || 'Elistin', left, 27);
+      pdf.setFontSize(9);
+      pdf.text('ONLINE MARKETPLACE', left, 34);
+      pdf.setFontSize(13);
+      pdf.text('ORDER RECEIPT', right, 25, { align: 'right' });
+      pdf.setFontSize(10);
+      pdf.text(`#${placedOrderData.id}`, right, 33, { align: 'right' });
+
+      pdf.setTextColor(15, 23, 42);
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('BILLED TO', left, 57);
+      pdf.text('ORDER DETAILS', 112, 57);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(10);
+      const customerLines = [placedOrderData.customerName, placedOrderData.customerPhone, placedOrderData.shippingAddress].filter(Boolean);
+      pdf.text(customerLines, left, 64, { maxWidth: 78 });
+      pdf.text([`Order date: ${placedOrderData.date}`, `Payment: ${placedOrderData.paymentMethod}`, 'Status: Confirmed'], 112, 64);
+
+      let y = 91;
+      pdf.setFillColor(255, 241, 242);
+      pdf.rect(14, y - 7, pageWidth - 28, 10, 'F');
+      pdf.setTextColor(190, 18, 60);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('PRODUCT', left, y);
+      pdf.text('QTY', 125, y, { align: 'right' });
+      pdf.text('UNIT PRICE', 157, y, { align: 'right' });
+      pdf.text('AMOUNT', right, y, { align: 'right' });
+      y += 10;
+
+      pdf.setTextColor(30, 41, 59);
+      pdf.setFont('helvetica', 'normal');
+      for (const item of placedOrderData.items || []) {
+        if (y > 245) { pdf.addPage(); y = 20; }
+        const qty = Number(item.qty || 1);
+        const price = Number(item.price || 0);
+        const title = String(item.title || item.name || 'Product');
+        pdf.text(title.length > 48 ? `${title.slice(0, 45)}...` : title, left, y);
+        pdf.text(String(qty), 125, y, { align: 'right' });
+        pdf.text(money(price), 157, y, { align: 'right' });
+        pdf.text(money(price * qty), right, y, { align: 'right' });
+        pdf.setDrawColor(226, 232, 240);
+        pdf.line(left, y + 4, right, y + 4);
+        y += 11;
+      }
+
+      y += 7;
+      const summary = [
+        ['Subtotal', money(placedOrderData.subtotal)],
+        ['Delivery', money(placedOrderData.shippingFee)],
+        ['Discount', `- ${money(placedOrderData.discount)}`]
+      ];
+      for (const [label, value] of summary) {
+        pdf.text(label, 135, y);
+        pdf.text(value, right, y, { align: 'right' });
+        y += 8;
+      }
+      pdf.setDrawColor(232, 38, 42);
+      pdf.line(135, y - 3, right, y - 3);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(13);
+      pdf.text('Total Paid', 135, y + 4);
+      pdf.setTextColor(232, 38, 42);
+      pdf.text(money(placedOrderData.totalAmount), right, y + 4, { align: 'right' });
+      pdf.setFontSize(9);
+      pdf.text(`Thank you for shopping with ${storeName || 'Elistin'}!`, pageWidth / 2, 282, { align: 'center' });
+      pdf.save(`Elistin-Receipt-${placedOrderData.id}.pdf`);
+    } catch {
+      setError('Receipt PDF could not be saved. Please try again.');
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[110] flex items-start justify-center overflow-hidden bg-slate-950/65 p-0 backdrop-blur-sm sm:items-center sm:p-4 md:p-6">
       <button
@@ -1095,10 +1182,10 @@ export default function CheckoutModal({
 
               <button
                 type="button"
-                onClick={printReceipt}
+                onClick={saveReceiptPdf}
                 className="px-6 h-12 inline-flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 text-[#E8262A] font-bold text-xs uppercase hover:bg-red-100 transition cursor-pointer"
               >
-                <span>Print / Save PDF</span>
+                <span>Save PDF</span>
               </button>
             </div>
           </div>
