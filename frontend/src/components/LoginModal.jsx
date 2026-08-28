@@ -8,6 +8,7 @@ import {
   Lock,
   LogIn,
   Mail,
+  Phone,
   Shield,
   ShieldCheck,
   Sparkles,
@@ -39,6 +40,7 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
   // Signup fields
   const [signupName, setSignupName] = React.useState('');
   const [signupEmail, setSignupEmail] = React.useState('');
+  const [signupPhone, setSignupPhone] = React.useState('');
   const [signupPassword, setSignupPassword] = React.useState('');
   const [signupConfirmPassword, setSignupConfirmPassword] = React.useState('');
   const [showSignupPassword, setShowSignupPassword] = React.useState(false);
@@ -194,7 +196,7 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
     setError('');
     setSuccessMsg('');
 
-    if (!signupName.trim() || !signupEmail.trim() || !signupPassword) {
+    if (!signupName.trim() || !signupEmail.trim() || !signupPhone.trim() || !signupPassword) {
       setError('Please fill in all required fields.');
       return;
     }
@@ -212,12 +214,12 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
       const response = await fetchWithTimeout('/api/auth/customer-registration/start', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: signupName.trim(), email: signupEmail.trim(), password: signupPassword })
+          body: JSON.stringify({ name: signupName.trim(), email: signupEmail.trim(), phone: signupPhone.trim(), password: signupPassword })
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Unable to send verification code.');
-      setSignupStep('verify');
-      setSuccessMsg(`We sent a 6-digit code to ${signupEmail.trim()}.`);
+      if (!response.ok) throw new Error(data.message || 'Unable to create account.');
+      onLogin({ ...data.user, token: data.token || null, role: 'User', loginType: 'user' });
+      onClose();
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {
@@ -465,6 +467,22 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
                           value={signupEmail}
                           onChange={(e) => setSignupEmail(e.target.value)}
                           placeholder="name@example.com"
+                          className="w-full h-10 pl-9 pr-3 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-[#E8262A] focus:ring-2 focus:ring-red-100 transition"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Contact Number */}
+                    <div>
+                      <label className="block mb-1 text-xs font-bold text-slate-700">Contact Number</label>
+                      <div className="relative flex items-center">
+                        <Phone size={16} className="absolute left-3 text-slate-400" />
+                        <input
+                          type="tel"
+                          value={signupPhone}
+                          onChange={(e) => setSignupPhone(e.target.value)}
+                          placeholder="e.g. 0300 1234567"
                           className="w-full h-10 pl-9 pr-3 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-[#E8262A] focus:ring-2 focus:ring-red-100 transition"
                           required
                         />

@@ -1417,27 +1417,22 @@ app.post('/api/auth/customer-registration/start', async (req, res) => {
   try {
     const name = String(req.body.name || '').trim();
     const email = normalizeEmail(req.body.email);
+    const phone = String(req.body.phone || '').trim();
     const password = String(req.body.password || '');
-    if (!name || !email || !password) return res.status(400).json({ message: 'Name, email and password are required.' });
+    if (!name || !email || !phone || !password) return res.status(400).json({ message: 'Name, email, contact number and password are required.' });
     if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ message: 'Please enter a valid email address.' });
+    if (!/^[+\d][\d\s()-]{6,19}$/.test(phone)) return res.status(400).json({ message: 'Please enter a valid contact number.' });
     if (password.length < 6) return res.status(400).json({ message: 'Password must contain at least 6 characters.' });
     const [[existingCustomer]] = await pool.query('SELECT id FROM customers WHERE username = ? OR email = ? LIMIT 1', [email, email]);
     if (existingCustomer) return res.status(409).json({ message: 'An account with this email already exists. Please sign in.' });
-
-    const otp = createOtp();
-    const otpHash = hashPassword(otp);
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-    const [[pending]] = await pool.query('SELECT id FROM customer_email_verifications WHERE email = ? LIMIT 1', [email]);
-    if (pending) {
-      await pool.query('UPDATE customer_email_verifications SET name = ?, password_hash = ?, otp_hash = ?, expires_at = ?, attempts = ? WHERE id = ?', [name, hashPassword(password), otpHash, expiresAt, 0, pending.id]);
-    } else {
-      await pool.query('INSERT INTO customer_email_verifications (email, name, password_hash, otp_hash, expires_at, attempts) VALUES (?, ?, ?, ?, ?, ?)', [email, name, hashPassword(password), otpHash, expiresAt, 0]);
-    }
-    await sendRegistrationOtp({ email, name, otp });
-    res.status(202).json({ message: 'Verification code sent. Please check your inbox.', email });
+    const [result] = await pool.query('INSERT INTO customers (business_id, name, username, password_hash, email, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?)', [DEFAULT_BUSINESS_ID, name, email, hashPassword(password), email, phone, 'Active']);
+    const user = { id: result.insertId, name, username: email, email, phone, role: 'User', loginType: 'user' };
+    const token = await createCustomerSession(req, res, user);
+    res.status(201).json({ message: 'Account created successfully.', user, role: 'User', token });
   } catch (error) {
-    console.error('Registration OTP error:', error.message);
-    res.status(500).json({ message: error.message.includes('Email service') ? error.message : `Unable to send verification email: ${error.message}` });
+    if (error.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'An account with this email already exists. Please sign in.' });
+    console.error('Customer registration error:', error.message);
+    res.status(500).json({ message: 'Unable to create your account. Please try again.' });
   }
 });
 
