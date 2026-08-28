@@ -1,1 +1,0 @@
-Restart Passenger after deploying commit 80aa732.
