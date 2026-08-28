@@ -583,6 +583,8 @@ const schemas = [
     description TEXT,
     seller_image VARCHAR(500),
     stock_seller_sell VARCHAR(180),
+    commission_rate DECIMAL(5,2) DEFAULT 10,
+    rating DECIMAL(2,1) DEFAULT 5,
     username VARCHAR(120),
     password VARCHAR(255),
     products_supplied TEXT,
@@ -756,7 +758,7 @@ const resources = {
   returns: ['order_id', 'product_id', 'customer_id', 'customer', 'product', 'reason', 'status', 'refund_amount', 'refund_method', 'created_at'],
   expenses: ['title', 'category', 'amount', 'payment_method', 'date', 'receipt_url', 'added_by', 'notes'],
   finance_transactions: ['title', 'type', 'category', 'amount', 'transaction_date', 'status', 'created_at'],
-  wholesellers: ['name', 'business_name', 'contact_person', 'phone', 'email', 'address', 'description', 'contact_date', 'supplier_payment_amount', 'supplier_payment_date', 'seller_image', 'stock_seller_sell', 'username', 'password', 'products_supplied', 'total_purchases', 'payment_due', 'status'],
+  wholesellers: ['name', 'business_name', 'contact_person', 'phone', 'email', 'address', 'description', 'contact_date', 'supplier_payment_amount', 'supplier_payment_date', 'seller_image', 'stock_seller_sell', 'commission_rate', 'rating', 'username', 'password', 'products_supplied', 'total_purchases', 'payment_due', 'status'],
   purchase_orders: ['wholeseller_id', 'items_json', 'total_amount', 'paid_amount', 'payment_method', 'payment_status', 'delivery_status', 'status', 'date'],
   staff: ['photo_url', 'name', 'email', 'phone', 'role', 'department', 'password_hash', 'status', 'last_login'],
   customers: ['avatar_url', 'name', 'username', 'password_hash', 'plain_password', 'email', 'phone', 'total_orders', 'total_spent', 'status', 'created_at'],
@@ -1195,6 +1197,8 @@ async function initializeDatabase() {
   await ensureColumn('wholesellers', 'description', 'TEXT');
   await ensureColumn('wholesellers', 'seller_image', 'VARCHAR(500)');
   await ensureColumn('wholesellers', 'stock_seller_sell', 'VARCHAR(180)');
+  await ensureColumn('wholesellers', 'commission_rate', 'DECIMAL(5,2) DEFAULT 10');
+  await ensureColumn('wholesellers', 'rating', 'DECIMAL(2,1) DEFAULT 5');
   await ensureColumn('wholesellers', 'username', 'VARCHAR(120)');
   await ensureColumn('wholesellers', 'password', 'VARCHAR(255)');
   await ensureColumn('wholesellers', 'contact_date', 'DATE');
@@ -1755,6 +1759,80 @@ app.delete('/api/business-accounts/:id', async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+});
+
+// A seller is both a marketplace profile and a portal account. Keeping this
+// creation in one server request makes the admin flow quick and prevents a
+// half-created seller when the browser is slow or refreshed.
+app.post('/api/sellers', async (req, res) => {
+  let connection;
+  try {
+    const { role, businessId } = getContext(req);
+    if (role !== 'SuperAdmin') return res.status(403).json({ message: 'Only superadmin can add sellers.' });
+    const required = requireFields(req.body, ['seller_name', 'store_name', 'username', 'password']);
+    const categories = Array.isArray(req.body.categories) ? req.body.categories.filter(Boolean) : [];
+    if (required) return res.status(400).json({ message: required });
+    if (!categories.length) return res.status(400).json({ message: 'Select at least one category.' });
+    const username = String(req.body.username || '').trim();
+    const rating = Number(req.body.rating || 5);
+    const commissionRate = Number(req.body.commission_rate ?? 10);
+    if (!Number.isFinite(rating) || rating < 1 || rating > 5) return res.status(400).json({ message: 'Rating must be from 1 to 5.' });
+    if (!Number.isFinite(commissionRate) || commissionRate < 0 || commissionRate > 100) return res.status(400).json({ message: 'Commission must be from 0 to 100.' });
+    const [[existing]] = await pool.query('SELECT id FROM business_accounts WHERE username = ? LIMIT 1', [username]);
+    if (existing) return res.status(409).json({ message: 'This seller username already exists.' });
+    const sellerImage = req.body.seller_image ? persistImageDataUrl(req.body.seller_image, 'sellers') : null;
+    connection = typeof pool.getConnection === 'function' ? await pool.getConnection() : pool;
+    if (connection.beginTransaction) await connection.beginTransaction();
+    const accountQuery = await connection.query(
+      'INSERT INTO business_accounts (business_name, username, password_hash, plain_password, owner_name, address, email, phone, seller_categories, role, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [req.body.store_name, username, hashPassword(req.body.password), req.body.password, req.body.seller_name, req.body.address || null, req.body.email || null, req.body.phone || null, categories.join(', '), 'Seller', 'Active']
+    );
+    const sellerQuery = await connection.query(
+      'INSERT INTO wholesellers (business_id, name, business_name, contact_person, phone, email, address, description, seller_image, stock_seller_sell, commission_rate, rating, username, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [businessId || DEFAULT_BUSINESS_ID, req.body.seller_name, req.body.store_name, req.body.contact_person || req.body.seller_name, req.body.phone || null, req.body.email || null, req.body.address || null, req.body.description || null, sellerImage, categories.join(', '), commissionRate, rating, username, 'Active']
+    );
+    if (connection.commit) await connection.commit();
+    const sellerId = sellerQuery[0].insertId;
+    res.status(201).json({ id: sellerId, account_id: accountQuery[0].insertId, name: req.body.seller_name, business_name: req.body.store_name, contact_person: req.body.contact_person || req.body.seller_name, phone: req.body.phone || null, email: req.body.email || null, address: req.body.address || null, description: req.body.description || null, seller_image: sellerImage, stock_seller_sell: categories.join(', '), commission_rate: commissionRate, rating, username, status: 'Active' });
+  } catch (error) {
+    if (connection?.rollback) await connection.rollback().catch(() => {});
+    res.status(500).json({ message: error.message || 'Seller could not be created.' });
+  } finally {
+    if (connection?.release) connection.release();
+  }
+});
+
+app.put('/api/sellers/:id', async (req, res) => {
+  try {
+    const { role } = getContext(req);
+    if (role !== 'SuperAdmin') return res.status(403).json({ message: 'Only superadmin can manage sellers.' });
+    const [[seller]] = await pool.query('SELECT id, username FROM wholesellers WHERE id = ? LIMIT 1', [req.params.id]);
+    if (!seller) return res.status(404).json({ message: 'Seller not found.' });
+    const status = String(req.body.status || '').trim();
+    const rating = req.body.rating === undefined ? null : Number(req.body.rating);
+    if (rating !== null && (!Number.isFinite(rating) || rating < 1 || rating > 5)) return res.status(400).json({ message: 'Rating must be from 1 to 5.' });
+    if (status) await pool.query('UPDATE wholesellers SET status = ? WHERE id = ?', [status, seller.id]);
+    if (rating !== null) await pool.query('UPDATE wholesellers SET rating = ? WHERE id = ?', [rating, seller.id]);
+    if (status && seller.username) await pool.query('UPDATE business_accounts SET status = ? WHERE username = ? AND role = ?', [status === 'Suspended' ? 'Inactive' : 'Active', seller.username, 'Seller']);
+    const [[updated]] = await pool.query('SELECT * FROM wholesellers WHERE id = ?', [seller.id]);
+    res.json(updated);
+  } catch (error) { res.status(500).json({ message: error.message }); }
+});
+
+app.delete('/api/sellers/:id', async (req, res) => {
+  try {
+    const { role } = getContext(req);
+    if (role !== 'SuperAdmin') return res.status(403).json({ message: 'Only superadmin can delete sellers.' });
+    const [[seller]] = await pool.query('SELECT id, username FROM wholesellers WHERE id = ? LIMIT 1', [req.params.id]);
+    if (!seller) return res.status(404).json({ message: 'Seller not found.' });
+    if (seller.username) {
+      const [accounts] = await pool.query('SELECT id FROM business_accounts WHERE username = ? AND role = ?', [seller.username, 'Seller']);
+      for (const account of accounts) await pool.query('DELETE FROM business_sessions WHERE business_account_id = ?', [account.id]);
+      await pool.query('DELETE FROM business_accounts WHERE username = ? AND role = ?', [seller.username, 'Seller']);
+    }
+    await pool.query('DELETE FROM wholesellers WHERE id = ?', [seller.id]);
+    res.json({ ok: true, id: seller.id });
+  } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
 app.get('/api/dashboard/summary', async (req, res) => {

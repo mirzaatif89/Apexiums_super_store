@@ -177,7 +177,8 @@ export const AdminProvider = ({ children, session }) => {
           productsCount: Number(row.products_supplied ? String(row.products_supplied).split(',').filter(Boolean).length : 0),
           ordersCount: Number(row.total_purchases || 0),
           revenue: Number(row.total_purchases || 0),
-          ratings: 5,
+          ratings: Number(row.rating || 5),
+          commissionRate: Number(row.commission_rate ?? 10),
           joinedDate: row.created_at ? String(row.created_at).slice(0, 10) : "-",
           verificationStatus: row.status === "Active" ? "Verified" : "Pending",
         })));
@@ -1221,11 +1222,18 @@ export const AdminProvider = ({ children, session }) => {
   };
 
   // Sellers
-  const updateSellerStatus = (id, newStatus, newVerification) => {
+  const updateSellerStatus = async (id, newStatus, newVerification) => {
+    const response = await fetch(`/api/sellers/${id}`, {
+      method: "PUT",
+      headers: apiHeaders(),
+      body: JSON.stringify({ status: newStatus }),
+    });
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || "Seller status could not be updated.");
+    const saved = await response.json();
     setSellers((prev) =>
       prev.map((s) => {
         if (s.id === id) {
-          const updated = { ...s };
+          const updated = { ...s, ...saved };
           if (newStatus) updated.status = newStatus;
           if (newVerification) updated.verificationStatus = newVerification;
           return updated;
@@ -1239,6 +1247,13 @@ export const AdminProvider = ({ children, session }) => {
     );
   };
 
+  const deleteSeller = async (id) => {
+    const response = await fetch(`/api/sellers/${id}`, { method: "DELETE", headers: apiHeaders() });
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || "Seller could not be deleted.");
+    setSellers((previous) => previous.filter((seller) => String(seller.id) !== String(id)));
+    addToast("Seller and their portal account were deleted.", "info");
+  };
+
   const addSeller = async (sellerData) => {
     const newSeller = {
       ...sellerData,
@@ -1246,45 +1261,29 @@ export const AdminProvider = ({ children, session }) => {
       productsCount: 0,
       ordersCount: 0,
       revenue: 0,
-      ratings: 5.0,
+      ratings: Number(sellerData.ratings || 5),
       joinedDate: new Date().toISOString().split("T")[0],
     };
-    const sellerResponse = await fetch("/api/wholesellers", {
+    const sellerResponse = await fetch("/api/sellers", {
       method: "POST",
       headers: apiHeaders(),
       body: JSON.stringify({
-        name: sellerData.sellerName,
-        business_name: sellerData.storeName || sellerData.stockSellerSell,
-        contact_person: sellerData.contact,
+        seller_name: sellerData.sellerName,
+        store_name: sellerData.storeName,
+        contact_person: sellerData.contact || sellerData.sellerName,
         phone: sellerData.phone,
         email: sellerData.email,
         address: sellerData.address,
         description: sellerData.description,
-        seller_image: sellerData.sellerImage,
-        stock_seller_sell: sellerData.stockSellerSell,
+        seller_image: sellerData.sellerImage || null,
+        categories: sellerData.selectedCategories || [],
+        commission_rate: Number(sellerData.commissionRate || 0),
+        rating: Number(sellerData.ratings || 5),
         username: sellerData.username,
         password: sellerData.password,
-        status: "Active",
       }),
     });
     if (!sellerResponse.ok) throw new Error((await sellerResponse.json().catch(() => ({}))).message || 'Seller record could not be saved.');
-    const accountResponse = await fetch("/api/business-accounts", {
-      method: "POST",
-      headers: apiHeaders(),
-      body: JSON.stringify({
-        business_name: sellerData.storeName,
-        username: sellerData.username,
-        password: sellerData.password,
-        owner_name: sellerData.sellerName,
-        address: sellerData.address,
-        email: sellerData.email,
-        phone: sellerData.phone,
-        seller_categories: (sellerData.selectedCategories || []).join(', '),
-        role: 'Seller',
-        status: 'Active'
-      })
-    });
-    if (!accountResponse.ok) throw new Error((await accountResponse.json().catch(() => ({}))).message || 'Seller portal account could not be created.');
     const savedSeller = await sellerResponse.json();
     setSellers((prev) => [{
       ...newSeller,
@@ -1913,6 +1912,7 @@ export const AdminProvider = ({ children, session }) => {
         updateReturnStatus,
         addReturn,
         updateSellerStatus,
+        deleteSeller,
         addSeller,
         addInvestor,
         updateInvestorStatus,

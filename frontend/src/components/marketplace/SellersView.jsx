@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import Badge from '../common/Badge';
 import ActionMenu from '../common/ActionMenu';
-import { Store, Search, Plus, CheckCircle2, ShieldAlert, X, Star, DollarSign, Package } from 'lucide-react';
+import { Store, Search, Plus, CheckCircle2, ShieldAlert, X, Star, Trash2, LoaderCircle } from 'lucide-react';
 
 export const SellersView = () => {
-  const { sellers, updateSellerStatus, addSeller, sellerApplications, reviewSellerApplication, categories } = useAdmin();
+  const { sellers, updateSellerStatus, deleteSeller, addSeller, sellerApplications, reviewSellerApplication, categories } = useAdmin();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSeller, setSelectedSeller] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     sellerName: '',
@@ -23,6 +24,7 @@ export const SellersView = () => {
     username: '',
     password: '',
     commissionRate: 10,
+    ratings: 5,
     verificationStatus: 'Pending',
     status: 'Pending',
     payoutMethod: 'Bank Transfer'
@@ -30,9 +32,9 @@ export const SellersView = () => {
 
   const filteredSellers = sellers.filter(
     (s) =>
-      s.storeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.sellerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.email.toLowerCase().includes(searchTerm.toLowerCase())
+      String(s.storeName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(s.sellerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(s.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleSubmit = async (e) => {
@@ -41,8 +43,10 @@ export const SellersView = () => {
       window.alert('Enter the store name and select at least one product category.');
       return;
     }
+    setIsSaving(true);
     try { await addSeller({ ...formData, stockSellerSell: formData.selectedCategories.join(', ') }); setIsModalOpen(false); }
     catch (error) { window.alert(error.message || 'Seller could not be added.'); }
+    finally { setIsSaving(false); }
   };
 
   return (
@@ -90,20 +94,20 @@ export const SellersView = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-              {filteredSellers.map((s) => (
+              {!filteredSellers.length ? <tr><td colSpan={9} className="p-10 text-center text-slate-400">No sellers found. Add a seller to create both the store record and portal login.</td></tr> : filteredSellers.map((s) => (
                 <tr key={s.id} className="hover:bg-slate-50 transition-colors">
                   <td className="p-3.5">
-                    <div className="flex items-center gap-2">{s.sellerImage && <img src={s.sellerImage} alt={s.sellerName} className="h-9 w-9 rounded-lg object-cover"/>}<div><p className="font-extrabold text-slate-900">{s.storeName}</p><p className="text-[10px] text-slate-400">Owner: {s.sellerName}</p></div></div>
+                    <div className="flex items-center gap-2">{(s.sellerImage || s.seller_image) && <img src={s.sellerImage || s.seller_image} alt={s.sellerName} className="h-9 w-9 rounded-lg object-cover"/>}<div><p className="font-extrabold text-slate-900">{s.storeName}</p><p className="text-[10px] text-slate-400">Owner: {s.sellerName}</p><p className="mt-0.5 text-[10px] text-slate-500">{s.stock_seller_sell || s.stockSellerSell || 'No categories assigned'}</p></div></div>
                   </td>
                   <td className="p-3.5">
                     <p className="font-semibold text-slate-800">{s.email}</p>
                     <p className="text-[10px] text-slate-400">{s.phone}</p>
                   </td>
-                  <td className="p-3.5 font-bold text-slate-800">{s.productsCount} items</td>
-                  <td className="p-3.5 font-black text-emerald-600">Rs {s.revenue.toLocaleString('en-PK')}</td>
-                  <td className="p-3.5 font-bold text-slate-800">{s.commissionRate}%</td>
+                  <td className="p-3.5 font-bold text-slate-800">{Number(s.productsCount || 0)} items</td>
+                  <td className="p-3.5 font-black text-emerald-600">Rs {Number(s.revenue || 0).toLocaleString('en-PK')}</td>
+                  <td className="p-3.5 font-bold text-slate-800">{s.commissionRate ?? s.commission_rate ?? 10}%</td>
                   <td className="p-3.5 font-bold text-amber-600 flex items-center gap-1">
-                    <Star size={12} className="fill-amber-400 text-amber-400" /> {s.ratings}
+                    <Star size={12} className="fill-amber-400 text-amber-400" /> {s.ratings ?? s.rating ?? 5}
                   </td>
                   <td className="p-3.5">
                     <Badge status={s.verificationStatus}>{s.verificationStatus}</Badge>
@@ -119,8 +123,8 @@ export const SellersView = () => {
                         {
                           label: s.verificationStatus === 'Pending' ? 'Approve & Verify' : 'Open details',
                           icon: CheckCircle2,
-                          onClick: () => {
-                            updateSellerStatus(s.id, 'Active', 'Verified');
+                          onClick: async () => {
+                            try { await updateSellerStatus(s.id, 'Active', 'Verified'); } catch (error) { window.alert(error.message); }
                             setSelectedSeller(s);
                           }
                         },
@@ -128,9 +132,15 @@ export const SellersView = () => {
                           label: s.status === 'Suspended' ? 'Un-suspend store' : 'Suspend store',
                           icon: ShieldAlert,
                           variant: s.status === 'Suspended' ? 'default' : 'danger',
-                          onClick: () => {
-                            updateSellerStatus(s.id, s.status === 'Suspended' ? 'Active' : 'Suspended', s.status === 'Suspended' ? 'Verified' : 'Suspended');
+                          onClick: async () => {
+                            try { await updateSellerStatus(s.id, s.status === 'Suspended' ? 'Active' : 'Suspended', s.status === 'Suspended' ? 'Verified' : 'Suspended'); } catch (error) { window.alert(error.message); }
                             setSelectedSeller(s);
+                          }
+                        },
+                        {
+                          label: 'Delete seller', icon: Trash2, variant: 'danger', onClick: async () => {
+                            if (!window.confirm(`Delete ${s.storeName} and its seller login permanently?`)) return;
+                            try { await deleteSeller(s.id); if (selectedSeller?.id === s.id) setSelectedSeller(null); } catch (error) { window.alert(error.message); }
                           }
                         }
                       ]}
@@ -195,10 +205,11 @@ export const SellersView = () => {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Seller Image *</label><input required type="file" accept="image/*" onChange={(e)=>{const file=e.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=()=>setFormData({...formData,sellerImage:reader.result});reader.readAsDataURL(file)}} className="w-full px-3 py-2 border rounded-xl font-semibold" />
+                  <label className="block font-bold text-slate-700 mb-1">Seller Image <span className="font-normal text-slate-400">(optional)</span></label><input type="file" accept="image/*" onChange={(e)=>{const file=e.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=()=>setFormData({...formData,sellerImage:reader.result});reader.readAsDataURL(file)}} className="w-full px-3 py-2 border rounded-xl font-semibold" />
                 </div>
               </div>
               <div><label className="block font-bold text-slate-700 mb-1">Description *</label><textarea required value={formData.description} onChange={(e)=>setFormData({...formData,description:e.target.value})} className="w-full px-3 py-2 border rounded-xl font-semibold" /></div>
+              <div className="grid grid-cols-2 gap-2"><div><label className="block font-bold text-slate-700 mb-1">Commission %</label><input required min="0" max="100" step="0.5" type="number" value={formData.commissionRate} onChange={(e)=>setFormData({...formData,commissionRate:e.target.value})} className="w-full px-3 py-2 border rounded-xl font-semibold" /></div><div><label className="block font-bold text-slate-700 mb-1">Seller Rating (1–5)</label><input required min="1" max="5" step="0.1" type="number" value={formData.ratings} onChange={(e)=>setFormData({...formData,ratings:e.target.value})} className="w-full px-3 py-2 border rounded-xl font-semibold" /></div></div>
               <div className="grid grid-cols-2 gap-2"><div><label className="block font-bold text-slate-700 mb-1">Username *</label><input required value={formData.username} onChange={(e)=>setFormData({...formData,username:e.target.value})} className="w-full px-3 py-2 border rounded-xl font-semibold" /></div><div><label className="block font-bold text-slate-700 mb-1">Password *</label><input required type="password" value={formData.password} onChange={(e)=>setFormData({...formData,password:e.target.value})} className="w-full px-3 py-2 border rounded-xl font-semibold" /></div></div>
 
               <div className="flex justify-end gap-2 pt-3 border-t">
@@ -211,9 +222,10 @@ export const SellersView = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold shadow-md cursor-pointer"
+                  disabled={isSaving}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold shadow-md cursor-pointer disabled:cursor-wait disabled:opacity-70"
                 >
-                  Add Seller
+                  {isSaving && <LoaderCircle size={14} className="animate-spin" />}{isSaving ? 'Saving securely…' : 'Add Seller'}
                 </button>
               </div>
             </form>
@@ -236,8 +248,10 @@ export const SellersView = () => {
               <p><span className="text-slate-400">Owner Name:</span> <strong>{selectedSeller.sellerName}</strong></p>
               <p><span className="text-slate-400">Email:</span> <strong>{selectedSeller.email}</strong></p>
               <p><span className="text-slate-400">Payout Account:</span> <strong>{selectedSeller.payoutMethod}</strong></p>
-              <p><span className="text-slate-400">Total Revenue:</span> <strong className="text-emerald-600">Rs {selectedSeller.revenue.toLocaleString('en-PK')}</strong></p>
-              <p><span className="text-slate-400">Platform Commission Rate:</span> <strong>{selectedSeller.commissionRate}%</strong></p>
+              <p><span className="text-slate-400">Categories:</span> <strong>{selectedSeller.stock_seller_sell || selectedSeller.stockSellerSell || '-'}</strong></p>
+              <p><span className="text-slate-400">Total Revenue:</span> <strong className="text-emerald-600">Rs {Number(selectedSeller.revenue || 0).toLocaleString('en-PK')}</strong></p>
+              <p><span className="text-slate-400">Platform Commission Rate:</span> <strong>{selectedSeller.commissionRate ?? selectedSeller.commission_rate ?? 10}%</strong></p>
+              <p><span className="text-slate-400">Admin Rating:</span> <strong className="text-amber-600">★ {selectedSeller.ratings ?? selectedSeller.rating ?? 5}</strong></p>
             </div>
 
             <div className="flex flex-wrap gap-2 justify-between pt-3 border-t">
