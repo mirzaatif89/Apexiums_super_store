@@ -1476,7 +1476,13 @@ app.post('/api/auth/login', async (req, res) => {
       ? await pool.query('SELECT * FROM customers WHERE username = ? OR email = ? LIMIT 1', [normalizedUsername, normalizedUsername])
       : await pool.query('SELECT * FROM customers WHERE username = ? OR phone = ? LIMIT 1', [username, username]);
     if (customer) {
-      if (customer.status === 'Inactive' || !verifyPassword(password, customer.password_hash)) return res.status(401).json({ message: 'Invalid username or password' });
+      const validCustomerPassword = customer.password_hash
+        ? verifyPassword(password, customer.password_hash)
+        : String(customer.plain_password || '') === password;
+      if (customer.status === 'Inactive' || !validCustomerPassword) return res.status(401).json({ message: 'Invalid username or password' });
+      if (!customer.password_hash && customer.plain_password) {
+        await pool.query('UPDATE customers SET password_hash = ?, plain_password = NULL WHERE id = ?', [hashPassword(password), customer.id]);
+      }
       const { password_hash, plain_password, ...safeCustomer } = customer;
       const token = await createCustomerSession(req, res, customer);
       return res.json({ user: { ...safeCustomer, role: 'User', loginType: 'user' }, role: 'User', token });

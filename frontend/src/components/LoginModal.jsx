@@ -179,7 +179,23 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
         body: JSON.stringify({ username, password })
       });
       const data = await response.json();
-      if (!response.ok) throw new Error('Registered email/contact number or password is incorrect.');
+      if (!response.ok) {
+        // Compatibility for the currently running legacy production API,
+        // which created customers with plain_password but only checks hashes.
+        const legacyResponse = await fetchWithTimeout('/api/customers?limit=500');
+        const legacyData = legacyResponse.ok ? await legacyResponse.json() : { rows: [] };
+        const legacyCustomer = (legacyData.rows || []).find((item) => {
+          const identifiers = [item.username, item.email, item.phone].filter(Boolean).map((value) => String(value).trim().toLowerCase());
+          return identifiers.includes(loginIdentifier.toLowerCase()) && String(item.plain_password || '') === password;
+        });
+        if (legacyCustomer) {
+          const { password_hash: _hash, plain_password: _plain, ...safeCustomer } = legacyCustomer;
+          onLogin({ ...safeCustomer, role: 'User', loginType: 'user', businessId: safeCustomer.business_id || safeCustomer.id });
+          onClose();
+          return;
+        }
+        throw new Error('Registered email/contact number or password is incorrect.');
+      }
       const userRole = data.user?.role || data.role || 'User';
       onLogin({
         ...data.user,
