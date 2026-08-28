@@ -15,14 +15,26 @@ import {
   PackageCheck,
   User,
   RotateCcw,
-  Printer
+  Printer,
+  CalendarDays
 } from 'lucide-react';
 
 export const OrdersView = () => {
   const { orders, updateOrderStatus, deleteOrder, createReturnFromOrder, setActiveTab } = useAdmin();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
+
+  const orderDateKey = (value) => {
+    const raw = String(value || '').trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
+    const dayFirst = raw.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+    if (dayFirst) return `${dayFirst[3]}-${dayFirst[2].padStart(2, '0')}-${dayFirst[1].padStart(2, '0')}`;
+    const parsed = new Date(raw);
+    if (Number.isNaN(parsed.getTime())) return '';
+    return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}-${String(parsed.getDate()).padStart(2, '0')}`;
+  };
 
   const printReceipt = (order) => {
     const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
@@ -46,7 +58,8 @@ export const OrdersView = () => {
       o.sellerName.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = statusFilter ? o.orderStatus === statusFilter : true;
-    return matchesSearch && matchesStatus;
+    const matchesDate = dateFilter ? orderDateKey(o.orderDate || o.created_at || o.date) === dateFilter : true;
+    return matchesSearch && matchesStatus && matchesDate;
   });
 
   return (
@@ -69,6 +82,16 @@ export const OrdersView = () => {
             className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none"
           />
         </div>
+        <label className="relative min-w-[185px]">
+          <CalendarDays size={16} className="pointer-events-none absolute left-3 top-3 text-[#E8262A]" />
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            aria-label="Filter orders by date"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-xs font-semibold text-slate-700 outline-none focus:border-red-300 focus:ring-2 focus:ring-red-100"
+          />
+        </label>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
@@ -103,7 +126,7 @@ export const OrdersView = () => {
               {filteredOrders.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="p-8 text-center text-slate-400">
-                    No orders match your search criteria.
+                    No orders match the selected search, status, or date.
                   </td>
                 </tr>
               ) : (
