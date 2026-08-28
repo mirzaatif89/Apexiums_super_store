@@ -12,6 +12,13 @@ function AppContent() {
   const [session, setSession] = React.useState(null);
 
   React.useEffect(() => {
+    // Customer sessions use the secure HTTP-only cookie. Seller, investor and
+    // admin portals use their own signed/login token, so retain that session
+    // client-side to survive a browser refresh.
+    try {
+      const stored = JSON.parse(localStorage.getItem('elistin-portal-session') || 'null');
+      if (stored?.user && stored?.savedAt && Date.now() - stored.savedAt < 1000 * 60 * 60 * 24 * 7) setSession(stored.user);
+    } catch {}
     fetch('/api/auth/session', { credentials: 'include' })
       .then((response) => response.ok ? response.json() : null)
       .then((data) => { if (data?.user) setSession(data.user); })
@@ -33,6 +40,11 @@ function AppContent() {
     };
 
     setSession(nextSession);
+    if (roleKey(nextSession.role) !== 'user') {
+      localStorage.setItem('elistin-portal-session', JSON.stringify({ user: nextSession, savedAt: Date.now() }));
+    } else {
+      localStorage.removeItem('elistin-portal-session');
+    }
     if (isAdminRole(user.role) || user.loginType === 'admin') {
       window.history.pushState({ page: 'dashboard' }, '', '/dashboard');
     }
@@ -40,6 +52,7 @@ function AppContent() {
 
   function handleLogout() {
     fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
+    localStorage.removeItem('elistin-portal-session');
     setSession(null);
     window.history.pushState({}, '', '/');
   }
