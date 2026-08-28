@@ -224,14 +224,14 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Unable to create account.');
-      const loginResponse = await fetchWithTimeout('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: identifier, password: signupPassword })
+      onLogin({
+        ...data,
+        username: data.username || identifier,
+        email: data.email || (isEmail ? identifier : null),
+        phone: data.phone || (isEmail ? null : identifier),
+        role: 'User',
+        loginType: 'user'
       });
-      const loginData = await loginResponse.json();
-      if (!loginResponse.ok) throw new Error(loginData.message || 'Account created. Please sign in.');
-      onLogin({ ...loginData.user, token: loginData.token || null, role: 'User', loginType: 'user' });
       onClose();
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
