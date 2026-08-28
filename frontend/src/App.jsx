@@ -5,6 +5,7 @@ import UserDashboard from './pages/storefront/UserDashboard.jsx';
 import { storeLogoSrc, storeName } from './data/storeData';
 import { isAdminRole, isSuperAdminRole, roleKey } from './utils/roles';
 import InvestorPortal from './pages/investor/InvestorPortal.jsx';
+import SellerPortal from './pages/seller/SellerPortal.jsx';
 import PrivacyPolicyModal from './components/PrivacyPolicyModal.jsx';
 
 function AppContent() {
@@ -68,6 +69,10 @@ function AppContent() {
 
   if (roleKey(session.role) === 'investor') {
     return <InvestorPortal session={session} onLogout={handleLogout} />;
+  }
+
+  if (roleKey(session.role) === 'seller') {
+    return <SellerPortal session={session} onLogout={handleLogout} />;
   }
 
   // Admin panel is available only on an explicit admin URL. Root is always the storefront.

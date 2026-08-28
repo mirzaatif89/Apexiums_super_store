@@ -1323,6 +1323,25 @@ export const AdminProvider = ({ children, session }) => {
             "Seller registration failed.",
         );
       const saved = await response.json();
+      const sellerPassword = `Seller@${application.id}2026`;
+      const accountResponse = await fetch("/api/business-accounts", {
+        method: "POST",
+        headers: apiHeaders(),
+        body: JSON.stringify({
+          business_name: application.business_name || `${application.applicant_name}'s Store`,
+          username,
+          password: sellerPassword,
+          owner_name: application.applicant_name,
+          address: application.address,
+          email: application.email,
+          phone: application.phone,
+          role: "Seller",
+          status: "Active",
+        }),
+      });
+      if (!accountResponse.ok && accountResponse.status !== 409) {
+        throw new Error((await accountResponse.json().catch(() => ({}))).message || "Seller portal account could not be created.");
+      }
       setSellers((previous) => [
         {
           ...saved,
@@ -1357,7 +1376,7 @@ export const AdminProvider = ({ children, session }) => {
         item.id === application.id ? { ...item, status: decision } : item,
       ),
     );
-    addToast(`Seller application ${decision.toLowerCase()}.`, "success");
+    addToast(decision === "Approved" ? `Seller approved. Portal username: ${username} | temporary password: Seller@${application.id}2026` : `Seller application ${decision.toLowerCase()}.`, "success");
   };
 
   const reviewInvestorApplication = async (application, decision) => {

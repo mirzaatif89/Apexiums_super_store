@@ -948,6 +948,26 @@ function requireInvestor(req, res, next) {
   next();
 }
 
+function createSellerToken(account) {
+  const payload = Buffer.from(JSON.stringify({ sub: Number(account.id), role: 'Seller', businessId: Number(account.id), exp: Date.now() + INVESTOR_TOKEN_TTL_MS })).toString('base64url');
+  const signature = crypto.createHmac('sha256', TOKEN_SECRET).update(payload).digest('base64url');
+  return `${payload}.${signature}`;
+}
+
+function requireSeller(req, res, next) {
+  const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
+  const [payload, signature] = token.split('.');
+  if (!payload || !signature) return res.status(401).json({ message: 'A valid seller session is required.' });
+  const expected = crypto.createHmac('sha256', TOKEN_SECRET).update(payload).digest('base64url');
+  if (signature.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return res.status(401).json({ message: 'A valid seller session is required.' });
+  try {
+    const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    if (data.role !== 'Seller' || !Number(data.sub) || Number(data.exp) <= Date.now()) throw new Error('Invalid seller token');
+    req.sellerAuth = data;
+    next();
+  } catch { return res.status(401).json({ message: 'A valid seller session is required.' }); }
+}
+
 function persistImageDataUrl(dataUrl, folder = 'categories') {
   if (!String(dataUrl || '').startsWith('data:image/')) return dataUrl || null;
   const match = String(dataUrl).match(/^data:image\/(png|jpeg|jpg|webp|gif);base64,(.+)$/);
@@ -1501,6 +1521,14 @@ app.post('/api/auth/login', async (req, res) => {
     if (account.status === 'Inactive') return res.status(401).json({ message: 'Invalid credentials' });
     if (!verifyPassword(password, account.password_hash)) return res.status(401).json({ message: 'Invalid credentials' });
     await pool.query('UPDATE business_accounts SET last_login = NOW() WHERE id = ?', [account.id]);
+    if (String(account.role || '').replace(/[\s_-]+/g, '').toLowerCase() === 'seller') {
+      return res.json({
+        user: { ...safeBusinessAccount(account), role: 'Seller', businessId: account.id, sellerId: account.id },
+        businessId: account.id,
+        role: 'Seller',
+        token: createSellerToken(account)
+      });
+    }
     res.json({
       user: safeBusinessAccount(account),
       businessId: account.id,
@@ -1510,6 +1538,19 @@ app.post('/api/auth/login', async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+});
+
+app.get('/api/seller/me/dashboard', requireSeller, async (req, res) => {
+  try {
+    const sellerId = Number(req.sellerAuth.sub);
+    const [[seller]] = await pool.query('SELECT id, business_name, username, owner_name, email, phone, status, created_at FROM business_accounts WHERE id = ? AND role = ? AND status = ? LIMIT 1', [sellerId, 'Seller', 'Active']);
+    if (!seller) return res.status(404).json({ message: 'Seller account is not active.' });
+    const [orders] = await pool.query('SELECT * FROM orders WHERE business_id = ? ORDER BY created_at DESC LIMIT 100', [sellerId]);
+    const [returns] = await pool.query('SELECT * FROM returns WHERE business_id = ? ORDER BY created_at DESC LIMIT 100', [sellerId]);
+    const [stock] = await pool.query("SELECT *, CASE WHEN quantity <= 0 THEN 'Out of stock' WHEN quantity <= reorder_level THEN 'Low stock' ELSE 'In stock' END AS stock_status FROM stock WHERE business_id = ? ORDER BY product_name ASC", [sellerId]);
+    const revenue = orders.filter((order) => !['Cancelled', 'Canceled'].includes(String(order.order_status || order.status || ''))).reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
+    res.json({ profile: seller, summary: { orders: orders.length, returns: returns.length, stockUnits: stock.reduce((sum, row) => sum + Number(row.quantity || 0), 0), revenue }, orders, returns, stock });
+  } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
 app.get('/api/auth/session', async (req, res) => {
