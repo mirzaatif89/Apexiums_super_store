@@ -37,7 +37,10 @@ export const SellersView = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.storeName || !formData.sellerName || !formData.selectedCategories.length) return;
+    if (!formData.storeName || !formData.sellerName || !formData.selectedCategories.length) {
+      window.alert('Enter the store name and select at least one product category.');
+      return;
+    }
     try { await addSeller({ ...formData, stockSellerSell: formData.selectedCategories.join(', ') }); setIsModalOpen(false); }
     catch (error) { window.alert(error.message || 'Seller could not be added.'); }
   };
@@ -159,6 +162,11 @@ export const SellersView = () => {
                   {!categories.length && <p className="col-span-full text-xs text-slate-400">Create categories in the Categories section first.</p>}
                 </div>
                 <p className="mt-1 text-[10px] text-slate-500">Select every category this seller is allowed to sell.</p>
+              </div>
+
+              <div>
+                <label className="mb-1 block font-bold text-slate-700">Store name *</label>
+                <input required value={formData.storeName} onChange={(e) => setFormData({ ...formData, storeName: e.target.value })} className="w-full px-3 py-2 border rounded-xl font-semibold" placeholder="e.g. Atif Books & Watches" />
               </div>
 
               <div>
