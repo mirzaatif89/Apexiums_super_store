@@ -2111,13 +2111,21 @@ app.post('/api/customers/register', async (req, res) => {
     const required = requireFields(req.body, ['name', 'username', 'password']);
     if (required) return res.status(400).json({ message: required });
     const username = String(req.body.username).trim();
-    const [existing] = await pool.query('SELECT id FROM customers WHERE username = ? OR email = ? LIMIT 1', [username, req.body.email || username]);
+    const email = req.body.email ? normalizeEmail(req.body.email) : null;
+    const phone = req.body.phone ? String(req.body.phone).trim() : null;
+    const isEmail = /^\S+@\S+\.\S+$/.test(username);
+    const isPhone = /^[+\d][\d\s()-]{6,19}$/.test(username);
+    if (!isEmail && !isPhone) return res.status(400).json({ message: 'Please enter a valid email address or contact number.' });
+    if (String(req.body.password).length < 6) return res.status(400).json({ message: 'Password must contain at least 6 characters.' });
+    const [existing] = isEmail
+      ? await pool.query('SELECT id FROM customers WHERE username = ? OR email = ? LIMIT 1', [username.toLowerCase(), email || username.toLowerCase()])
+      : await pool.query('SELECT id FROM customers WHERE username = ? OR phone = ? LIMIT 1', [username, phone || username]);
     if (existing.length) return res.status(409).json({ message: 'Customer account already exists' });
     const [result] = await pool.query(
-      'INSERT INTO customers (business_id, name, username, password_hash, plain_password, email, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [DEFAULT_BUSINESS_ID, req.body.name, username, hashPassword(req.body.password), req.body.password, req.body.email || null, req.body.phone || null, 'Active']
+      'INSERT INTO customers (business_id, name, username, password_hash, email, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [DEFAULT_BUSINESS_ID, req.body.name, isEmail ? username.toLowerCase() : username, hashPassword(req.body.password), email, phone, 'Active']
     );
-    res.status(201).json({ id: result.insertId, name: req.body.name, username, email: req.body.email || null, phone: req.body.phone || null, status: 'Active' });
+    res.status(201).json({ id: result.insertId, name: req.body.name, username, email, phone, status: 'Active' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

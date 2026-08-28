@@ -209,14 +209,29 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
 
     setLoading(true);
     try {
-      const response = await fetchWithTimeout('/api/auth/customer-registration/start', {
+      const identifier = signupEmail.trim();
+      const isEmail = identifier.includes('@');
+      const response = await fetchWithTimeout('/api/customers/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: signupName.trim(), identifier: signupEmail.trim(), password: signupPassword })
+          body: JSON.stringify({
+            name: signupName.trim(),
+            username: identifier,
+            email: isEmail ? identifier : null,
+            phone: isEmail ? null : identifier,
+            password: signupPassword
+          })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Unable to create account.');
-      onLogin({ ...data.user, token: data.token || null, role: 'User', loginType: 'user' });
+      const loginResponse = await fetchWithTimeout('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: identifier, password: signupPassword })
+      });
+      const loginData = await loginResponse.json();
+      if (!loginResponse.ok) throw new Error(loginData.message || 'Account created. Please sign in.');
+      onLogin({ ...loginData.user, token: loginData.token || null, role: 'User', loginType: 'user' });
       onClose();
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
