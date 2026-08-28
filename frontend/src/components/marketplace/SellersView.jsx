@@ -5,7 +5,7 @@ import ActionMenu from '../common/ActionMenu';
 import { Store, Search, Plus, CheckCircle2, ShieldAlert, X, Star, DollarSign, Package } from 'lucide-react';
 
 export const SellersView = () => {
-  const { sellers, updateSellerStatus, addSeller, sellerApplications, reviewSellerApplication } = useAdmin();
+  const { sellers, updateSellerStatus, addSeller, sellerApplications, reviewSellerApplication, categories } = useAdmin();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSeller, setSelectedSeller] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -19,7 +19,7 @@ export const SellersView = () => {
     phone: '',
     description: '',
     sellerImage: '',
-    stockSellerSell: '',
+    selectedCategories: [],
     username: '',
     password: '',
     commissionRate: 10,
@@ -35,11 +35,11 @@ export const SellersView = () => {
       s.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.storeName || !formData.sellerName) return;
-    addSeller(formData);
-    setIsModalOpen(false);
+    if (!formData.storeName || !formData.sellerName || !formData.selectedCategories.length) return;
+    try { await addSeller({ ...formData, stockSellerSell: formData.selectedCategories.join(', ') }); setIsModalOpen(false); }
+    catch (error) { window.alert(error.message || 'Seller could not be added.'); }
   };
 
   return (
@@ -53,7 +53,7 @@ export const SellersView = () => {
           onClick={() => setIsModalOpen(true)}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md cursor-pointer"
         >
-          <Plus size={16} /> + Become a Seller Application
+          <Plus size={16} /> Add Seller
         </button>
       </div>
 
@@ -145,7 +145,7 @@ export const SellersView = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl max-h-[90vh] overflow-y-auto w-full p-5 space-y-4">
             <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="text-sm font-extrabold text-slate-900">Seller Registration Application</h3>
+              <h3 className="text-sm font-extrabold text-slate-900">Add Seller</h3>
               <button onClick={() => setIsModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-800">
                 <X size={18} />
               </button>
@@ -153,15 +153,12 @@ export const SellersView = () => {
 
             <form onSubmit={handleSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Which Stock Seller Sells *</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.stockSellerSell}
-                  onChange={(e) => setFormData({ ...formData, stockSellerSell: e.target.value, storeName: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-xl font-semibold"
-                  placeholder="e.g. Apexium Electronics Store"
-                />
+                <label className="mb-2 block font-bold text-slate-700">Product categories *</label>
+                <div className="grid max-h-36 grid-cols-2 gap-2 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-3">
+                  {categories.filter((category) => String(category.status || 'Active').toLowerCase() === 'active').map((category) => { const label = category.name; const checked = formData.selectedCategories.includes(label); return <label key={category.id || label} className={`flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold ${checked ? 'bg-red-50 text-[#E8262A]' : 'bg-white text-slate-600'}`}><input type="checkbox" checked={checked} onChange={() => setFormData({ ...formData, selectedCategories: checked ? formData.selectedCategories.filter((item) => item !== label) : [...formData.selectedCategories, label] })} className="accent-[#E8262A]" />{label}</label>; })}
+                  {!categories.length && <p className="col-span-full text-xs text-slate-400">Create categories in the Categories section first.</p>}
+                </div>
+                <p className="mt-1 text-[10px] text-slate-500">Select every category this seller is allowed to sell.</p>
               </div>
 
               <div>
@@ -208,7 +205,7 @@ export const SellersView = () => {
                   type="submit"
                   className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold shadow-md cursor-pointer"
                 >
-                  Submit Application
+                  Add Seller
                 </button>
               </div>
             </form>

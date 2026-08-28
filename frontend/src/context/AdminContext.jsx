@@ -1214,7 +1214,7 @@ export const AdminProvider = ({ children, session }) => {
     );
   };
 
-  const addSeller = (sellerData) => {
+  const addSeller = async (sellerData) => {
     const newSeller = {
       ...sellerData,
       id: `v-${Date.now()}`,
@@ -1225,7 +1225,7 @@ export const AdminProvider = ({ children, session }) => {
       joinedDate: new Date().toISOString().split("T")[0],
     };
     setSellers((prev) => [newSeller, ...prev]);
-    fetch("/api/wholesellers", {
+    const sellerResponse = await fetch("/api/wholesellers", {
       method: "POST",
       headers: apiHeaders(),
       body: JSON.stringify({
@@ -1240,9 +1240,27 @@ export const AdminProvider = ({ children, session }) => {
         stock_seller_sell: sellerData.stockSellerSell,
         username: sellerData.username,
         password: sellerData.password,
-        status: sellerData.status || "Pending",
+        status: "Active",
       }),
-    }).catch(() => {});
+    });
+    if (!sellerResponse.ok) throw new Error((await sellerResponse.json().catch(() => ({}))).message || 'Seller record could not be saved.');
+    const accountResponse = await fetch("/api/business-accounts", {
+      method: "POST",
+      headers: apiHeaders(),
+      body: JSON.stringify({
+        business_name: sellerData.storeName,
+        username: sellerData.username,
+        password: sellerData.password,
+        owner_name: sellerData.sellerName,
+        address: sellerData.address,
+        email: sellerData.email,
+        phone: sellerData.phone,
+        seller_categories: (sellerData.selectedCategories || []).join(', '),
+        role: 'Seller',
+        status: 'Active'
+      })
+    });
+    if (!accountResponse.ok) throw new Error((await accountResponse.json().catch(() => ({}))).message || 'Seller portal account could not be created.');
     addToast(`New seller "${newSeller.storeName}" registered!`, "success");
   };
 

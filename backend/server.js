@@ -725,6 +725,7 @@ const schemas = [
     address TEXT,
     email VARCHAR(180),
     phone VARCHAR(60),
+    seller_categories TEXT,
     agreement_image VARCHAR(500),
     role VARCHAR(40) DEFAULT 'BusinessAdmin',
     status VARCHAR(30) DEFAULT 'Active',
@@ -1177,6 +1178,7 @@ async function initializeDatabase() {
   await ensureColumn('business_accounts', 'address', 'TEXT');
   await ensureColumn('business_accounts', 'agreement_image', 'VARCHAR(500)');
   await ensureColumn('business_accounts', 'plain_password', 'VARCHAR(255)');
+  await ensureColumn('business_accounts', 'seller_categories', 'TEXT');
   await ensureColumn('seller_applications', 'address', 'TEXT');
   await ensureColumn('seller_applications', 'leopard_courier_nearby', 'VARCHAR(10)');
   await ensureColumn('seller_applications', 'product_image_url', 'VARCHAR(500)');
@@ -1629,7 +1631,7 @@ app.post('/api/business-accounts', async (req, res) => {
     if (existing.length) return res.status(409).json({ message: 'Username already exists' });
     const passwordHash = hashPassword(req.body.password);
     const [result] = await pool.query(
-      'INSERT INTO business_accounts (business_name, username, password_hash, plain_password, owner_name, cnic, address, email, phone, agreement_image, role, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO business_accounts (business_name, username, password_hash, plain_password, owner_name, cnic, address, email, phone, seller_categories, agreement_image, role, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         req.body.business_name,
         username,
@@ -1640,6 +1642,7 @@ app.post('/api/business-accounts', async (req, res) => {
         req.body.address || null,
         req.body.email || null,
         req.body.phone || null,
+        req.body.seller_categories || null,
         req.body.agreement_image || null,
         req.body.role || 'BusinessAdmin',
         req.body.status || 'Active'
@@ -1653,7 +1656,7 @@ app.post('/api/business-accounts', async (req, res) => {
       cnic: req.body.cnic || null,
       address: req.body.address || null,
       email: req.body.email || null,
-      phone: req.body.phone || null,
+      phone: req.body.phone || null, seller_categories: req.body.seller_categories || null,
       agreement_image: req.body.agreement_image || null,
       role: req.body.role || 'BusinessAdmin',
       status: req.body.status || 'Active'
@@ -1670,7 +1673,7 @@ app.put('/api/business-accounts/:id', async (req, res) => {
       return res.status(403).json({ message: 'Not allowed' });
     }
     const data = {};
-    ['business_name', 'owner_name', 'cnic', 'address', 'email', 'phone', 'agreement_image', 'role', 'status'].forEach((key) => {
+    ['business_name', 'owner_name', 'cnic', 'address', 'email', 'phone', 'seller_categories', 'agreement_image', 'role', 'status'].forEach((key) => {
       if (Object.prototype.hasOwnProperty.call(req.body, key)) data[key] = req.body[key] || null;
     });
     if (req.body.password) {
