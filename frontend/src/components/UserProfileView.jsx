@@ -28,10 +28,8 @@ export default function UserProfileView({
 }) {
   const fileInputRef = useRef(null);
 
-  const [profileName, setProfileName] = useState(session?.name || session?.username || 'Esther Howard');
-  const [profileEmail, setProfileEmail] = useState(session?.email || 'esther.howard@example.com');
-  const [trackId, setTrackId] = useState('');
-  const [trackedOrder, setTrackedOrder] = useState(null);
+  const [profileName, setProfileName] = useState(session?.name || session?.username || 'Customer');
+  const [profileEmail, setProfileEmail] = useState(session?.email || '');
   const [ordersOpen, setOrdersOpen] = useState(initialOrders);
   const [myOrders, setMyOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
@@ -54,14 +52,10 @@ export default function UserProfileView({
   }, [session?.email, profileEmail]);
 
   React.useEffect(() => { if (ordersOpen) loadMyOrders(); }, [ordersOpen, loadMyOrders]);
-  const trackOrder = async (event) => {
-    event.preventDefault();
-    const id = trackId.trim();
-    if (!id) return;
-    const lookupId = id.replace(/^ORD-/i, '');
-    try { const response = await fetch(`/api/orders/${lookupId}`); const data = response.ok ? await response.json() : null; const status = data?.order?.order_status || data?.order_status || 'Placed'; setTrackedOrder({ id, status: status === 'Pending' ? 'Placed' : status }); } catch { setTrackedOrder(null); }
-  };
-  const [profilePhone, setProfilePhone] = useState(session?.phone || '603.555.0123');
+  const [profilePhone, setProfilePhone] = useState(session?.phone || '');
+  const profileIdentifier = session?.email
+    ? profileEmail
+    : profilePhone || session?.username || '';
   // Start with a clean placeholder. A remote stock image can fail to load and
   // leaves the browser's broken-image text over the profile card.
   const [avatarUrl, setAvatarUrl] = useState(session?.avatar || null);
@@ -188,8 +182,6 @@ export default function UserProfileView({
         <div className="w-6" /> {/* Spacer for symmetry */}
       </div>
 
-      <div className="mx-4 mt-4 rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-4 shadow-sm"><div className="flex items-center justify-between"><div><h3 className="text-sm font-black text-slate-900">Track an order</h3><p className="mt-0.5 text-[11px] font-medium text-slate-500">Enter your order ID for a quick update.</p></div><PackageCheck size={20} className="text-[#E8262A]" /></div><form onSubmit={trackOrder} className="mt-3 flex gap-2"><input value={trackId} onChange={(e) => setTrackId(e.target.value)} placeholder="e.g. ORD-12" className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-800 outline-none transition focus:border-[#E8262A] focus:ring-2 focus:ring-red-100" /><button className="rounded-xl bg-[#E8262A] px-4 py-2.5 text-xs font-black text-white shadow-sm transition hover:bg-red-700">Track</button></form>{trackedOrder && <p className="mt-3 text-xs font-bold text-emerald-700">Order {trackedOrder.id}: {trackedOrder.status}</p>}</div>
-
       {ordersOpen ? <div className="px-5 py-6"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-xl font-black text-slate-900">My Orders</h2><p className="mt-1 text-xs text-slate-500">Track your purchases and delivery progress.</p></div><button type="button" onClick={() => setOrdersOpen(false)} className="rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700">Back</button></div>{ordersLoading ? <p className="py-10 text-center text-xs font-semibold text-slate-400">Loading your orders...</p> : !myOrders.length ? <div className="rounded-2xl border border-dashed p-8 text-center"><Package className="mx-auto text-slate-300" size={34}/><p className="mt-3 text-sm font-bold text-slate-700">No orders yet</p><p className="mt-1 text-xs text-slate-500">Your placed orders will appear here.</p></div> : <div className="space-y-4">{myOrders.map((order) => { const status = order.order_status || order.status || 'Pending'; const displayStatus = status === 'Pending' ? 'Placed' : status; const items = order.items || []; const delivered = ['Delivered', 'Received'].includes(status); const shipped = ['Shipped', 'Delivered', 'Received'].includes(status); return <article key={order.id || order.backendOrderId} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="flex items-center justify-between border-b bg-slate-50 px-4 py-3"><div><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Order #{order.id || order.backendOrderId}</p><p className="mt-0.5 text-xs font-bold text-slate-700">{order.created_at ? new Date(order.created_at).toLocaleDateString('en-PK') : order.date || 'Recent order'}</p></div><span className="rounded-full bg-red-50 px-2.5 py-1 text-[10px] font-black text-red-600">{displayStatus}</span></div><div className="space-y-2 px-4 py-3">{items.slice(0, 2).map((item, index) => <div key={`${item.product_id || item.id}-${index}`} className="flex justify-between gap-3 text-xs"><span className="min-w-0 truncate font-semibold text-slate-800">{item.product_name || item.title || item.name || 'Product'} × {item.qty || 1}</span><span className="shrink-0 font-bold">Rs {Number(item.price || 0).toLocaleString('en-PK')}</span></div>)}<div className="flex justify-between border-t pt-3 text-xs"><span className="text-slate-500">{order.payment_method || order.paymentMethod || 'Cash on Delivery'}</span><strong className="text-red-600">Rs {Number(order.total_amount || order.totalAmount || 0).toLocaleString('en-PK')}</strong></div></div><div className="grid grid-cols-4 border-t px-3 py-3 text-center text-[9px] font-bold"><div className="text-red-600"><PackageCheck className="mx-auto mb-1" size={17}/>Placed</div><div className={status !== 'Pending' ? 'text-red-600' : 'text-slate-300'}><Package className="mx-auto mb-1" size={17}/>Processing</div><div className={shipped ? 'text-red-600' : 'text-slate-300'}><Truck className="mx-auto mb-1" size={17}/>Shipped</div><div className={delivered ? 'text-red-600' : 'text-slate-300'}><MapPin className="mx-auto mb-1" size={17}/>Delivered</div></div></article>; })}</div>}</div> : <>
       {/* User Avatar & Basic Info */}
       <div className="mx-4 mt-5 rounded-3xl border border-slate-100 bg-white px-5 py-6 text-center shadow-[0_8px_30px_rgba(15,23,42,0.07)]">
@@ -225,10 +217,7 @@ export default function UserProfileView({
         </h2>
 
         {/* Contact info subtext */}
-        <p className="mt-1.5 break-all text-xs font-medium text-slate-500">
-          {profileEmail}
-        </p>
-        <p className="mt-1 text-xs font-medium text-slate-400">{profilePhone}</p>
+        {profileIdentifier ? <p className="mx-auto mt-1.5 w-fit max-w-full break-all rounded-full bg-red-50 px-3 py-1.5 text-xs font-bold text-[#E8262A]">{profileIdentifier}</p> : null}
         <button type="button" onClick={() => setActiveModal('editProfile')} className="mt-4 rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-200">Edit profile</button>
       </div>
 
@@ -249,7 +238,7 @@ export default function UserProfileView({
             }}
             className="group flex flex-col items-center justify-center gap-2 cursor-pointer"
           >
-            <span className="rounded-2xl bg-red-50 p-2.5"><CreditCard className="w-5 h-5 text-[#E8262A] stroke-[1.8] group-hover:scale-110 transition" /></span><span className="text-[11px] text-slate-600 font-semibold group-hover:text-[#E8262A] transition">
+            <span className="rounded-2xl bg-amber-50 p-2.5 ring-1 ring-amber-100"><CreditCard className="w-5 h-5 text-amber-600 stroke-[1.8] group-hover:scale-110 transition" /></span><span className="text-[11px] text-slate-600 font-semibold group-hover:text-amber-600 transition">
               To pay
             </span>
           </button>
@@ -263,7 +252,7 @@ export default function UserProfileView({
             }}
             className="group flex flex-col items-center justify-center gap-2 cursor-pointer"
           >
-            <span className="rounded-2xl bg-red-50 p-2.5"><Truck className="w-5 h-5 text-[#E8262A] stroke-[1.8] group-hover:scale-110 transition" /></span><span className="text-[11px] text-slate-600 font-semibold group-hover:text-[#E8262A] transition">
+            <span className="rounded-2xl bg-sky-50 p-2.5 ring-1 ring-sky-100"><Truck className="w-5 h-5 text-sky-600 stroke-[1.8] group-hover:scale-110 transition" /></span><span className="text-[11px] text-slate-600 font-semibold group-hover:text-sky-600 transition">
               To ship
             </span>
           </button>
@@ -277,7 +266,7 @@ export default function UserProfileView({
             }}
             className="group flex flex-col items-center justify-center gap-2 cursor-pointer"
           >
-            <span className="rounded-2xl bg-red-50 p-2.5"><Package className="w-5 h-5 text-[#E8262A] stroke-[1.8] group-hover:scale-110 transition" /></span><span className="text-[11px] text-slate-600 font-semibold group-hover:text-[#E8262A] transition">
+            <span className="rounded-2xl bg-violet-50 p-2.5 ring-1 ring-violet-100"><Package className="w-5 h-5 text-violet-600 stroke-[1.8] group-hover:scale-110 transition" /></span><span className="text-[11px] text-slate-600 font-semibold group-hover:text-violet-600 transition">
               To receive
             </span>
           </button>
@@ -291,7 +280,7 @@ export default function UserProfileView({
             }}
             className="group flex flex-col items-center justify-center gap-2 cursor-pointer"
           >
-            <span className="rounded-2xl bg-red-50 p-2.5"><SquarePen className="w-5 h-5 text-[#E8262A] stroke-[1.8] group-hover:scale-110 transition" /></span><span className="text-[11px] text-slate-600 font-semibold group-hover:text-[#E8262A] transition">
+            <span className="rounded-2xl bg-emerald-50 p-2.5 ring-1 ring-emerald-100"><SquarePen className="w-5 h-5 text-emerald-600 stroke-[1.8] group-hover:scale-110 transition" /></span><span className="text-[11px] text-slate-600 font-semibold group-hover:text-emerald-600 transition">
               To review
             </span>
           </button>
@@ -307,7 +296,7 @@ export default function UserProfileView({
           className="w-full flex items-center justify-between py-4 border-b border-slate-100 hover:bg-slate-50/80 px-2 rounded-xl transition cursor-pointer group"
         >
           <div className="flex items-center gap-3">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-red-50 text-[#E8262A]"><MapPin className="h-4 w-4 stroke-[2]" /></span>
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-rose-50 text-rose-600 ring-1 ring-rose-100"><MapPin className="h-4 w-4 stroke-[2]" /></span>
             <span className="text-sm font-semibold text-slate-800 group-hover:text-slate-900">
               Manage address
             </span>
@@ -322,7 +311,7 @@ export default function UserProfileView({
           className="w-full flex items-center justify-between py-4 border-b border-slate-100 hover:bg-slate-50/80 px-2 rounded-xl transition cursor-pointer group"
         >
           <div className="flex items-center gap-3">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-red-50 text-[#E8262A]"><CreditCard className="h-4 w-4 stroke-[2]" /></span>
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-sky-50 text-sky-600 ring-1 ring-sky-100"><CreditCard className="h-4 w-4 stroke-[2]" /></span>
             <span className="text-sm font-semibold text-slate-800 group-hover:text-slate-900">
               Payment method
             </span>
@@ -337,7 +326,7 @@ export default function UserProfileView({
           className="w-full flex items-center justify-between py-4 border-b border-slate-100 hover:bg-slate-50/80 px-2 rounded-xl transition cursor-pointer group"
         >
           <div className="flex items-center gap-3">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-red-50 text-[#E8262A]"><ShieldCheck className="h-4 w-4 stroke-[2]" /></span>
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100"><ShieldCheck className="h-4 w-4 stroke-[2]" /></span>
             <span className="text-sm font-semibold text-slate-800 group-hover:text-slate-900">
               Privacy Policy
             </span>
@@ -352,7 +341,7 @@ export default function UserProfileView({
           className="w-full flex items-center justify-between py-4 hover:bg-slate-50/80 px-2 rounded-xl transition cursor-pointer group"
         >
           <div className="flex items-center gap-3">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-red-50 text-[#E8262A]"><Settings className="h-4 w-4 stroke-[2]" /></span>
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-violet-50 text-violet-600 ring-1 ring-violet-100"><Settings className="h-4 w-4 stroke-[2]" /></span>
             <span className="text-sm font-semibold text-slate-800 group-hover:text-slate-900">
               Setting
             </span>
