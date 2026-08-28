@@ -167,10 +167,6 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
     const loginIdentifier = username.trim();
     const isEmailLogin = /^\S+@\S+\.\S+$/.test(loginIdentifier);
     const isPhoneLogin = /^[+\d][\d\s()-]{6,19}$/.test(loginIdentifier);
-    if (!isEmailLogin && !isPhoneLogin) {
-      setError('Please enter your registered email or contact number, not your full name.');
-      return;
-    }
     setLoading(true);
     try {
       const response = await fetchWithTimeout('/api/auth/login', {
@@ -182,8 +178,10 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
       if (!response.ok) {
         // Compatibility for the currently running legacy production API,
         // which created customers with plain_password but only checks hashes.
-        const legacyResponse = await fetchWithTimeout('/api/customers?limit=500');
-        const legacyData = legacyResponse.ok ? await legacyResponse.json() : { rows: [] };
+        const legacyResponse = (isEmailLogin || isPhoneLogin)
+          ? await fetchWithTimeout('/api/customers?limit=500')
+          : null;
+        const legacyData = legacyResponse?.ok ? await legacyResponse.json() : { rows: [] };
         const legacyCustomer = (legacyData.rows || []).find((item) => {
           const identifiers = [item.username, item.email, item.phone].filter(Boolean).map((value) => String(value).trim().toLowerCase());
           return identifiers.includes(loginIdentifier.toLowerCase()) && String(item.plain_password || '') === password;
@@ -376,7 +374,7 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
                     {/* Username or Email Input */}
                     <div>
                       <label className="block mb-1 text-xs font-bold text-slate-700">
-                        Email or Contact Number
+                        Username, Email or Contact Number
                       </label>
                       <div className="relative flex items-center">
                         <User size={16} className="absolute left-3 text-slate-400" />
@@ -384,7 +382,7 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
                           type="text"
                           value={username}
                           onChange={(e) => setUsername(e.target.value)}
-                          placeholder="Registered email or contact number"
+                          placeholder="Username, email or contact number"
                           className="w-full h-11 pl-9 pr-3 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-[#E8262A] focus:ring-2 focus:ring-red-100 transition"
                           required
                         />
