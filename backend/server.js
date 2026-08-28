@@ -31,7 +31,6 @@ const dbConfig = {
 };
 
 let pool;
-const customerSessions = new Map();
 const DEFAULT_BUSINESS_ID = 1;
 const businessScopedTables = new Set([
   'banners',
@@ -203,7 +202,11 @@ class MockPool {
 
         if (params.length > 0) {
           const targetId = params[0];
-          rows = rows.filter(r => r.id != targetId);
+          if (String(match[2] || '').includes('token_hash = ?')) {
+            rows = rows.filter(r => r.token_hash !== targetId);
+          } else {
+            rows = rows.filter(r => r.id != targetId);
+          }
           this.tables.set(tableName, rows);
         } else {
           this.tables.set(tableName, []);
@@ -232,6 +235,10 @@ class MockPool {
           if (queryStr.includes('email = ?')) {
             const targetEmail = params[paramIdx++];
             rows = rows.filter(r => r.email === targetEmail);
+          }
+          if (queryStr.includes('token_hash = ?')) {
+            const targetTokenHash = params[paramIdx++];
+            rows = rows.filter(r => r.token_hash === targetTokenHash);
           }
           if (queryStr.includes('alert_key = ?')) {
             const targetAlertKey = params[paramIdx++];
@@ -509,6 +516,28 @@ const schemas = [
     attempts INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`,
+  `CREATE TABLE IF NOT EXISTS customer_sessions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    token_hash CHAR(64) NOT NULL UNIQUE,
+    user_agent VARCHAR(500),
+    ip_address VARCHAR(64),
+    expires_at DATETIME NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_customer_sessions_customer (customer_id),
+    INDEX idx_customer_sessions_expiry (expires_at)
+  )`,
+  `CREATE TABLE IF NOT EXISTS customer_login_history (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    email VARCHAR(180),
+    user_agent VARCHAR(500),
+    ip_address VARCHAR(64),
+    logged_in_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_customer_login_customer (customer_id),
+    INDEX idx_customer_login_date (logged_in_at)
+  )`,
   `CREATE TABLE IF NOT EXISTS reviews (
     id INT AUTO_INCREMENT PRIMARY KEY,
     business_id INT DEFAULT 1,
@@ -765,20 +794,37 @@ function getCookies(req) {
   return Object.fromEntries(String(req.headers.cookie || '').split(';').map(part => part.trim().split(/=(.*)/s)).filter(([key]) => key));
 }
 
-function createCustomerSession(res, customer) {
+function sessionTokenHash(token) {
+  return crypto.createHash('sha256').update(String(token || '')).digest('hex');
+}
+
+function getCustomerToken(req) {
+  const authorization = String(req.headers.authorization || '');
+  const bearer = authorization.match(/^Bearer\s+(.+)$/i)?.[1];
+  return bearer || getCookies(req).apexiums_customer_session || '';
+}
+
+async function createCustomerSession(req, res, customer) {
   const token = crypto.randomBytes(32).toString('hex');
-  customerSessions.set(token, { customerId: customer.id, expiresAt: Date.now() + 1000 * 60 * 60 * 24 * 14 });
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 14);
+  const userAgent = String(req.headers['user-agent'] || '').slice(0, 500) || null;
+  const ipAddress = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '').split(',')[0].trim().slice(0, 64) || null;
+  await pool.query('INSERT INTO customer_sessions (customer_id, token_hash, user_agent, ip_address, expires_at) VALUES (?, ?, ?, ?, ?)', [customer.id, sessionTokenHash(token), userAgent, ipAddress, expiresAt]);
+  await pool.query('INSERT INTO customer_login_history (customer_id, email, user_agent, ip_address) VALUES (?, ?, ?, ?)', [customer.id, normalizeEmail(customer.email || customer.username), userAgent, ipAddress]);
   res.setHeader('Set-Cookie', `apexiums_customer_session=${token}; HttpOnly; Path=/; Max-Age=${60 * 60 * 24 * 14}; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+  return token;
 }
 
 async function getCurrentCustomer(req) {
-  const token = getCookies(req).apexiums_customer_session;
-  const session = token && customerSessions.get(token);
-  if (!session || session.expiresAt < Date.now()) {
-    if (token) customerSessions.delete(token);
+  const token = getCustomerToken(req);
+  if (!token) return null;
+  const [[session]] = await pool.query('SELECT * FROM customer_sessions WHERE token_hash = ? LIMIT 1', [sessionTokenHash(token)]);
+  if (!session || new Date(session.expires_at).getTime() < Date.now()) {
+    if (session) await pool.query('DELETE FROM customer_sessions WHERE id = ?', [session.id]);
     return null;
   }
-  const [[customer]] = await pool.query('SELECT * FROM customers WHERE id = ? LIMIT 1', [session.customerId]);
+  await pool.query('UPDATE customer_sessions SET last_used_at = NOW() WHERE id = ?', [session.id]);
+  const [[customer]] = await pool.query('SELECT * FROM customers WHERE id = ? LIMIT 1', [session.customer_id]);
   return customer || null;
 }
 
@@ -1410,8 +1456,8 @@ app.post('/api/auth/customer-registration/verify', async (req, res) => {
     }
     const [result] = await pool.query('INSERT INTO customers (business_id, name, username, password_hash, email, status) VALUES (?, ?, ?, ?, ?, ?)', [DEFAULT_BUSINESS_ID, pending.name, email, pending.password_hash, email, 'Active']);
     await pool.query('DELETE FROM customer_email_verifications WHERE id = ?', [pending.id]);
-    createCustomerSession(res, { id: result.insertId });
-    res.status(201).json({ user: { id: result.insertId, name: pending.name, username: email, email, role: 'User', loginType: 'user' }, role: 'User', token: `customer-${result.insertId}` });
+    const token = await createCustomerSession(req, res, { id: result.insertId, email, username: email });
+    res.status(201).json({ user: { id: result.insertId, name: pending.name, username: email, email, role: 'User', loginType: 'user' }, role: 'User', token });
   } catch (error) {
     if (error.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'An account with this email already exists. Please sign in.' });
     console.error('Registration verification error:', error.message);
@@ -1428,8 +1474,8 @@ app.post('/api/auth/login', async (req, res) => {
     if (customer) {
       if (customer.status === 'Inactive' || !verifyPassword(password, customer.password_hash)) return res.status(401).json({ message: 'Invalid username or password' });
       const { password_hash, plain_password, ...safeCustomer } = customer;
-      createCustomerSession(res, customer);
-      return res.json({ user: { ...safeCustomer, role: 'User', loginType: 'user' }, role: 'User', token: `customer-${customer.id}` });
+      const token = await createCustomerSession(req, res, customer);
+      return res.json({ user: { ...safeCustomer, role: 'User', loginType: 'user' }, role: 'User', token });
     }
     const [[account]] = await pool.query('SELECT * FROM business_accounts WHERE username = ? LIMIT 1', [username]);
     if (!account) {
@@ -1465,9 +1511,9 @@ app.get('/api/auth/session', async (req, res) => {
   } catch (error) { res.status(500).json({ message: 'Unable to restore session.' }); }
 });
 
-app.post('/api/auth/logout', (req, res) => {
-  const token = getCookies(req).apexiums_customer_session;
-  if (token) customerSessions.delete(token);
+app.post('/api/auth/logout', async (req, res) => {
+  const token = getCustomerToken(req);
+  if (token) await pool.query('DELETE FROM customer_sessions WHERE token_hash = ?', [sessionTokenHash(token)]);
   res.setHeader('Set-Cookie', 'apexiums_customer_session=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax');
   res.status(204).end();
 });
