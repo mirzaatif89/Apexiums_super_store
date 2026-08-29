@@ -9,7 +9,6 @@ import {
   Package,
   PackageCheck,
   Pencil,
-  Settings,
   ShieldCheck,
   SquarePen,
   Truck,
@@ -347,20 +346,6 @@ export default function UserProfileView({
           <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-[#E8262A] transition" />
         </button>
 
-        {/* Setting */}
-        <button
-          type="button"
-          onClick={() => setActiveModal('settings')}
-          className="w-full flex items-center justify-between py-4 hover:bg-slate-50/80 px-2 rounded-xl transition cursor-pointer group"
-        >
-          <div className="flex items-center gap-3">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-violet-50 text-violet-600 ring-1 ring-violet-100"><Settings className="h-4 w-4 stroke-[2]" /></span>
-            <span className="text-sm font-semibold text-slate-800 group-hover:text-slate-900">
-              Setting
-            </span>
-          </div>
-          <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-[#E8262A] transition" />
-        </button>
       </div>
 
       {/* Logout Option Button (if logged in) */}
@@ -581,40 +566,6 @@ export default function UserProfileView({
         </div>
       ) : null}
 
-      {/* MODAL 5: SETTINGS */}
-      {activeModal === 'settings' ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-base font-bold text-slate-900">Account Settings</h3>
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="text-slate-400 hover:text-slate-700 p-1"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                <span className="font-semibold text-slate-800">Push Notifications</span>
-                <input type="checkbox" defaultChecked className="accent-[#E8262A] h-4 w-4" />
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                <span className="font-semibold text-slate-800">SMS Order Updates</span>
-                <input type="checkbox" defaultChecked className="accent-[#E8262A] h-4 w-4" />
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                <span className="font-semibold text-slate-800">Two-Factor Authentication</span>
-                <input type="checkbox" className="accent-[#E8262A] h-4 w-4" />
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }
