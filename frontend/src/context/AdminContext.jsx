@@ -1323,11 +1323,27 @@ export const AdminProvider = ({ children, session }) => {
     addToast(`Investor "${newInv.name}" added to registry.`, "success");
   };
 
-  const updateInvestorStatus = (id, newStatus) => {
+  const updateInvestorStatus = async (id, newStatus) => {
+    const response = await fetch(`/api/investors/${id}`, {
+      method: "PUT",
+      headers: apiHeaders(),
+      body: JSON.stringify({ status: newStatus }),
+    });
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || "Investor status could not be updated.");
     setInvestors((prev) =>
       prev.map((inv) => (inv.id === id ? { ...inv, status: newStatus } : inv)),
     );
     addToast(`Investor status updated to ${newStatus}.`, "success");
+  };
+
+  const deleteInvestor = async (id) => {
+    const response = await fetch(`/api/investors/${id}`, {
+      method: "DELETE",
+      headers: apiHeaders(),
+    });
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || "Investor could not be deleted.");
+    setInvestors((prev) => prev.filter((investor) => String(investor.id) !== String(id)));
+    addToast("Investor was deleted from the registry.", "info");
   };
 
   const reviewSellerApplication = async (application, decision) => {
@@ -1916,6 +1932,7 @@ export const AdminProvider = ({ children, session }) => {
         addSeller,
         addInvestor,
         updateInvestorStatus,
+        deleteInvestor,
         addStaffMember,
         updateStaffMember,
         deleteStaffMember,

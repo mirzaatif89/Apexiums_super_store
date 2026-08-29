@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import Badge from '../common/Badge';
 import ActionMenu from '../common/ActionMenu';
-import { TrendingUp, Plus, CheckCircle2, X } from 'lucide-react';
+import { TrendingUp, Plus, CheckCircle2, Trash2, X } from 'lucide-react';
 
 export const InvestorsView = () => {
-  const { investors, addInvestor, updateInvestorStatus, investorApplications, reviewInvestorApplication } = useAdmin();
+  const { investors, addInvestor, updateInvestorStatus, deleteInvestor, investorApplications, reviewInvestorApplication } = useAdmin();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedInvestor, setSelectedInvestor] = useState(null);
 
@@ -99,9 +99,21 @@ export const InvestorsView = () => {
                         {
                           label: inv.status === 'Pending Approval' ? 'Approve investment' : 'Mark active',
                           icon: CheckCircle2,
-                          onClick: () => {
-                            updateInvestorStatus(inv.id, 'Active');
+                          onClick: async () => {
+                            try { await updateInvestorStatus(inv.id, 'Active'); } catch (error) { window.alert(error.message); }
                             setSelectedInvestor(inv);
+                          }
+                        },
+                        {
+                          label: 'Delete investor',
+                          icon: Trash2,
+                          variant: 'danger',
+                          onClick: async () => {
+                            if (!window.confirm(`Delete investor "${inv.name}" permanently?`)) return;
+                            try {
+                              await deleteInvestor(inv.id);
+                              if (selectedInvestor?.id === inv.id) setSelectedInvestor(null);
+                            } catch (error) { window.alert(error.message); }
                           }
                         }
                       ]}
@@ -210,8 +222,8 @@ export const InvestorsView = () => {
             {selectedInvestor.status === 'Pending Approval' && (
               <div className="flex justify-end gap-2 pt-2 border-t">
                 <button
-                  onClick={() => {
-                    updateInvestorStatus(selectedInvestor.id, 'Active');
+                  onClick={async () => {
+                    try { await updateInvestorStatus(selectedInvestor.id, 'Active'); } catch (error) { window.alert(error.message); }
                     setSelectedInvestor(null);
                   }}
                   className="w-full py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold cursor-pointer"
