@@ -7,6 +7,9 @@ function ProductCard({ product, onSelectProduct, onAddToCart }) {
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : null;
 
+  const ratingValue = Number(product.rating ?? product.averageRating ?? 0);
+  const reviewCount = Number(product.reviewsCount ?? product.reviewCount ?? 0);
+
   return (
     <article
       onClick={() => onSelectProduct && onSelectProduct(product)}
@@ -61,11 +64,13 @@ function ProductCard({ product, onSelectProduct, onAddToCart }) {
           </h3>
 
           {/* Rating */}
-          <div className="mt-0.5 flex items-center gap-1 text-[10px] text-amber-500">
-            <Star size={11} className="fill-amber-400 text-amber-400" />
-            <span className="font-bold text-slate-700 text-[10px]">{product.rating || '4.8'}</span>
-            <span className="text-slate-400 text-[9px]">({product.reviewsCount || 36})</span>
-          </div>
+          {ratingValue > 0 && reviewCount > 0 && (
+            <div className="mt-0.5 flex items-center gap-1 text-[10px] text-amber-500">
+              <Star size={11} className="fill-amber-400 text-amber-400" />
+              <span className="font-bold text-slate-700 text-[10px]">{ratingValue.toFixed(1)}</span>
+              <span className="text-slate-400 text-[9px]">({reviewCount})</span>
+            </div>
+          )}
         </div>
 
         {/* Pricing and Action */}

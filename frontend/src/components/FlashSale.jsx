@@ -40,7 +40,7 @@ export default function FlashSale({ products = [], onProductClick, onAddToCart }
     if (!products || products.length === 0) return [];
     let list = [...products];
     if (activeTab === 'Popular') {
-      list.sort((a, b) => (b.reviewsCount || 50) - (a.reviewsCount || 50));
+      list.sort((a, b) => (Number(b.reviewsCount || b.reviewCount || 0)) - (Number(a.reviewsCount || a.reviewCount || 0)));
     } else if (activeTab === 'Newest') {
       list.reverse();
     }
@@ -104,6 +104,8 @@ export default function FlashSale({ products = [], onProductClick, onAddToCart }
             const discountPercent = product.originalPrice
               ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
               : null;
+            const ratingValue = Number(product.rating ?? product.averageRating ?? 0);
+            const reviewCount = Number(product.reviewsCount ?? product.reviewCount ?? 0);
 
             return (
               <article
@@ -156,11 +158,13 @@ export default function FlashSale({ products = [], onProductClick, onAddToCart }
                     </h3>
 
                     {/* Rating stars */}
-                    <div className="mt-0.5 flex items-center gap-1 text-[10px] text-amber-500">
-                      <Star size={11} className="fill-amber-400 text-amber-400" />
-                      <span className="font-bold text-slate-700 text-[10px]">{product.rating || '4.8'}</span>
-                      <span className="text-slate-400 text-[9px]">({product.reviewsCount || 42})</span>
-                    </div>
+                    {ratingValue > 0 && reviewCount > 0 && (
+                      <div className="mt-0.5 flex items-center gap-1 text-[10px] text-amber-500">
+                        <Star size={11} className="fill-amber-400 text-amber-400" />
+                        <span className="font-bold text-slate-700 text-[10px]">{ratingValue.toFixed(1)}</span>
+                        <span className="text-slate-400 text-[9px]">({reviewCount})</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Price and Add to Cart */}

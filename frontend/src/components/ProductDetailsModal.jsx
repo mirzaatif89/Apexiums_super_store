@@ -46,6 +46,7 @@ export default function ProductDetailsModal({
   const [searchQuery, setSearchQuery] = useState('');
   const [reviews, setReviews] = useState([]);
   const averageRating = reviews.length ? reviews.reduce((total, review) => total + Number(review.rating || 0), 0) / reviews.length : 0;
+  const hasRealReviews = reviews.length > 0;
 
   const handleAddToCart = () => {
     if (onAddToCart) onAddToCart(quantity);
@@ -347,11 +348,13 @@ export default function ProductDetailsModal({
                       <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
                       In Stock
                     </span>
+                    {hasRealReviews && (
                     <div className="flex items-center gap-1 text-xs font-bold text-slate-700">
-                      <span className="text-amber-500 font-extrabold">4.8</span>
+                      <span className="text-amber-500 font-extrabold">{averageRating.toFixed(1)}</span>
                       <Star size={13} className="fill-amber-400 text-amber-400" />
-                      <span className="text-[10px] text-slate-400 font-normal">({product.reviewsCount || 128})</span>
+                      <span className="text-[10px] text-slate-400 font-normal">({reviews.length})</span>
                     </div>
+                  )}
                   </div>
                 </div>
 
@@ -552,60 +555,61 @@ export default function ProductDetailsModal({
             </div>
           </div>
 
-          {/* 7. RATING DISPLAY SECTION (Right after Delivery, with numeric text 4.5 / 4.8) */}
-          <div className="rounded-[20px] border border-slate-100 bg-white p-4 sm:p-5 shadow-xs flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
-                Customer Rating
-              </h3>
-              <p className="text-[11px] text-slate-500 font-medium">Quality verified product review score</p>
-            </div>
-            <div className="flex items-center gap-3 bg-amber-50/90 px-4 py-2 rounded-xl border border-amber-200/80">
-              <span className="text-lg font-black text-amber-700">{averageRating.toFixed(1)}</span>
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={16} fill={i < Math.round(averageRating) ? 'currentColor' : 'none'} className="text-amber-500" />
-                ))}
-              </div>
-              <span className="text-xs font-bold text-amber-800">({averageRating.toFixed(1)} / 5.0)</span>
-            </div>
-          </div>
-
-          {/* 8. CUSTOMER REVIEWS SECTION (With Product Picture & Product Name) */}
-          <div className="rounded-[20px] border border-slate-100 bg-white p-4 sm:p-6 shadow-xs space-y-4">
-            <div className="border-b border-slate-100 pb-3 flex flex-wrap items-center justify-between gap-3">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
-                Customer Reviews
-              </h3>
-              <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100">
-                ✓ Verified Customer Reviews
-              </span>
-            </div>
-
-            {/* Product Picture & Product Name Header in Reviews */}
-            <div className="flex items-center gap-3.5 p-3 rounded-xl bg-slate-50 border border-slate-100">
-              <img
-                src={product.image}
-                alt={product.title}
-                className="h-14 w-14 rounded-lg object-cover border border-slate-200 shrink-0 bg-white shadow-2xs"
-              />
-              <div className="min-w-0 flex-1">
-                <h4 className="text-xs sm:text-sm font-bold text-slate-900 truncate">
-                  {product.title}
-                </h4>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-xs font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">4.8 ★</span>
-                  <span className="text-[11px] text-slate-500 font-medium">• 128 Verified Reviews</span>
+          {hasRealReviews && (
+            <>
+              {/* 7. RATING DISPLAY SECTION */}
+              <div className="rounded-[20px] border border-slate-100 bg-white p-4 sm:p-5 shadow-xs flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
+                    Customer Rating
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-medium">Quality verified product review score</p>
+                </div>
+                <div className="flex items-center gap-3 bg-amber-50/90 px-4 py-2 rounded-xl border border-amber-200/80">
+                  <span className="text-lg font-black text-amber-700">{averageRating.toFixed(1)}</span>
+                  <div className="flex items-center gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} size={16} fill={i < Math.round(averageRating) ? 'currentColor' : 'none'} className="text-amber-500" />
+                    ))}
+                  </div>
+                  <span className="text-xs font-bold text-amber-800">({averageRating.toFixed(1)} / 5.0)</span>
                 </div>
               </div>
-            </div>
 
-            {/* Reviews Cards List */}
-            <div className="space-y-3 pt-1">
-              {!reviews.length && <p className="py-4 text-center text-xs font-medium text-slate-400">No reviews yet.</p>}
-              {reviews.map((review) => <article key={review.id} className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3.5"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-black text-slate-900">{review.reviewer_name}</p><div className="mt-0.5 flex items-center gap-0.5">{[...Array(5)].map((_, index) => <Star key={index} size={13} fill={index < Number(review.rating) ? 'currentColor' : 'none'} className="text-amber-500" />)}</div></div><time className="shrink-0 text-[10px] font-medium text-slate-400">{review.created_at ? new Date(review.created_at).toLocaleDateString('en-GB') : ''}</time></div><p className="mt-2 text-xs leading-relaxed text-slate-600">{review.comment}</p></article>)}
-            </div>
-          </div>
+              {/* 8. CUSTOMER REVIEWS SECTION */}
+              <div className="rounded-[20px] border border-slate-100 bg-white p-4 sm:p-6 shadow-xs space-y-4">
+                <div className="border-b border-slate-100 pb-3 flex flex-wrap items-center justify-between gap-3">
+                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
+                    Customer Reviews
+                  </h3>
+                  <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100">
+                    ✓ Verified Customer Reviews
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3.5 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                  <img
+                    src={product.image}
+                    alt={product.title}
+                    className="h-14 w-14 rounded-lg object-cover border border-slate-200 shrink-0 bg-white shadow-2xs"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 truncate">
+                      {product.title}
+                    </h4>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">{averageRating.toFixed(1)} ★</span>
+                      <span className="text-[11px] text-slate-500 font-medium">• {reviews.length} Verified Reviews</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-1">
+                  {reviews.map((review) => <article key={review.id} className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3.5"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-black text-slate-900">{review.reviewer_name}</p><div className="mt-0.5 flex items-center gap-0.5">{[...Array(5)].map((_, index) => <Star key={index} size={13} fill={index < Number(review.rating) ? 'currentColor' : 'none'} className="text-amber-500" />)}</div></div><time className="shrink-0 text-[10px] font-medium text-slate-400">{review.created_at ? new Date(review.created_at).toLocaleDateString('en-GB') : ''}</time></div><p className="mt-2 text-xs leading-relaxed text-slate-600">{review.comment}</p></article>)}
+                </div>
+              </div>
+            </>
+          )}
 
           {/* 8. RELATED PRODUCTS SECTION */}
           {relatedProducts.length > 0 && (
