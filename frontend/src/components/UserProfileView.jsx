@@ -587,6 +587,23 @@ export default function UserProfileView({
 
           {/* Action Menu List */}
           <div className="mx-4 mt-5 overflow-hidden rounded-3xl border border-slate-100 bg-white px-3 shadow-[0_8px_30px_rgba(15,23,42,0.05)]">
+            {/* My Orders */}
+            <button
+              type="button"
+              onClick={() => setOrdersOpen(true)}
+              className="w-full flex items-center justify-between py-4 border-b border-slate-100 hover:bg-slate-50/80 px-2 rounded-xl transition cursor-pointer group"
+            >
+              <div className="flex items-center gap-3">
+                <span className="grid h-9 w-9 place-items-center rounded-xl bg-violet-50 text-violet-600 ring-1 ring-violet-100">
+                  <PackageCheck className="h-4 w-4 stroke-[2]" />
+                </span>
+                <span className="text-sm font-semibold text-slate-800 group-hover:text-slate-900">
+                  My Orders
+                </span>
+              </div>
+              <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-[#E8262A] transition" />
+            </button>
+
             {/* Manage Address */}
             <button
               type="button"
