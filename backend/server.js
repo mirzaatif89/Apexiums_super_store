@@ -224,6 +224,13 @@ class MockPool {
 
         if (upper.includes('WHERE')) {
           let paramIdx = 0;
+          // The checkout coupon endpoint uses UPPER(code) = ?. The fallback
+          // database must honor this just like MySQL; otherwise the first
+          // coupon row could incorrectly validate every typed code.
+          if (upper.includes('UPPER(CODE) = ?')) {
+            const targetCode = String(params[paramIdx++] || '').toUpperCase();
+            rows = rows.filter(r => String(r.code || '').toUpperCase() === targetCode);
+          }
           if (queryStr.includes('id = ?')) {
             const targetId = params[paramIdx++];
             rows = rows.filter(r => r.id == targetId);

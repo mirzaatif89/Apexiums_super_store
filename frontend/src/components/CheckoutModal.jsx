@@ -144,6 +144,11 @@ export default function CheckoutModal({
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || 'Invalid coupon code.');
+      // Never trust a mismatched response. This is a final client-side guard
+      // while the server remains the source of truth for all coupon rules.
+      if (String(result.coupon?.code || '').trim().toUpperCase() !== code) {
+        throw new Error('Coupon code is invalid or inactive.');
+      }
       setAppliedDiscount(Number(result.discount || 0));
       setAppliedCoupon(result.coupon);
       setCouponMsg(result.freeDelivery ? `${result.coupon.title || result.coupon.code} applied! Delivery is now free.` : `${result.coupon.title || result.coupon.code} applied! Rs ${Number(result.discount || 0).toLocaleString('en-PK')} discount added.`);
