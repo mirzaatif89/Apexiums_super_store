@@ -75,10 +75,17 @@ export default function UserProfileView({
   const [activeModal, setActiveModal] = useState(null); // 'address' | 'payment' | 'privacy' | 'settings' | 'editProfile'
 
   // Editable forms state
-  const [addresses, setAddresses] = useState([
-    { id: 1, label: 'Home Address', address: '742 Evergreen Terrace, Springfield, OR', isDefault: true }
-  ]);
-  const [newAddress, setNewAddress] = useState('');
+  const [addresses, setAddresses] = useState([]);
+  const [addressForm, setAddressForm] = useState({ label: 'Home', fullName: '', phone: '', email: '', province: '', city: '', address: '', landmark: '', isDefault: true });
+  const addressStorageKey = React.useMemo(() => `elistin-profile-addresses:${String(session?.email || session?.username || '').trim().toLowerCase() || 'guest'}`, [session?.email, session?.username]);
+  const checkoutAddressStorageKey = React.useMemo(() => `elistin-saved-checkout-address:${String(session?.email || session?.username || '').trim().toLowerCase() || 'guest'}`, [session?.email, session?.username]);
+
+  React.useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(addressStorageKey) || '[]');
+      setAddresses(Array.isArray(saved) ? saved : []);
+    } catch { setAddresses([]); }
+  }, [addressStorageKey]);
 
   const [paymentMethods, setPaymentMethods] = useState([
     { id: 1, name: 'Visa ending in 4242', exp: '12/28', isDefault: true }
@@ -135,13 +142,19 @@ export default function UserProfileView({
 
   const handleAddAddress = (e) => {
     e.preventDefault();
-    if (!newAddress.trim()) return;
-    setAddresses([
-      ...addresses,
-      { id: Date.now(), label: 'New Address', address: newAddress, isDefault: addresses.length === 0 }
-    ]);
-    setNewAddress('');
-    showToast('New address added!');
+    const { label, fullName, phone, email, province, city, address, landmark, isDefault } = addressForm;
+    if (!fullName || !phone || !province || !city || !address) {
+      showToast('Fill Name, Contact, Province, City and Street.');
+      return;
+    }
+    const isNewDefault = isDefault || addresses.length === 0;
+    const next = [...addresses.map((item) => ({ ...item, isDefault: isNewDefault ? false : item.isDefault })), { id: Date.now(), label: label || 'Home', fullName, phone, email: email.trim(), province, city, address, landmark, isDefault: isNewDefault }];
+    setAddresses(next);
+    localStorage.setItem(addressStorageKey, JSON.stringify(next));
+    const defaultAddress = next.find((item) => item.isDefault) || next[0];
+    localStorage.setItem(checkoutAddressStorageKey, JSON.stringify(defaultAddress));
+    setAddressForm({ label: 'Home', fullName: profileName, phone: profilePhone, email: profileEmail, province: '', city: '', address: '', landmark: '', isDefault: false });
+    showToast('Address saved. It will be available at checkout.');
   };
 
   return (
@@ -475,19 +488,21 @@ export default function UserProfileView({
                       </span>
                     ) : null}
                   </div>
-                  <p className="text-slate-600">{addr.address}</p>
+                  <p className="text-slate-700 font-semibold">{addr.fullName} · {addr.phone}</p>
+                  {addr.email ? <p className="mt-0.5 text-slate-500">{addr.email}</p> : null}
+                  <p className="mt-1 text-slate-600">{addr.address}{addr.landmark ? `, Near ${addr.landmark}` : ''}, {addr.city}, {addr.province}</p>
                 </div>
               ))}
             </div>
 
-            <form onSubmit={handleAddAddress} className="pt-3 border-t border-slate-100 space-y-2">
-              <label className="block text-xs font-bold text-slate-700">Add New Address</label>
-              <textarea
-                value={newAddress}
-                onChange={(e) => setNewAddress(e.target.value)}
-                placeholder="Enter street name, house/suite number, city"
-                className="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl h-20 outline-none focus:bg-white focus:border-[#E8262A]"
-              />
+            <form onSubmit={handleAddAddress} className="pt-3 border-t border-slate-100 space-y-3">
+              <label className="block text-xs font-black text-slate-800">Add New Address</label>
+              <div className="grid grid-cols-2 gap-2"><label className="text-[11px] font-bold text-slate-600">Address label<input value={addressForm.label} onChange={(e) => setAddressForm({ ...addressForm, label: e.target.value })} placeholder="Home / Office" className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs outline-none focus:border-[#E8262A]" /></label><label className="text-[11px] font-bold text-slate-600">Full name *<input required value={addressForm.fullName} onChange={(e) => setAddressForm({ ...addressForm, fullName: e.target.value })} placeholder="Ali Raza" className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs outline-none focus:border-[#E8262A]" /></label></div>
+              <div className="grid grid-cols-2 gap-2"><label className="text-[11px] font-bold text-slate-600">Contact *<input required value={addressForm.phone} onChange={(e) => setAddressForm({ ...addressForm, phone: e.target.value })} placeholder="0300-1234567" className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs outline-none focus:border-[#E8262A]" /></label><label className="text-[11px] font-bold text-slate-600">Email <span className="font-normal">(optional)</span><input type="email" value={addressForm.email} onChange={(e) => setAddressForm({ ...addressForm, email: e.target.value })} placeholder="name@email.com" className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs outline-none focus:border-[#E8262A]" /></label></div>
+              <div className="grid grid-cols-2 gap-2"><label className="text-[11px] font-bold text-slate-600">Province *<input required value={addressForm.province} onChange={(e) => setAddressForm({ ...addressForm, province: e.target.value })} placeholder="Punjab" className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs outline-none focus:border-[#E8262A]" /></label><label className="text-[11px] font-bold text-slate-600">City *<input required value={addressForm.city} onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })} placeholder="Lahore" className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs outline-none focus:border-[#E8262A]" /></label></div>
+              <label className="block text-[11px] font-bold text-slate-600">Mohallah / Sector / Street *<input required value={addressForm.address} onChange={(e) => setAddressForm({ ...addressForm, address: e.target.value })} placeholder="House No, Mohallah, Sector or Street" className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs outline-none focus:border-[#E8262A]" /></label>
+              <label className="block text-[11px] font-bold text-slate-600">Landmark <span className="font-normal">(optional)</span><input value={addressForm.landmark} onChange={(e) => setAddressForm({ ...addressForm, landmark: e.target.value })} placeholder="Near mosque, school, market, etc." className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs outline-none focus:border-[#E8262A]" /></label>
+              <label className="flex cursor-pointer items-center gap-2 text-[11px] font-bold text-slate-600"><input type="checkbox" checked={addressForm.isDefault} onChange={(e) => setAddressForm({ ...addressForm, isDefault: e.target.checked })} className="accent-[#E8262A]" />Use as default delivery address</label>
               <button
                 type="submit"
                 className="w-full py-2.5 bg-[#E8262A] text-white font-bold text-xs rounded-xl hover:bg-red-900 transition"
