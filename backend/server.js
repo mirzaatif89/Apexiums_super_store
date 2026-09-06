@@ -1321,6 +1321,17 @@ function crudRoutes(resource, required = []) {
         if (!Number.isFinite(rating) || rating < 1 || rating > 5) return res.status(400).json({ message: 'Rating must be between 1.0 and 5.0.' });
       }
       const data = cleanPayload(req.body, fields);
+      // A signed-in customer's order must always belong to that customer.
+      // Do not trust an address form's email for account ownership.
+      if (resource === 'orders') {
+        const customer = await getCurrentCustomer(req);
+        if (customer) {
+          data.customer_id = customer.id;
+          data.customer_email = normalizeEmail(customer.email || customer.username);
+          data.customer_name = customer.name || data.customer_name;
+          data.customer_phone = customer.phone || data.customer_phone || null;
+        }
+      }
       if (resource === 'categories' && Object.prototype.hasOwnProperty.call(data, 'subcategories')) {
         data.subcategories = JSON.stringify(Array.isArray(req.body.subcategories) ? req.body.subcategories : (() => { try { return JSON.parse(req.body.subcategories || '[]'); } catch { return []; } })());
       }
@@ -2004,6 +2015,27 @@ app.get('/api/orders', async (req, res) => {
     await listRows('orders', req, res, { ...req.query, sort: req.query.sort || 'created_at' });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+app.get('/api/customer/orders', async (req, res) => {
+  try {
+    const customer = await getCurrentCustomer(req);
+    if (!customer) return res.status(401).json({ message: 'Please sign in to view your orders.' });
+    // Link legacy orders that were created before customer_id was added,
+    // matching only the currently authenticated account's email/phone.
+    await pool.query(
+      'UPDATE orders SET customer_id = ? WHERE customer_id IS NULL AND (customer_email = ? OR (customer_phone IS NOT NULL AND customer_phone = ?))',
+      [customer.id, normalizeEmail(customer.email || customer.username), customer.phone || '']
+    );
+    const [orders] = await pool.query('SELECT * FROM orders WHERE customer_id = ? ORDER BY created_at DESC', [customer.id]);
+    const enriched = await Promise.all(orders.map(async (order) => {
+      const [items] = await pool.query('SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC', [order.id]);
+      return { ...order, items };
+    }));
+    res.json({ rows: enriched, total: enriched.length });
+  } catch (error) {
+    res.status(500).json({ message: 'Unable to load your orders.' });
   }
 });
 

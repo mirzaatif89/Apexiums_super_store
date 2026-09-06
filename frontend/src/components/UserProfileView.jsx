@@ -40,21 +40,14 @@ export default function UserProfileView({
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   const loadMyOrders = React.useCallback(async () => {
-    const email = String(session?.email || profileEmail || "")
-      .trim()
-      .toLowerCase();
     setOrdersLoading(true);
     try {
-      const response = await fetch("/api/orders?limit=500", {
+      const response = await fetch("/api/customer/orders", {
         credentials: "include",
       });
       const data = response.ok ? await response.json() : { rows: [] };
-      const apiOrders = (data.rows || []).filter(
-        (order) =>
-          email && String(order.customer_email || "").toLowerCase() === email,
-      );
       const detailed = await Promise.all(
-        apiOrders.map(async (order) => {
+        (data.rows || []).map(async (order) => {
           try {
             const detail = await fetch(`/api/orders/${order.id}`, {
               credentials: "include",
@@ -82,7 +75,7 @@ export default function UserProfileView({
     } finally {
       setOrdersLoading(false);
     }
-  }, [session?.email, profileEmail]);
+  }, []);
 
   React.useEffect(() => {
     if (ordersOpen) loadMyOrders();
