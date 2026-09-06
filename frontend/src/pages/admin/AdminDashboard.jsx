@@ -1,6 +1,6 @@
 import React from "react";
 import { Search } from "lucide-react";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, X } from "lucide-react";
 import { AdminProvider, useAdmin } from "../../context/AdminContext";
 import Sidebar from "../../components/layout/Sidebar";
 import ToastContainer from "../../components/layout/ToastContainer";
@@ -38,6 +38,14 @@ const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
     useAdmin();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const [selectedDate, setSelectedDate] = React.useState("");
+  const [isMonthPickerOpen, setIsMonthPickerOpen] = React.useState(false);
+
+  const selectedMonthLabel = selectedDate
+    ? new Date(`${selectedDate}-01T00:00:00`).toLocaleDateString("en-PK", {
+        month: "long",
+        year: "numeric",
+      })
+    : "All time";
 
   const pageSlugs = {
     dashboard: "dashboard",
@@ -261,19 +269,54 @@ const AdminDashboardContent = ({ session, storeName, logoSrc, onLogout }) => {
                   Ctrl+K
                 </span>
               </button>
-              <label
-                title="Filter by date"
-                className="relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-500 shadow-sm hover:border-slate-300 hover:bg-slate-50"
-              >
-                <CalendarDays size={18} className="text-slate-500" />
-                <input
-                  type="month"
-                  value={selectedDate}
-                  onChange={(event) => setSelectedDate(event.target.value)}
-                  className="absolute inset-0 cursor-pointer opacity-0"
-                  aria-label="Filter by month"
-                />
-              </label>
+              <div className="relative shrink-0">
+                <button
+                  type="button"
+                  title="Filter dashboard by month"
+                  onClick={() => setIsMonthPickerOpen((isOpen) => !isOpen)}
+                  className={`flex h-10 items-center gap-2 rounded-xl border bg-white px-3 text-xs font-bold shadow-sm transition hover:border-slate-300 hover:bg-slate-50 ${selectedDate ? "border-rose-200 text-rose-600" : "border-slate-200/80 text-slate-500"}`}
+                  aria-expanded={isMonthPickerOpen}
+                  aria-haspopup="dialog"
+                >
+                  <CalendarDays size={18} />
+                  <span className="hidden sm:inline">{selectedMonthLabel}</span>
+                </button>
+                {isMonthPickerOpen && (
+                  <div className="absolute right-0 z-30 mt-2 w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl" role="dialog" aria-label="Dashboard month filter">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-sm font-extrabold text-slate-900">Dashboard month</p>
+                      <button
+                        type="button"
+                        onClick={() => setIsMonthPickerOpen(false)}
+                        className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                        aria-label="Close month filter"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                    <input
+                      type="month"
+                      value={selectedDate}
+                      onChange={(event) => {
+                        setSelectedDate(event.target.value);
+                        setIsMonthPickerOpen(false);
+                      }}
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+                      aria-label="Select dashboard month"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedDate("");
+                        setIsMonthPickerOpen(false);
+                      }}
+                      className="mt-3 w-full rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200"
+                    >
+                      Clear filter (all time)
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
           {renderActiveView()}

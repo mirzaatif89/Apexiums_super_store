@@ -68,24 +68,34 @@ export const DashboardView = ({ selectedDate = '' }) => {
   if (dateRange === 'Last 7 Days') multiplier = 0.45;
   if (dateRange === 'This Year') multiplier = 2.8;
 
+  // The dashboard picker returns YYYY-MM. Keep date comparisons local so a
+  // server timestamp cannot move to the previous/next day in UTC.
+  const getLocalDateKey = (value) => {
+    if (!value) return '';
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) return value.slice(0, 10);
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
+  const matchesSelectedDate = (value) => !selectedDate || getLocalDateKey(value).startsWith(selectedDate);
+  const isRevenueOrder = (order) => ['Shipped', 'Delivered', 'Received'].includes(order.orderStatus);
+
   // Key KPI Numbers
-  const revenueStatuses = ['Shipped', 'Delivered', 'Received'];
-  const totalRevenue = Number(selectedDate ? orders.filter((order) => { const date = new Date(order.orderDate || order.created_at); return revenueStatuses.includes(order.orderStatus) && !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === selectedDate; }).reduce((sum, order) => sum + Number(order.totalAmount || 0), 0) : (liveSummary?.orders?.revenue ?? finance.summary?.totalRevenue ?? orders.filter((order) => revenueStatuses.includes(order.orderStatus)).reduce((sum, order) => sum + Number(order.totalAmount || 0), 0)));
+  const totalRevenue = Number(selectedDate ? orders.filter((order) => isRevenueOrder(order) && matchesSelectedDate(order.orderDate || order.created_at)).reduce((sum, order) => sum + Number(order.totalAmount || 0), 0) : (liveSummary?.orders?.revenue ?? finance.summary?.totalRevenue ?? orders.filter(isRevenueOrder).reduce((sum, order) => sum + Number(order.totalAmount || 0), 0)));
   const totalExpenses = Number(selectedDate ? (finance.expensesList || []).filter((expense) => String(expense.date || '').startsWith(selectedDate)).reduce((sum, expense) => sum + Number(expense.amount || 0), 0) : (finance.expensesList || []).reduce((sum, expense) => sum + Number(expense.amount || 0), 0));
   // Revenue cards include every placed order; use the same order set for COGS
   // so a pending order's product cost is never omitted from net profit.
   const soldOrders = orders.filter((order) => {
     if (['Cancelled', 'Returned'].includes(order.orderStatus)) return false;
     if (!selectedDate) return true;
-    const date = new Date(order.orderDate || order.created_at);
-    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === selectedDate;
+    return matchesSelectedDate(order.orderDate || order.created_at);
   });
   const costOfGoodsSold = soldOrders.reduce((total, order) => total + (order.products || []).reduce((orderCost, item) => {
     const product = products.find((entry) => String(entry.id) === String(item.id));
     return orderCost + Number(product?.costPrice ?? product?.cost_price ?? 0) * Number(item.qty || 1);
   }, 0), 0);
   const netProfit = Number(selectedDate ? totalRevenue - totalExpenses - costOfGoodsSold : (liveSummary?.orders?.netProfit ?? totalRevenue - totalExpenses - costOfGoodsSold));
-  const totalOrders = Number(selectedDate ? orders.filter((order) => { const date = new Date(order.orderDate || order.created_at); return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === selectedDate; }).length : (liveSummary?.orders?.total ?? orders.length));
+  const totalOrders = Number(selectedDate ? orders.filter((order) => matchesSelectedDate(order.orderDate || order.created_at)).length : (liveSummary?.orders?.total ?? orders.length));
   const totalCustomers = Number(liveSummary?.customers?.total ?? customers.length);
   const totalProducts = Number(liveSummary?.products?.total ?? products.length);
   const totalSellers = sellers.length;
@@ -94,11 +104,6 @@ export const DashboardView = ({ selectedDate = '' }) => {
   const pendingSellers = sellers.filter((seller) => ['Pending', 'pending'].includes(seller.status)).length;
   const totalInvestment = investors.reduce((sum, investor) => sum + Number(investor.investmentAmount || investor.investment_amount || 0), 0);
 
-  const matchesSelectedDate = (value) => {
-    if (!selectedDate) return true;
-    const date = new Date(value);
-    return !Number.isNaN(date.getTime()) && (selectedDate.length === 7 ? date.toISOString().slice(0, 7) === selectedDate : date.toISOString().slice(0, 10) === selectedDate);
-  };
   const filteredOrders = orders.filter((order) => matchesSelectedDate(order.orderDate || order.created_at));
   const filteredExpenses = (finance.expensesList || []).filter((expense) => matchesSelectedDate(expense.date));
   const filteredRevenue = filteredOrders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
@@ -118,13 +123,13 @@ export const DashboardView = ({ selectedDate = '' }) => {
   });
   const chartData = monthKeys.map(({ key, month }) => ({
     month,
-    revenue: (selectedDate ? filteredOrders : orders).filter((order) => { const date = new Date(order.orderDate || order.created_at); return !Number.isNaN(date.getTime()) && `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}` === key; }).reduce((sum, order) => sum + Number(order.totalAmount || 0), 0),
+    revenue: (selectedDate ? filteredOrders : orders).filter((order) => getLocalDateKey(order.orderDate || order.created_at).startsWith(key)).reduce((sum, order) => sum + Number(order.totalAmount || 0), 0),
     expenses: (selectedDate ? filteredExpenses : (finance.expensesList || [])).filter((expense) => String(expense.date || '').startsWith(key)).reduce((sum, expense) => sum + Number(expense.amount || 0), 0)
   }));
 
   // Category share based on actual sold order items.
   const productById = new Map(products.map((product) => [String(product.id), product]));
-  const categoryTotals = orders.reduce((result, order) => {
+  const categoryTotals = (selectedDate ? filteredOrders : orders).reduce((result, order) => {
     (order.products || []).forEach((item) => {
       const product = productById.get(String(item.id));
       const name = product?.category || item.category || 'Uncategorized';
