@@ -117,7 +117,7 @@ export const BannersView = () => {
           <div className="border-b bg-slate-50 px-5 py-4">
             <h3 className="font-black text-slate-900">Banner Details</h3>
             <p className="mt-1 text-xs text-slate-500">
-              Upload one image and choose where it should appear.
+              Use 1600 × 700 px (16:7) for a perfect website and app fit.
             </p>
           </div>
           <form onSubmit={saveBanner} className="space-y-5 p-5">
@@ -150,7 +150,7 @@ export const BannersView = () => {
                 Upload Banner
               </p>
               <div className="rounded-xl border border-dashed border-red-200 bg-red-50/30 p-3">
-                <div className="flex h-40 items-center justify-center overflow-hidden rounded-xl border bg-white">
+                <div className="flex aspect-[16/7] items-center justify-center overflow-hidden rounded-xl border bg-white">
                   {form.image ? (
                     <img
                       src={form.image}
