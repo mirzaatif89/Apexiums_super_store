@@ -2022,12 +2022,22 @@ app.get('/api/customer/orders', async (req, res) => {
   try {
     const customer = await getCurrentCustomer(req);
     if (!customer) return res.status(401).json({ message: 'Please sign in to view your orders.' });
-    // Link legacy orders that were created before customer_id was added,
-    // matching only the currently authenticated account's email/phone.
-    await pool.query(
-      'UPDATE orders SET customer_id = ? WHERE customer_id IS NULL AND (customer_email = ? OR (customer_phone IS NOT NULL AND customer_phone = ?))',
-      [customer.id, normalizeEmail(customer.email || customer.username), customer.phone || '']
-    );
+    // Link legacy orders made before customer_id was stored. An exact contact
+    // match is preferred; a matching first name supports old guest checkouts
+    // where the customer registered later with a phone-only account.
+    const [legacyCandidates] = await pool.query('SELECT * FROM orders WHERE customer_id IS NULL');
+    const accountEmail = normalizeEmail(customer.email || customer.username);
+    const customerName = String(customer.name || '').trim().toLowerCase();
+    const firstName = customerName.split(/\s+/)[0];
+    for (const order of legacyCandidates) {
+      const sameEmail = Boolean(customer.email) && normalizeEmail(order.customer_email) === accountEmail;
+      const samePhone = Boolean(customer.phone) && String(order.customer_phone || '').trim() === String(customer.phone).trim();
+      const orderName = String(order.customer_name || '').trim().toLowerCase();
+      const sameFirstName = firstName.length >= 3 && (orderName === firstName || orderName.startsWith(`${firstName} `));
+      if (sameEmail || samePhone || sameFirstName) {
+        await pool.query('UPDATE orders SET customer_id = ? WHERE id = ?', [customer.id, order.id]);
+      }
+    }
     const [orders] = await pool.query('SELECT * FROM orders WHERE customer_id = ? ORDER BY created_at DESC', [customer.id]);
     const enriched = await Promise.all(orders.map(async (order) => {
       const [items] = await pool.query('SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC', [order.id]);
