@@ -491,9 +491,10 @@ export const AdminProvider = ({ children, session }) => {
           totalAmount: Number(row.total_amount || 0),
           paymentStatus: row.payment_status || "Pending",
           orderStatus: row.order_status || "Pending",
-          orderDate: row.created_at
-            ? new Date(row.created_at).toLocaleDateString()
-            : "",
+          // Keep the API's ISO timestamp. Locale formatted values such as
+          // 6/9/2026 are ambiguous and made the dashboard month filter treat
+          // September orders as June orders on some browsers.
+          orderDate: row.created_at || "",
           shippingAddress: row.shipping_address || "",
           paymentMethod: row.payment_method || "",
           deliveryCourier: "Unassigned",

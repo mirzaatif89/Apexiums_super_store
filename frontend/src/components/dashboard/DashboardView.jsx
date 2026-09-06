@@ -78,7 +78,9 @@ export const DashboardView = ({ selectedDate = '' }) => {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   };
   const matchesSelectedDate = (value) => !selectedDate || getLocalDateKey(value).startsWith(selectedDate);
-  const isRevenueOrder = (order) => ['Shipped', 'Delivered', 'Received'].includes(order.orderStatus);
+  // A placed order is a sale for dashboard reporting. Only cancelled and
+  // returned orders are excluded, so COD/pending orders do not disappear.
+  const isRevenueOrder = (order) => !['Cancelled', 'Returned'].includes(order.orderStatus);
 
   // Key KPI Numbers
   const totalRevenue = Number(selectedDate ? orders.filter((order) => isRevenueOrder(order) && matchesSelectedDate(order.orderDate || order.created_at)).reduce((sum, order) => sum + Number(order.totalAmount || 0), 0) : (liveSummary?.orders?.revenue ?? finance.summary?.totalRevenue ?? orders.filter(isRevenueOrder).reduce((sum, order) => sum + Number(order.totalAmount || 0), 0)));
