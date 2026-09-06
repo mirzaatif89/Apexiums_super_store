@@ -231,7 +231,15 @@ class MockPool {
             const targetCode = String(params[paramIdx++] || '').toUpperCase();
             rows = rows.filter(r => String(r.code || '').toUpperCase() === targetCode);
           }
-          if (queryStr.includes('id = ?')) {
+          if (queryStr.includes('order_id = ?')) {
+            const targetOrderId = params[paramIdx++];
+            rows = rows.filter(r => r.order_id == targetOrderId);
+          }
+          if (queryStr.includes('customer_id = ?')) {
+            const targetCustId = params[paramIdx++];
+            rows = rows.filter(r => r.customer_id == targetCustId);
+          }
+          if (/([^a-zA-Z0-9_]|^)id\s*=\s*\?/i.test(queryStr)) {
             const targetId = params[paramIdx++];
             rows = rows.filter(r => r.id == targetId);
           }
@@ -255,9 +263,8 @@ class MockPool {
             const targetProdId = params[paramIdx++];
             rows = rows.filter(r => r.product_id == targetProdId);
           }
-          if (queryStr.includes('customer_id = ?')) {
-            const targetCustId = params[paramIdx++];
-            rows = rows.filter(r => r.customer_id == targetCustId);
+          if (queryStr.includes('customer_id IS NULL')) {
+            rows = rows.filter(r => r.customer_id === null || r.customer_id === undefined);
           }
           if (queryStr.includes('investor_id = ?')) {
             const targetInvestorId = params[paramIdx++];
