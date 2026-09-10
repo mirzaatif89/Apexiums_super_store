@@ -1084,25 +1084,23 @@ export const AdminProvider = ({ children, session }) => {
   };
 
   // Orders
-  const updateOrderStatus = (id, newStatus, newPaymentStatus) => {
-    setOrders((prev) =>
-      prev.map((o) => {
-        if (o.id === id) {
-          const updated = { ...o, orderStatus: newStatus };
-          if (newPaymentStatus) updated.paymentStatus = newPaymentStatus;
-          return updated;
-        }
-        return o;
-      }),
-    );
-    if (String(id).startsWith("ORD-") && /^ORD-\d+$/.test(String(id))) {
-      fetch(`/api/orders/${String(id).replace("ORD-", "")}/status`, {
-        method: "PUT",
-        headers: apiHeaders(),
-        body: JSON.stringify({ order_status: newStatus }),
-      }).catch(() => {});
+  const updateOrderStatus = async (id, newStatus, newPaymentStatus) => {
+    try {
+      if (/^ORD-\d+$/.test(String(id))) {
+        const response = await fetch(`/api/orders/${String(id).replace("ORD-", "")}/status`, {
+          method: "PUT",
+          headers: apiHeaders(),
+          body: JSON.stringify({ order_status: newStatus }),
+        });
+        if (!response.ok) throw new Error("Unable to save order status. Please try again.");
+      }
+      setOrders((prev) => prev.map((order) => order.id === id
+        ? { ...order, orderStatus: newStatus, ...(newPaymentStatus ? { paymentStatus: newPaymentStatus } : {}) }
+        : order));
+      addToast(`Order ${id} status changed to ${newStatus}.`, "success");
+    } catch (error) {
+      addToast(error.message || "Unable to save order status.", "error");
     }
-    addToast(`Order ${id} status changed to ${newStatus}.`, "success");
   };
 
   const deleteOrder = async (id) => {

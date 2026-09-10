@@ -374,7 +374,7 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
                     {/* Username or Email Input */}
                     <div>
                       <label className="block mb-1 text-xs font-bold text-slate-700">
-                        Username, Email or Contact Number
+                        Email or Contact Number
                       </label>
                       <div className="relative flex items-center">
                         <User size={16} className="absolute left-3 text-slate-400" />
@@ -382,7 +382,7 @@ export default function LoginModal({ open, onClose, onLogin, storeName, logoSrc,
                           type="text"
                           value={username}
                           onChange={(e) => setUsername(e.target.value)}
-                          placeholder="Username, email or contact number"
+                          placeholder="Email or contact number"
                           className="w-full h-11 pl-9 pr-3 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-[#E8262A] focus:ring-2 focus:ring-red-100 transition"
                           required
                         />

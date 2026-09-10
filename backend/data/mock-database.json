@@ -108,45 +108,19 @@
     "stock_history": [],
     "orders": [
       {
-        "id": 7,
-        "created_at": "2026-08-23T08:41:48.326Z",
-        "customer_name": "fdgfd",
-        "customer_email": "admin@apexiums.com",
-        "customer_phone": "564564654",
-        "items_count": 1,
-        "total_amount": 860,
-        "payment_method": "COD",
-        "payment_status": "Pending",
-        "order_status": "Pending",
-        "shipping_address": "ghgh, hghgg, pun"
-      },
-      {
-        "id": 8,
-        "created_at": "2026-09-06T09:31:05.195Z",
-        "customer_name": "Atif",
-        "customer_email": "mirzaatif7809@gmail.com",
-        "customer_phone": "656456456465465",
+        "id": 12,
+        "created_at": "2026-09-10T14:36:20.417Z",
+        "customer_name": "Atif mehmoodd",
+        "customer_email": "03293400019",
+        "customer_phone": "03293400019",
         "items_count": 1,
         "total_amount": 860,
         "payment_method": "Cash on Delivery",
         "payment_status": "Pending",
-        "order_status": "Pending",
-        "shipping_address": "Basti Qudratabad wazirabad Punjab Pakistan, Wazirabad, Pungab",
-        "customer_id": 1
-      },
-      {
-        "id": 9,
-        "created_at": "2026-09-06T09:42:31.600Z",
-        "customer_name": "Atif Mehmood",
-        "customer_email": "03147656724",
-        "customer_phone": "03147656724",
-        "items_count": 1,
-        "total_amount": 860,
-        "payment_method": "Cash on Delivery",
-        "payment_status": "Pending",
-        "order_status": "Pending",
-        "shipping_address": "Basti Qudratabad wazirabad Punjab Pakistan, Wazirabad, Pungab",
-        "customer_id": 1
+        "order_status": "Received",
+        "shipping_address": "dhsdkfhsdk, Near kfhsdhfsdkfh, Wazirabad, fksdfh",
+        "customer_id": 2,
+        "business_id": 1
       }
     ],
     "order_items": [
@@ -239,6 +213,38 @@
         "image_url": "/uploads/products/products-1787472905595-69064f48b5.jpg",
         "qty": 1,
         "price": 600
+      },
+      {
+        "id": 10,
+        "created_at": "2026-09-10T09:48:17.824Z",
+        "order_id": 10,
+        "product_id": 2,
+        "product_name": "Sahi bukhari",
+        "image_url": "/uploads/products/products-1787472905595-69064f48b5.jpg",
+        "qty": 1,
+        "price": 600
+      },
+      {
+        "id": 11,
+        "created_at": "2026-09-10T14:34:25.289Z",
+        "business_id": 1,
+        "order_id": 11,
+        "product_id": 2,
+        "product_name": "Sahi bukhari",
+        "image_url": "/uploads/products/products-1787472905595-69064f48b5.jpg",
+        "qty": 1,
+        "price": 600
+      },
+      {
+        "id": 12,
+        "created_at": "2026-09-10T14:36:20.421Z",
+        "business_id": 1,
+        "order_id": 12,
+        "product_id": 2,
+        "product_name": "Sahi bukhari",
+        "image_url": "/uploads/products/products-1787472905595-69064f48b5.jpg",
+        "qty": 1,
+        "price": 600
       }
     ],
     "returns": [
@@ -266,6 +272,16 @@
         "password_hash": "264fdd8e34ba845e7c3bcd22ed64f513:e4ba6d330c1d8e1d960b3dfffb35a3f29b17387c17a885f7e7b96dc9565e0e29a87bd10fc157540e24184a2e24ad7868ca031553482f28eea7a6aaa121b70a1e",
         "email": null,
         "phone": "03147656724",
+        "status": "Active"
+      },
+      {
+        "id": 2,
+        "created_at": "2026-09-10T09:47:27.537Z",
+        "name": "Atif mehmoodd",
+        "username": "03293400019",
+        "password_hash": "7ba1fcf9046d1ebe6a66f671ee6847fb:39a81ad08a648ae68846e9ce49f34d272366c10dc366b73113e3fa88651e78ccb4b7990bd67611653ddd57dff4f733b3557fb6930717d82c59939c96f3cfc412",
+        "email": null,
+        "phone": "03293400019",
         "status": "Active"
       }
     ],
@@ -418,6 +434,41 @@
         "entity_id": 9,
         "severity": "Info",
         "is_read": null
+      },
+      {
+        "id": 14,
+        "created_at": "2026-09-10T09:48:17.866Z",
+        "type": "Order",
+        "title": "New order #ORD-10",
+        "message": "dskfhsdk placed an order worth Rs 860.",
+        "entity_type": "order",
+        "entity_id": 10,
+        "severity": "Info",
+        "is_read": null
+      },
+      {
+        "id": 15,
+        "created_at": "2026-09-10T14:34:25.313Z",
+        "business_id": 1,
+        "type": "Order",
+        "title": "New order #ORD-11",
+        "message": "dskfhsdk placed an order worth Rs 860.",
+        "entity_type": "order",
+        "entity_id": 11,
+        "severity": "Info",
+        "is_read": null
+      },
+      {
+        "id": 16,
+        "created_at": "2026-09-10T14:36:20.425Z",
+        "business_id": 1,
+        "type": "Order",
+        "title": "New order #ORD-12",
+        "message": "Atif mehmoodd placed an order worth Rs 860.",
+        "entity_type": "order",
+        "entity_id": 12,
+        "severity": "Info",
+        "is_read": null
       }
     ],
     "investors": [
@@ -448,8 +499,8 @@
         "id": 1,
         "created_at": "2026-08-20T18:54:20.770Z",
         "business_name": "Apexiums HQ",
-        "username": "Superadmin",
-        "password_hash": "d1b5ee007fd26dc24dff4cc2b0b2be97:f951a8946d68d13ce646dc2d4660421707766fc67eb7d71cbd2274514ddd851a908de318ffa204b61fc37a5fb0923bc4ea5bacdd79a57f345fd98c88bc554a5d",
+        "username": "03236150006",
+        "password_hash": "ee7405680311b63e434ef38f3cc41289:761b1c3f688f28403b0f0680588d73d1903eebe73db1f5043b1a9c8fe692c13d470c69a4db370621ad628d5f623051fcf425a2f7cf1f7662c5f3efb648379927",
         "owner_name": "Super Admin",
         "email": "admin@apexiums.com",
         "phone": "03000000000",
@@ -477,7 +528,17 @@
       }
     ],
     "customer_email_verifications": [],
-    "customer_sessions": [],
+    "customer_sessions": [
+      {
+        "id": 4,
+        "created_at": "2026-09-10T14:45:00.267Z",
+        "customer_id": 2,
+        "token_hash": "bf4eb977d38314844c807f79c228f8595aafa23d64bba25bf222920a3813182e",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+        "ip_address": "127.0.0.1",
+        "expires_at": "2026-09-24T14:45:00.267Z"
+      }
+    ],
     "business_sessions": [],
     "customer_login_history": [
       {
@@ -485,6 +546,30 @@
         "created_at": "2026-09-06T09:39:24.015Z",
         "customer_id": 1,
         "email": "03147656724",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+        "ip_address": "127.0.0.1"
+      },
+      {
+        "id": 2,
+        "created_at": "2026-09-10T09:53:51.333Z",
+        "customer_id": 2,
+        "email": "03293400019",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+        "ip_address": "127.0.0.1"
+      },
+      {
+        "id": 3,
+        "created_at": "2026-09-10T14:36:05.098Z",
+        "customer_id": 2,
+        "email": "03293400019",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+        "ip_address": "127.0.0.1"
+      },
+      {
+        "id": 4,
+        "created_at": "2026-09-10T14:45:00.272Z",
+        "customer_id": 2,
+        "email": "03293400019",
         "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
         "ip_address": "127.0.0.1"
       }
@@ -499,16 +584,16 @@
     "product_variants": 1,
     "stock": 4,
     "stock_history": 1,
-    "orders": 10,
-    "order_items": 10,
+    "orders": 13,
+    "order_items": 13,
     "returns": 2,
     "staff": 1,
     "staff_permissions": 1,
-    "customers": 2,
+    "customers": 3,
     "expenses": 1,
     "wholesellers": 1,
     "purchase_orders": 1,
-    "notifications": 14,
+    "notifications": 17,
     "investors": 2,
     "permissions": 1,
     "software_fees": 1,
@@ -522,8 +607,8 @@
     "finance_transactions": 1,
     "reviews": 2,
     "customer_email_verifications": 1,
-    "customer_sessions": 2,
+    "customer_sessions": 5,
     "business_sessions": 1,
-    "customer_login_history": 2
+    "customer_login_history": 5
   }
 }

@@ -36,49 +36,57 @@ export default function UserProfileView({
   const [profileEmail, setProfileEmail] = useState(session?.email || "");
   const [ordersOpen, setOrdersOpen] = useState(initialOrders);
   const [myOrders, setMyOrders] = useState([]);
+  const [ordersFilter, setOrdersFilter] = useState("all");
+  const visibleOrders = myOrders.filter((order) => {
+    const status = String(order.order_status || order.status || "").trim().toLowerCase();
+    if (ordersFilter === "shipped") return status === "shipped";
+    if (ordersFilter === "received") return ["received", "delivered"].includes(status);
+    return true;
+  });
+  const ordersTitle = ordersFilter === "shipped" ? "Shipped Orders"
+    : ordersFilter === "received" ? "Received Orders" : "My Orders";
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersError, setOrdersError] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  const loadMyOrders = React.useCallback(async () => {
-    setOrdersLoading(true);
+  const ordersRequestPending = useRef(false);
+  const loadMyOrders = React.useCallback(async (silent = false) => {
+    if (ordersRequestPending.current) return;
+    ordersRequestPending.current = true;
+    if (silent !== true) setOrdersLoading(true);
     try {
       const response = await fetch("/api/customer/orders", {
         credentials: "include",
+        cache: "no-store",
       });
-      const data = response.ok ? await response.json() : { rows: [] };
-      const detailed = await Promise.all(
-        (data.rows || []).map(async (order) => {
-          try {
-            const detail = await fetch(`/api/orders/${order.id}`, {
-              credentials: "include",
-            });
-            const result = detail.ok ? await detail.json() : order;
-            return {
-              ...order,
-              ...(result.order || result),
-              items: result.items || order.items || [],
-            };
-          } catch {
-            return order;
-          }
-        }),
-      );
-      const activeOrders = detailed.filter(
-        (order) =>
-          !["Cancelled", "Canceled"].includes(
-            order.order_status || order.status,
-          ),
-      );
-      setMyOrders(activeOrders);
-    } catch {
-      setMyOrders([]);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Unable to load your orders. Please try again.");
+      const latest = data.rows || [];
+      setMyOrders(latest);
+      setSelectedOrder((current) => current ? latest.find((order) => String(order.id) === String(current.id)) || null : null);
+      setOrdersError("");
+    } catch (error) {
+      if (silent !== true) setOrdersError(error.message || "Unable to load your orders. Please try again.");
     } finally {
+      ordersRequestPending.current = false;
       setOrdersLoading(false);
     }
   }, []);
 
   React.useEffect(() => {
-    if (ordersOpen) loadMyOrders();
+    if (!ordersOpen) return;
+    loadMyOrders();
+    const refresh = () => loadMyOrders(true);
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") refresh();
+    }, 5000);
+    window.addEventListener("elistin-order-placed", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("elistin-order-placed", refresh);
+      window.removeEventListener("focus", refresh);
+    };
   }, [ordersOpen, loadMyOrders]);
   const [profilePhone, setProfilePhone] = useState(session?.phone || "");
   const profileIdentifier = session?.email
@@ -296,6 +304,18 @@ export default function UserProfileView({
         <button
           type="button"
           onClick={() => {
+            if (selectedOrder) {
+              setSelectedOrder(null);
+              return;
+            }
+            if (activeModal) {
+              setActiveModal(null);
+              return;
+            }
+            if (ordersOpen) {
+              setOrdersOpen(false);
+              return;
+            }
             if (onBack) onBack();
             else window.history.back();
           }}
@@ -315,7 +335,7 @@ export default function UserProfileView({
         <div className="px-5 py-6">
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-black text-slate-900">My Orders</h2>
+              <h2 className="text-xl font-black text-slate-900">{ordersTitle}</h2>
               <p className="mt-1 text-xs text-slate-500">
                 Track your purchases and delivery progress.
               </p>
@@ -332,19 +352,24 @@ export default function UserProfileView({
             <p className="py-10 text-center text-xs font-semibold text-slate-400">
               Loading your orders...
             </p>
-          ) : !myOrders.length ? (
+          ) : ordersError ? (
+            <div role="alert" className="rounded-2xl border border-red-200 p-6 text-center text-xs text-red-600">
+              <p>{ordersError}</p>
+              <button onClick={loadMyOrders} className="mt-3 font-bold underline">Try again</button>
+            </div>
+          ) : !visibleOrders.length ? (
             <div className="rounded-2xl border border-dashed p-8 text-center">
               <Package className="mx-auto text-slate-300" size={34} />
               <p className="mt-3 text-sm font-bold text-slate-700">
-                No orders yet
+                {ordersFilter === "all" ? "No orders yet" : `No ${ordersFilter} orders yet`}
               </p>
               <p className="mt-1 text-xs text-slate-500">
-                Your placed orders will appear here.
+                {ordersFilter === "all" ? "Your placed orders will appear here." : "Orders will appear here when their status is updated by the admin."}
               </p>
             </div>
           ) : (
             <div className="space-y-4">
-              {myOrders.map((order) => {
+              {visibleOrders.map((order) => {
                 const status = order.order_status || order.status || "Pending";
                 const displayStatus = status === "Pending" ? "Placed" : status;
                 const items = order.items || [];
@@ -360,7 +385,7 @@ export default function UserProfileView({
                     <div className="flex items-center justify-between border-b bg-slate-50 px-4 py-3">
                       <div>
                         <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                          Order #{order.id || order.backendOrderId}
+                          Order ORD-{order.id || order.backendOrderId}
                         </p>
                         <p className="mt-0.5 text-xs font-bold text-slate-700">
                           {order.created_at
@@ -516,6 +541,7 @@ export default function UserProfileView({
               <button
                 type="button"
                 onClick={() => {
+                  setOrdersFilter("all");
                   setOrdersOpen(true);
                 }}
                 className="group flex flex-col items-center justify-center gap-2 cursor-pointer"
@@ -532,6 +558,7 @@ export default function UserProfileView({
               <button
                 type="button"
                 onClick={() => {
+                  setOrdersFilter("shipped");
                   setOrdersOpen(true);
                 }}
                 className="group flex flex-col items-center justify-center gap-2 cursor-pointer"
@@ -548,6 +575,7 @@ export default function UserProfileView({
               <button
                 type="button"
                 onClick={() => {
+                  setOrdersFilter("received");
                   setOrdersOpen(true);
                 }}
                 className="group flex flex-col items-center justify-center gap-2 cursor-pointer"
@@ -564,6 +592,7 @@ export default function UserProfileView({
               <button
                 type="button"
                 onClick={() => {
+                  setOrdersFilter("all");
                   setOrdersOpen(true);
                 }}
                 className="group flex flex-col items-center justify-center gap-2 cursor-pointer"
@@ -583,7 +612,7 @@ export default function UserProfileView({
             {/* My Orders */}
             <button
               type="button"
-              onClick={() => setOrdersOpen(true)}
+              onClick={() => { setOrdersFilter("all"); setOrdersOpen(true); }}
               className="w-full flex items-center justify-between py-4 border-b border-slate-100 hover:bg-slate-50/80 px-2 rounded-xl transition cursor-pointer group"
             >
               <div className="flex items-center gap-3">
@@ -609,23 +638,6 @@ export default function UserProfileView({
                 </span>
                 <span className="text-sm font-semibold text-slate-800 group-hover:text-slate-900">
                   Manage address
-                </span>
-              </div>
-              <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-[#E8262A] transition" />
-            </button>
-
-            {/* Payment method */}
-            <button
-              type="button"
-              onClick={() => setActiveModal("payment")}
-              className="w-full flex items-center justify-between py-4 border-b border-slate-100 hover:bg-slate-50/80 px-2 rounded-xl transition cursor-pointer group"
-            >
-              <div className="flex items-center gap-3">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-sky-50 text-sky-600 ring-1 ring-sky-100">
-                  <CreditCard className="h-4 w-4 stroke-[2]" />
-                </span>
-                <span className="text-sm font-semibold text-slate-800 group-hover:text-slate-900">
-                  Payment method
                 </span>
               </div>
               <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-[#E8262A] transition" />
@@ -1060,7 +1072,7 @@ export default function UserProfileView({
               <p className="text-sm font-black text-slate-800">
                 Order ID:{" "}
                 <span className="text-[#F82D46]">
-                  #{selectedOrder.id || selectedOrder.backendOrderId}
+                  ORD-{selectedOrder.id || selectedOrder.backendOrderId}
                 </span>
               </p>
               <p className="mt-2 text-sm font-bold text-slate-700">
@@ -1148,7 +1160,7 @@ function OrderTimeline({ order }) {
       ? 4
       : normalized.includes("ship")
         ? 3
-        : normalized.includes("process") || normalized.includes("confirm")
+        : normalized.includes("process") || normalized.includes("confirm") || normalized === "packed"
           ? 2
           : 1;
   return (
