@@ -106,6 +106,7 @@ export default function FlashSale({ products = [], onProductClick, onAddToCart }
               : null;
             const ratingValue = Number(product.rating ?? product.averageRating ?? 0);
             const reviewCount = Number(product.reviewsCount ?? product.reviewCount ?? 0);
+            const isOutOfStock = Number(product.stock || 0) <= 0 || product.status === 'Out of Stock';
 
             return (
               <article
@@ -119,7 +120,7 @@ export default function FlashSale({ products = [], onProductClick, onAddToCart }
                     src={product.image}
                     alt={product.title}
                     loading="lazy"
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${isOutOfStock ? 'opacity-60 grayscale' : ''}`}
                   />
 
                   {/* Wishlist Icon */}
@@ -136,7 +137,11 @@ export default function FlashSale({ products = [], onProductClick, onAddToCart }
                   </button>
 
                   {/* Discount Badge */}
-                  {discountPercent ? (
+                  {isOutOfStock ? (
+                    <span className="absolute left-1.5 top-1.5 rounded-md bg-slate-900 px-1.5 py-0.5 text-[9px] font-black uppercase text-white shadow-xs tracking-wider">
+                      Out of Stock
+                    </span>
+                  ) : discountPercent ? (
                     <span className="absolute left-1.5 top-1.5 rounded-md bg-[#E8262A] px-1.5 py-0.5 text-[9px] font-black uppercase text-white shadow-xs tracking-wider">
                       -{discountPercent}%
                     </span>
@@ -182,16 +187,18 @@ export default function FlashSale({ products = [], onProductClick, onAddToCart }
 
                     <button
                       type="button"
+                      disabled={isOutOfStock}
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (isOutOfStock) return;
                         const hasOptions = Boolean(String(product.colors || '').trim() || String(product.sizes || '').trim());
                         if (hasOptions && onProductClick) onProductClick(product);
                         else if (onAddToCart) onAddToCart(product);
                         else if (onProductClick) onProductClick(product);
                       }}
-                      className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-[#E8262A] text-white shadow-xs transition hover:bg-red-700 active:scale-95 cursor-pointer shrink-0"
-                      title="Add to Cart"
-                      aria-label="Add to Cart"
+                      className={`flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg text-white shadow-xs transition shrink-0 ${isOutOfStock ? 'cursor-not-allowed bg-slate-300' : 'cursor-pointer bg-[#E8262A] hover:bg-red-700 active:scale-95'}`}
+                      title={isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
+                      aria-label={isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
                     >
                       <ShoppingBag size={14} />
                     </button>

@@ -1,0 +1,35 @@
+{
+  "name": "apexiums-super-store-admin",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "node backend/server.js",
+    "build": "node --input-type=module -e \"import {existsSync} from 'node:fs'; import('vite').then(({build}) => { const root = process.env.PROJECT_ROOT || process.env.DEPLOY_ROOT || (existsSync('/home/apexium2/elistin.com') ? '/home/apexium2/elistin.com' : process.cwd()); return build({configFile: root + '/frontend/vite.config.js'}); })\"",
+    "start": "node backend/server.js",
+    "preview": "node --input-type=module -e \"import {existsSync} from 'node:fs'; import('vite').then(async ({preview}) => { const root = process.env.PROJECT_ROOT || process.env.DEPLOY_ROOT || (existsSync('/home/apexium2/elistin.com') ? '/home/apexium2/elistin.com' : process.cwd()); const server = await preview({configFile: root + '/frontend/vite.config.js', preview: {host: '0.0.0.0', port: 3000}}); server.printUrls(); })\""
+  },
+  "dependencies": {
+    "cors": "latest",
+    "dotenv": "latest",
+    "express": "latest",
+    "jspdf": "^3.0.4",
+    "lucide-react": "latest",
+    "mysql2": "latest",
+    "nodemailer": "^9.0.5",
+    "react": "latest",
+    "react-dom": "latest",
+    "recharts": "3.10.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-react": "latest",
+    "autoprefixer": "^10.5.4",
+    "postcss": "^8.5.25",
+    "tailwindcss": "^4.3.3",
+    "vite": "latest"
+  }
+}

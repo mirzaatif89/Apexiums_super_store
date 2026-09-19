@@ -946,18 +946,40 @@ export const AdminProvider = ({ children, session }) => {
   };
 
   const updateProductStock = (id, newStock) => {
+    const existing = products.find((product) => String(product.id) === String(id));
+    const numStock = Number(newStock) || 0;
+    const nextStatus = numStock === 0 ? "Out of Stock" : existing?.status === "Out of Stock" ? "Active" : existing?.status || "Active";
     setProducts((prev) =>
       prev.map((p) => {
         if (p.id === id) {
-          const numStock = Number(newStock) || 0;
-          let status = p.status;
-          if (numStock === 0) status = "Out of Stock";
-          else if (status === "Out of Stock") status = "Active";
-          return { ...p, stock: numStock, status };
+          return { ...p, stock: numStock, status: nextStatus };
         }
         return p;
       }),
     );
+    if (existing && !String(id).startsWith("p-")) {
+      fetch(`/api/products/${id}`, {
+        method: "PUT",
+        headers: apiHeaders(),
+        body: JSON.stringify({
+          name: existing.name,
+          sku: existing.sku || null,
+          category: existing.category || null,
+          subcategory: existing.subcategory || null,
+          description: existing.description || null,
+          investor_id: existing.investorId ? Number(existing.investorId) : null,
+          product_images: JSON.stringify(existing.images || []),
+          product_detail: JSON.stringify({ colors: existing.colors || "", sizes: existing.sizes || "" }),
+          actual_price: Number(existing.realPrice ?? existing.price) || 0,
+          base_price: Number(existing.realPrice ?? existing.price) || 0,
+          discounted_price: Number(existing.discountedPrice ?? existing.price) || 0,
+          cost_price: Number(existing.costPrice) || 0,
+          stock_qty: numStock,
+          image_url: existing.image || null,
+          status: nextStatus,
+        }),
+      }).catch(() => {});
+    }
     addToast("Stock quantity updated.", "success");
   };
 

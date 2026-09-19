@@ -48,6 +48,7 @@ export default function ProductDetailsModal({
   const [reviews, setReviews] = useState([]);
   const averageRating = reviews.length ? reviews.reduce((total, review) => total + Number(review.rating || 0), 0) / reviews.length : 0;
   const hasRealReviews = reviews.length > 0;
+  const isOutOfStock = Number(product.stock || 0) <= 0 || product.status === 'Out of Stock';
 
   const colorOptions = useMemo(() => {
     return String(product.colors || '').split(',').map((value) => value.trim()).filter(Boolean);
@@ -77,6 +78,10 @@ export default function ProductDetailsModal({
   };
 
   const handleAddToCart = () => {
+    if (isOutOfStock) {
+      setSelectionError('This product is currently out of stock.');
+      return;
+    }
     if (!validateSelections()) return;
     if (onAddToCart) onAddToCart(quantity, getSelectedOptions());
     setAddedToast(true);
@@ -364,9 +369,9 @@ export default function ProductDetailsModal({
                   </div>
 
                   <div className="flex flex-col items-end gap-1">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 bg-red-50/80 px-2.5 py-0.5 rounded-full">
-                      <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-                      In Stock
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold ${isOutOfStock ? 'bg-slate-100 text-slate-700' : 'bg-red-50/80 text-red-600'}`}>
+                      <span className={`h-2 w-2 rounded-full ${isOutOfStock ? 'bg-slate-400' : 'animate-pulse bg-red-500'}`} />
+                      {isOutOfStock ? 'Out of Stock' : 'In Stock'}
                     </span>
                     {hasRealReviews && (
                     <div className="flex items-center gap-1 text-xs font-bold text-slate-700">
@@ -704,20 +709,26 @@ export default function ProductDetailsModal({
             <button
               type="button"
               onClick={handleAddToCart}
-              className="flex-1 h-11 sm:h-12 inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 rounded-xl border-2 border-[#E8262A] bg-white text-[#E8262A] font-extrabold text-xs uppercase tracking-wider transition hover:bg-red-50 active:scale-95 cursor-pointer whitespace-nowrap shadow-xs"
+              disabled={isOutOfStock}
+              className={`flex-1 h-11 sm:h-12 inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 rounded-xl border-2 font-extrabold text-xs uppercase tracking-wider transition whitespace-nowrap shadow-xs ${isOutOfStock ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400' : 'cursor-pointer border-[#E8262A] bg-white text-[#E8262A] hover:bg-red-50 active:scale-95'}`}
             >
-              <ShoppingCart size={17} className="shrink-0 text-[#E8262A]" />
-              <span>Add To Cart</span>
+              <ShoppingCart size={17} className={`shrink-0 ${isOutOfStock ? 'text-slate-400' : 'text-[#E8262A]'}`} />
+              <span>{isOutOfStock ? 'Out of Stock' : 'Add To Cart'}</span>
             </button>
 
             {/* Buy Now Button */}
             <button
               type="button"
+              disabled={isOutOfStock}
               onClick={() => {
+                if (isOutOfStock) {
+                  setSelectionError('This product is currently out of stock.');
+                  return;
+                }
                 if (!validateSelections()) return;
                 onBuyNow(quantity, getSelectedOptions());
               }}
-              className="flex-[1.25] h-11 sm:h-12 inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 rounded-xl bg-[#E8262A] text-white font-extrabold text-xs uppercase tracking-wider shadow-md transition hover:bg-red-700 active:scale-95 cursor-pointer whitespace-nowrap"
+              className={`flex-[1.25] h-11 sm:h-12 inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 rounded-xl text-white font-extrabold text-xs uppercase tracking-wider shadow-md transition whitespace-nowrap ${isOutOfStock ? 'cursor-not-allowed bg-slate-300' : 'cursor-pointer bg-[#E8262A] hover:bg-red-700 active:scale-95'}`}
             >
               <ShoppingBag size={17} className="shrink-0" />
               <span>Buy Now</span>

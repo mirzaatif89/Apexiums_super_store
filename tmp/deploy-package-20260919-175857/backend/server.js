@@ -1376,32 +1376,20 @@ function crudRoutes(resource, required = []) {
       if (resource === 'orders') {
         const items = Array.isArray(req.body.items) ? req.body.items : [];
         for (const item of items) {
-          const itemProductId = item.id || item.product_id || null;
-          const itemQty = Number(item.qty || 1);
           await pool.query(
             'INSERT INTO order_items (business_id, order_id, product_id, product_name, image_url, size, color, qty, price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
               data.business_id || DEFAULT_BUSINESS_ID,
               result.insertId,
-              itemProductId,
+              item.id || null,
               item.title || item.name || 'Product',
               item.image || null,
               item.selectedSize || item.size || null,
               item.selectedColor || item.color || null,
-              itemQty,
+              Number(item.qty || 1),
               Number(item.price || 0)
             ]
           );
-          if (itemProductId) {
-            await pool.query(
-              "UPDATE products SET stock_qty = GREATEST(stock_qty - ?, 0), status = CASE WHEN GREATEST(stock_qty - ?, 0) <= 0 THEN 'Out of Stock' ELSE 'Active' END WHERE id = ? AND business_id = ?",
-              [itemQty, itemQty, itemProductId, data.business_id || DEFAULT_BUSINESS_ID]
-            );
-            await pool.query(
-              'UPDATE stock SET quantity = GREATEST(quantity - ?, 0) WHERE product_id = ? AND business_id = ?',
-              [itemQty, itemProductId, data.business_id || DEFAULT_BUSINESS_ID]
-            );
-          }
         }
         if (data.customer_email || data.customer_phone) {
           await pool.query(

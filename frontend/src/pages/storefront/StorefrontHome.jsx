@@ -214,6 +214,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
 
   const handleAddProductToCart = (product, qty = 1, options = {}) => {
     if (!product) return;
+    if (Number(product.stock || 0) <= 0 || product.status === 'Out of Stock') return;
     const selectedColor = options.color || product.selectedColor || '';
     const selectedSize = options.size || product.selectedSize || '';
     const cartKey = `${product.id || product.title || 'product'}::${selectedColor}::${selectedSize}`;
@@ -243,7 +244,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
     return () => window.removeEventListener('apexiums-product-visibility-changed', refreshVisibility);
   }, []);
 
-  const visible = (list) => list.filter((p) => !hiddenProductIds.includes(p.id) && p.status !== 'Inactive' && p.status !== 'Out of Stock');
+  const visible = (list) => list.filter((p) => !hiddenProductIds.includes(p.id) && p.status !== 'Inactive');
   const catalogProducts = websiteProducts.length ? websiteProducts : [...flashSaleProducts, ...productSections.flatMap((section) => section.products)];
   const filteredFlashSale = filterProducts(visible(catalogProducts), searchQuery, selectedCategory);
   const filteredSections = [{ title: 'All Products', products: filterProducts(visible(catalogProducts), searchQuery, selectedCategory) }];

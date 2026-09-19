@@ -155,6 +155,11 @@ export default function CheckoutModal({
       setError('Your cart is empty. Please add items before proceeding.');
       return;
     }
+    const outOfStockItem = items.find((item) => Number(item.stock || 0) <= 0 || item.status === 'Out of Stock');
+    if (outOfStockItem) {
+      setError(`${outOfStockItem.title || outOfStockItem.name || 'A product'} is out of stock. Please remove it from your cart.`);
+      return;
+    }
     setError('');
     setStep('checkout');
   };
