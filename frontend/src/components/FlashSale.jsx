@@ -184,7 +184,9 @@ export default function FlashSale({ products = [], onProductClick, onAddToCart }
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (onAddToCart) onAddToCart(product);
+                        const hasOptions = Boolean(String(product.colors || '').trim() || String(product.sizes || '').trim());
+                        if (hasOptions && onProductClick) onProductClick(product);
+                        else if (onAddToCart) onAddToCart(product);
                         else if (onProductClick) onProductClick(product);
                       }}
                       className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-[#E8262A] text-white shadow-xs transition hover:bg-red-700 active:scale-95 cursor-pointer shrink-0"

@@ -43,13 +43,42 @@ export default function ProductDetailsModal({
   const [addedToast, setAddedToast] = useState(false);
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
+  const [selectionError, setSelectionError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [reviews, setReviews] = useState([]);
   const averageRating = reviews.length ? reviews.reduce((total, review) => total + Number(review.rating || 0), 0) / reviews.length : 0;
   const hasRealReviews = reviews.length > 0;
 
+  const colorOptions = useMemo(() => {
+    return String(product.colors || '').split(',').map((value) => value.trim()).filter(Boolean);
+  }, [product]);
+
+  // Size/Variant options
+  const variantOptions = useMemo(() => {
+    return String(product.sizes || '').split(',').map((value) => value.trim()).filter(Boolean);
+  }, [product]);
+
+  const getSelectedOptions = () => ({
+    color: selectedColor,
+    size: selectedSize
+  });
+
+  const validateSelections = () => {
+    if (colorOptions.length > 0 && !selectedColor) {
+      setSelectionError('Please select a color before adding this product.');
+      return false;
+    }
+    if (variantOptions.length > 0 && !selectedSize) {
+      setSelectionError('Please select a size before adding this product.');
+      return false;
+    }
+    setSelectionError('');
+    return true;
+  };
+
   const handleAddToCart = () => {
-    if (onAddToCart) onAddToCart(quantity);
+    if (!validateSelections()) return;
+    if (onAddToCart) onAddToCart(quantity, getSelectedOptions());
     setAddedToast(true);
     setTimeout(() => setAddedToast(false), 2200);
   };
@@ -77,6 +106,7 @@ export default function ProductDetailsModal({
     setQuantity(1);
     setSelectedColor('');
     setSelectedSize('');
+    setSelectionError('');
   }, [product?.id]);
 
   useEffect(() => {
@@ -114,16 +144,6 @@ export default function ProductDetailsModal({
       return Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
     }
     return 20;
-  }, [product]);
-
-  // Color options
-  const colorOptions = useMemo(() => {
-    return String(product.colors || '').split(',').map((value) => value.trim()).filter(Boolean);
-  }, [product]);
-
-  // Size/Variant options
-  const variantOptions = useMemo(() => {
-    return String(product.sizes || '').split(',').map((value) => value.trim()).filter(Boolean);
   }, [product]);
 
   // Dynamically constructed Product Details List
@@ -446,6 +466,11 @@ export default function ProductDetailsModal({
                     ))}
                   </div>
                 </div>}
+                {selectionError ? (
+                  <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
+                    {selectionError}
+                  </p>
+                ) : null}
               </div>
 
               {/* Quantity Selector Box */}
@@ -688,7 +713,10 @@ export default function ProductDetailsModal({
             {/* Buy Now Button */}
             <button
               type="button"
-              onClick={() => onBuyNow(quantity)}
+              onClick={() => {
+                if (!validateSelections()) return;
+                onBuyNow(quantity, getSelectedOptions());
+              }}
               className="flex-[1.25] h-11 sm:h-12 inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 rounded-xl bg-[#E8262A] text-white font-extrabold text-xs uppercase tracking-wider shadow-md transition hover:bg-red-700 active:scale-95 cursor-pointer whitespace-nowrap"
             >
               <ShoppingBag size={17} className="shrink-0" />

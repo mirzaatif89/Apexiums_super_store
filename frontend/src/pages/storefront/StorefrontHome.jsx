@@ -212,16 +212,19 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
     return () => { active = false; window.clearInterval(interval); };
   }, []);
 
-  const handleAddProductToCart = (product, qty = 1) => {
+  const handleAddProductToCart = (product, qty = 1, options = {}) => {
     if (!product) return;
+    const selectedColor = options.color || product.selectedColor || '';
+    const selectedSize = options.size || product.selectedSize || '';
+    const cartKey = `${product.id || product.title || 'product'}::${selectedColor}::${selectedSize}`;
     setCartItems((prev) => {
-      const idx = prev.findIndex((item) => item.id === product.id);
+      const idx = prev.findIndex((item) => item.cartKey === cartKey);
       if (idx > -1) {
         const copy = [...prev];
         copy[idx] = { ...copy[idx], qty: (copy[idx].qty || 1) + qty };
         return copy;
       }
-      return [...prev, { ...product, qty }];
+      return [...prev, { ...product, selectedColor, selectedSize, cartKey, qty }];
     });
   };
 
@@ -625,11 +628,11 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
             setModalQty(1);
           }}
           onClose={() => setSelectedProduct(null)}
-          onAddToCart={(qty) => {
-            handleAddProductToCart(selectedProduct, qty);
+          onAddToCart={(qty, options) => {
+            handleAddProductToCart(selectedProduct, qty, options);
           }}
-          onBuyNow={(qty) => {
-            handleAddProductToCart(selectedProduct, qty);
+          onBuyNow={(qty, options) => {
+            handleAddProductToCart(selectedProduct, qty, options);
             setSelectedProduct(null);
             setCheckoutOpen(true);
           }}
@@ -655,12 +658,12 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
           setCartItems((prev) =>
             prev
               .map((item) =>
-                item.id === id ? { ...item, qty: Math.max(1, (item.qty || 1) + delta) } : item
+                item.cartKey === id ? { ...item, qty: Math.max(1, (item.qty || 1) + delta) } : item
               )
           );
         }}
         onRemoveItem={(id) => {
-          setCartItems((prev) => prev.filter((item) => item.id !== id));
+          setCartItems((prev) => prev.filter((item) => item.cartKey !== id));
         }}
         onOrderPlaced={() => setCartItems([])}
       />

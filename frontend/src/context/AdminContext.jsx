@@ -486,6 +486,8 @@ export const AdminProvider = ({ children, session }) => {
             qty: Number(item.qty || 1),
             price: Number(item.price || 0),
             image: item.image_url || "",
+            size: item.size || "",
+            color: item.color || "",
           })),
           sellerName: "Marketplace",
           totalAmount: Number(row.total_amount || 0),

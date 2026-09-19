@@ -588,6 +588,10 @@ export const ProductListing = () => {
                   <label className="block font-bold text-slate-700 mb-1">Colors <span className="font-normal text-slate-400">(optional, comma separated)</span></label>
                   <input value={formData.colors} onChange={(e) => setFormData({ ...formData, colors: e.target.value })} placeholder="Black, White, Blue" className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none" />
                 </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Sizes <span className="font-normal text-slate-400">(optional, comma separated)</span></label>
+                  <input value={formData.sizes} onChange={(e) => setFormData({ ...formData, sizes: e.target.value })} placeholder="S, M, L, XL" className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none" />
+                </div>
                 <div className="sm:col-span-2"><label className="block font-bold text-slate-700 mb-1">Initial Review Comment <span className="font-normal text-slate-400">(optional)</span></label><textarea value={formData.initialReview} onChange={(e) => setFormData({ ...formData, initialReview: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs" placeholder="Optional review to publish with this product" /></div>
               </div>
 

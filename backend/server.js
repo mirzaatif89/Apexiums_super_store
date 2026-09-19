@@ -460,6 +460,8 @@ const schemas = [
     product_id INT,
     product_name VARCHAR(180),
     image_url VARCHAR(500),
+    size VARCHAR(40),
+    color VARCHAR(60),
     qty INT DEFAULT 1,
     price DECIMAL(12,2) DEFAULT 0
   )`,
@@ -1198,6 +1200,8 @@ async function initializeDatabase() {
   await pool.query('CREATE INDEX IF NOT EXISTS idx_reviews_product_created ON reviews (product_id, created_at)');
   await ensureColumn('orders', 'customer_email', 'VARCHAR(180)');
   await ensureColumn('orders', 'customer_phone', 'VARCHAR(60)');
+  await ensureColumn('order_items', 'size', 'VARCHAR(40)');
+  await ensureColumn('order_items', 'color', 'VARCHAR(60)');
   await ensureColumn('customers', 'username', 'VARCHAR(120)');
   await ensureColumn('customers', 'password_hash', 'VARCHAR(255)');
   await ensureColumn('customers', 'plain_password', 'VARCHAR(255)');
@@ -1373,8 +1377,18 @@ function crudRoutes(resource, required = []) {
         const items = Array.isArray(req.body.items) ? req.body.items : [];
         for (const item of items) {
           await pool.query(
-            'INSERT INTO order_items (business_id, order_id, product_id, product_name, image_url, qty, price) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [data.business_id || DEFAULT_BUSINESS_ID, result.insertId, item.id || null, item.title || item.name || 'Product', item.image || null, Number(item.qty || 1), Number(item.price || 0)]
+            'INSERT INTO order_items (business_id, order_id, product_id, product_name, image_url, size, color, qty, price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [
+              data.business_id || DEFAULT_BUSINESS_ID,
+              result.insertId,
+              item.id || null,
+              item.title || item.name || 'Product',
+              item.image || null,
+              item.selectedSize || item.size || null,
+              item.selectedColor || item.color || null,
+              Number(item.qty || 1),
+              Number(item.price || 0)
+            ]
           );
         }
         if (data.customer_email || data.customer_phone) {

@@ -39,7 +39,7 @@ export const OrdersView = () => {
   const printReceipt = (order) => {
     const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
     const itemRows = (order.products || []).map((item) => `
-      <tr><td>${escapeHtml(item.name)}</td><td>${Number(item.qty || 0)}</td><td>Rs ${Number(item.price || 0).toLocaleString('en-PK')}</td><td>Rs ${(Number(item.qty || 0) * Number(item.price || 0)).toLocaleString('en-PK')}</td></tr>
+      <tr><td>${escapeHtml(item.name)}${(item.color || item.size) ? `<br><span style="font-size:11px;color:#64748b">${escapeHtml([item.color ? `Color: ${item.color}` : '', item.size ? `Size: ${item.size}` : ''].filter(Boolean).join(' | '))}</span>` : ''}</td><td>${Number(item.qty || 0)}</td><td>Rs ${Number(item.price || 0).toLocaleString('en-PK')}</td><td>Rs ${(Number(item.qty || 0) * Number(item.price || 0)).toLocaleString('en-PK')}</td></tr>
     `).join('');
     const receiptWindow = window.open('', '_blank', 'width=820,height=900');
     if (!receiptWindow) return;
@@ -241,6 +241,11 @@ export const OrdersView = () => {
                         <img src={item.image} alt={item.name} className="w-10 h-10 rounded-lg object-cover border shrink-0" />
                         <div>
                           <p className="font-bold text-slate-900">{item.name}</p>
+                          {(item.color || item.size) ? (
+                            <p className="text-[10px] font-bold text-slate-500">
+                              {[item.color ? `Color: ${item.color}` : '', item.size ? `Size: ${item.size}` : ''].filter(Boolean).join(' | ')}
+                            </p>
+                          ) : null}
                           <p className="text-[10px] text-slate-400">Qty: {item.qty} x Rs {item.price}</p>
                         </div>
                       </div>

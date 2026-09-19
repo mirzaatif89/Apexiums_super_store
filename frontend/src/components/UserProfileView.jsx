@@ -410,6 +410,7 @@ export default function UserProfileView({
                               item.title ||
                               item.name ||
                               "Product"}{" "}
+                            {(item.color || item.selectedColor || item.size || item.selectedSize) ? `(${[item.color || item.selectedColor ? `Color: ${item.color || item.selectedColor}` : "", item.size || item.selectedSize ? `Size: ${item.size || item.selectedSize}` : ""].filter(Boolean).join(" | ")}) ` : ""}
                             × {item.qty || 1}
                           </span>
                           <span className="shrink-0 font-bold">
@@ -1097,6 +1098,7 @@ export default function UserProfileView({
                 >
                   <span className="min-w-0 truncate font-semibold text-slate-700">
                     {item.product_name || item.title || item.name || "Product"}{" "}
+                    {(item.color || item.selectedColor || item.size || item.selectedSize) ? `(${[item.color || item.selectedColor ? `Color: ${item.color || item.selectedColor}` : "", item.size || item.selectedSize ? `Size: ${item.size || item.selectedSize}` : ""].filter(Boolean).join(" | ")}) ` : ""}
                     × {item.qty || 1}
                   </span>
                   <strong>

@@ -18,6 +18,7 @@ import {
   Phone,
   X
 } from 'lucide-react';
+import { openWhatsApp } from '../utils/whatsapp';
 
 export default function CheckoutModal({
   open,
@@ -46,11 +47,7 @@ export default function CheckoutModal({
   const [savedAddress, setSavedAddress] = React.useState(null);
 
   // Payment method
-  const [paymentMethod, setPaymentMethod] = React.useState('cod'); // 'cod' | 'wallet' | 'card'
-  const [cardNumber, setCardNumber] = React.useState('');
-  const [cardExpiry, setCardExpiry] = React.useState('');
-  const [cardCvc, setCardCvc] = React.useState('');
-  const [walletPhone, setWalletPhone] = React.useState('');
+  const [paymentMethod, setPaymentMethod] = React.useState('cod'); // 'cod' | 'manual'
 
   // Coupon code
   const [couponCode, setCouponCode] = React.useState('');
@@ -183,8 +180,9 @@ export default function CheckoutModal({
     setError('');
 
     try {
+      const paymentMethodLabel = paymentMethod === 'manual' ? 'Manual Payment via WhatsApp' : 'Cash on Delivery';
       const orderPayload = {
-        payment_method: paymentMethod === 'cod' ? 'Cash on Delivery' : paymentMethod === 'wallet' ? 'Paid Online (Mobile Wallet)' : 'Paid Online (Card)',
+        payment_method: paymentMethodLabel,
         customer_name: currentName,
         customer_email: currentEmail,
         customer_phone: currentPhone,
@@ -192,7 +190,7 @@ export default function CheckoutModal({
         total_amount: grandTotal,
         items_count: items.reduce((sum, item) => sum + Number(item.qty || 1), 0),
         items: items,
-        payment_status: paymentMethod === 'cod' ? 'Pending' : 'Paid',
+        payment_status: 'Pending',
         order_status: 'Pending'
       };
 
@@ -221,12 +219,7 @@ export default function CheckoutModal({
         customerEmail: currentEmail,
         customerPhone: currentPhone,
         shippingAddress: `${currentAddress}${currentLandmark ? `, Near ${currentLandmark}` : ''}, ${currentCity}, ${currentProvince}`,
-        paymentMethod:
-          paymentMethod === 'cod'
-            ? 'Cash on Delivery'
-            : paymentMethod === 'wallet'
-            ? 'JazzCash / EasyPaisa'
-            : 'Credit / Debit Card',
+        paymentMethod: paymentMethodLabel,
         subtotal,
         shippingFee,
         discount: appliedDiscount,
@@ -239,6 +232,14 @@ export default function CheckoutModal({
       setStep('success');
       window.dispatchEvent(new Event('elistin-order-placed'));
       if (onOrderPlaced) onOrderPlaced(orderSummaryObj);
+      if (paymentMethod === 'manual') {
+        openWhatsApp(
+          `Hello ${storeName || 'Elistin'}, I want to make a manual payment for order ${orderSummaryObj.id}.\n` +
+          `Name: ${currentName}\n` +
+          `Phone: ${currentPhone}\n` +
+          `Total: Rs ${grandTotal.toLocaleString('en-PK')}`
+        );
+      }
     } catch (err) {
       setError(err.message || 'Unable to place your order. Please try again.');
     } finally {
@@ -268,7 +269,10 @@ export default function CheckoutModal({
     if (!placedOrderData) return;
     const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
     const money = (value) => `Rs ${Number(value || 0).toLocaleString('en-PK')}`;
-    const itemRows = (placedOrderData.items || []).map((item) => `<tr><td><strong>${escapeHtml(item.title || item.name || 'Product')}</strong></td><td>${Number(item.qty || 1)}</td><td>${money(item.price)}</td><td class="amount">${money(Number(item.price || 0) * Number(item.qty || 1))}</td></tr>`).join('');
+    const itemRows = (placedOrderData.items || []).map((item) => {
+      const variantText = [item.selectedColor ? `Color: ${item.selectedColor}` : '', item.selectedSize ? `Size: ${item.selectedSize}` : ''].filter(Boolean).join(' | ');
+      return `<tr><td><strong>${escapeHtml(item.title || item.name || 'Product')}</strong>${variantText ? `<br><span style="font-size:11px;color:#64748b">${escapeHtml(variantText)}</span>` : ''}</td><td>${Number(item.qty || 1)}</td><td>${money(item.price)}</td><td class="amount">${money(Number(item.price || 0) * Number(item.qty || 1))}</td></tr>`;
+    }).join('');
     const receiptWindow = window.open('', '_blank', 'width=850,height=900');
     if (!receiptWindow) return setError('Please allow pop-ups to print or save your receipt as PDF.');
     receiptWindow.document.write(`<!doctype html><html><head><title>Receipt ${escapeHtml(placedOrderData.id)}</title><style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{margin:0;background:#f1f5f9;color:#172033;font:14px Arial,sans-serif}.receipt{width:100%;max-width:760px;margin:24px auto;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 12px 30px rgba(15,23,42,.14)}.head{background:linear-gradient(135deg,#e8262a,#ff5262);padding:30px 36px;color:#fff;display:flex;justify-content:space-between;align-items:flex-start}.brand-row{display:flex;align-items:center;gap:12px}.brand-logo{width:46px;height:46px;border-radius:12px;object-fit:cover;background:#fff;border:2px solid rgba(255,255,255,.65)}.brand{font-size:28px;font-weight:800}.tag{margin-top:5px;font-size:11px;letter-spacing:1.3px;font-weight:bold}.invoice{text-align:right}.invoice strong{font-size:18px}.content{padding:32px 36px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding-bottom:24px;border-bottom:1px solid #e2e8f0}.label{font-size:10px;font-weight:bold;letter-spacing:1px;color:#94a3b8;text-transform:uppercase}.value{margin-top:7px;font-weight:700;line-height:1.5}.table{width:100%;border-collapse:collapse;margin-top:26px}.table th{padding:11px 8px;text-align:left;background:#fff1f2;color:#e8262a;font-size:10px;letter-spacing:.8px;text-transform:uppercase}.table td{padding:15px 8px;border-bottom:1px solid #eef2f7}.amount{text-align:right;font-weight:700}.summary{margin:25px 0 4px auto;width:310px}.summary div{display:flex;justify-content:space-between;padding:8px 0;color:#64748b}.summary .total{margin-top:7px;padding:14px 0;border-top:2px solid #e8262a;color:#172033;font-weight:800;font-size:19px}.summary .total span:last-child{color:#e8262a}.footer{margin:28px -36px -32px;padding:22px 36px;background:#f8fafc;text-align:center;color:#64748b;font-size:12px}.footer strong{display:block;color:#e8262a;margin-bottom:5px}@media print{body{background:#fff}.receipt{box-shadow:none;margin:0;max-width:none}.head{-webkit-print-color-adjust:exact;print-color-adjust:exact}.table th{background:#fff1f2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><main class="receipt"><header class="head"><div><div class="brand-row">${logoSrc ? `<img class="brand-logo" src="${escapeHtml(logoSrc)}" alt="${escapeHtml(storeName || 'Elistin')} logo"/>` : ''}<div><div class="brand">${escapeHtml(storeName || 'Elistin')}</div><div class="tag">ONLINE MARKETPLACE</div></div></div></div><div class="invoice"><strong>ORDER RECEIPT</strong><div style="margin-top:8px">${escapeHtml(placedOrderData.id)}</div></div></header><section class="content"><div class="meta"><div><div class="label">Billed To</div><div class="value">${escapeHtml(placedOrderData.customerName)}<br>${escapeHtml(placedOrderData.customerPhone || '')}<br>${escapeHtml(placedOrderData.shippingAddress || '')}</div></div><div><div class="label">Order Details</div><div class="value">Order date: ${escapeHtml(placedOrderData.date)}<br>Payment: ${escapeHtml(placedOrderData.paymentMethod)}<br>Status: Confirmed</div></div></div><table class="table"><thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th class="amount">Amount</th></tr></thead><tbody>${itemRows}</tbody></table><div class="summary"><div><span>Subtotal</span><span>${money(placedOrderData.subtotal)}</span></div><div><span>Delivery</span><span>${money(placedOrderData.shippingFee)}</span></div><div><span>Discount</span><span>- ${money(placedOrderData.discount)}</span></div><div class="total"><span>Total Paid</span><span>${money(placedOrderData.totalAmount)}</span></div></div></section><footer class="footer"><strong>Thank you for shopping with ${escapeHtml(storeName || 'Elistin')}!</strong>Keep this receipt for your records.</footer></main><script>window.onload=()=>setTimeout(()=>window.print(),250);</script></body></html>`);
@@ -327,13 +331,21 @@ export default function CheckoutModal({
         const qty = Number(item.qty || 1);
         const price = Number(item.price || 0);
         const title = String(item.title || item.name || 'Product');
+        const variantText = [item.selectedColor ? `Color: ${item.selectedColor}` : '', item.selectedSize ? `Size: ${item.selectedSize}` : ''].filter(Boolean).join(' | ');
         pdf.text(title.length > 48 ? `${title.slice(0, 45)}...` : title, left, y);
+        if (variantText) {
+          pdf.setFontSize(8);
+          pdf.setTextColor(100, 116, 139);
+          pdf.text(variantText.length > 56 ? `${variantText.slice(0, 53)}...` : variantText, left, y + 4);
+          pdf.setTextColor(30, 41, 59);
+          pdf.setFontSize(10);
+        }
         pdf.text(String(qty), 125, y, { align: 'right' });
         pdf.text(money(price), 157, y, { align: 'right' });
         pdf.text(money(price * qty), right, y, { align: 'right' });
         pdf.setDrawColor(226, 232, 240);
-        pdf.line(left, y + 4, right, y + 4);
-        y += 11;
+        pdf.line(left, y + (variantText ? 8 : 4), right, y + (variantText ? 8 : 4));
+        y += variantText ? 15 : 11;
       }
 
       y += 7;
@@ -463,7 +475,7 @@ export default function CheckoutModal({
 
                     return (
                       <div
-                        key={item.id || idx}
+                        key={item.cartKey || item.id || idx}
                         className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-3.5 sm:p-4 rounded-2xl bg-slate-50 border border-slate-200/90 hover:border-red-200 transition shadow-2xs"
                       >
                         {/* Image & Title */}
@@ -485,6 +497,16 @@ export default function CheckoutModal({
                             <p className="text-[11px] sm:text-xs font-semibold text-slate-500">
                               Unit Price: <span className="font-bold text-slate-800">Rs {(item.price || 0).toLocaleString('en-PK')}</span>
                             </p>
+                            {(item.selectedColor || item.selectedSize) ? (
+                              <div className="flex flex-wrap gap-1.5 pt-0.5">
+                                {item.selectedColor ? (
+                                  <span className="rounded-md border border-red-100 bg-white px-2 py-0.5 text-[10px] font-bold text-slate-600">Color: {item.selectedColor}</span>
+                                ) : null}
+                                {item.selectedSize ? (
+                                  <span className="rounded-md border border-red-100 bg-white px-2 py-0.5 text-[10px] font-bold text-slate-600">Size: {item.selectedSize}</span>
+                                ) : null}
+                              </div>
+                            ) : null}
                           </div>
                         </div>
 
@@ -494,7 +516,7 @@ export default function CheckoutModal({
                           <div className="flex items-center rounded-xl bg-white border border-slate-200 p-1 shadow-2xs">
                             <button
                               type="button"
-                              onClick={() => onUpdateQty && onUpdateQty(item.id, -1)}
+                              onClick={() => onUpdateQty && onUpdateQty(item.cartKey || item.id, -1)}
                               className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 active:bg-slate-200 transition cursor-pointer"
                               title="Decrease quantity"
                             >
@@ -505,7 +527,7 @@ export default function CheckoutModal({
                             </span>
                             <button
                               type="button"
-                              onClick={() => onUpdateQty && onUpdateQty(item.id, 1)}
+                              onClick={() => onUpdateQty && onUpdateQty(item.cartKey || item.id, 1)}
                               className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 active:bg-slate-200 transition cursor-pointer"
                               title="Increase quantity"
                             >
@@ -524,7 +546,7 @@ export default function CheckoutModal({
                           {/* Remove Item Button */}
                           <button
                             type="button"
-                            onClick={() => onRemoveItem && onRemoveItem(item.id)}
+                            onClick={() => onRemoveItem && onRemoveItem(item.cartKey || item.id)}
                             className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition cursor-pointer shrink-0 ml-1"
                             title="Remove item"
                           >
@@ -883,100 +905,31 @@ export default function CheckoutModal({
                     </span>
                   </label>
 
-                  {/* Mobile Wallet EasyPaisa / JazzCash */}
+                  {/* Manual Payment via WhatsApp */}
                   <label
-                    onClick={() => setPaymentMethod('wallet')}
-                    className={`flex flex-col p-3.5 rounded-xl border cursor-pointer transition ${
-                      paymentMethod === 'wallet'
+                    onClick={() => setPaymentMethod('manual')}
+                    className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition ${
+                      paymentMethod === 'manual'
                         ? 'border-[#E8262A] bg-red-50/80 text-red-950 shadow-xs'
                         : 'border-slate-200 bg-white hover:bg-slate-100'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="radio"
-                          name="payment"
-                          checked={paymentMethod === 'wallet'}
-                          onChange={() => setPaymentMethod('wallet')}
-                          className="text-[#E8262A] focus:ring-red-500"
-                        />
-                        <div>
-                          <p className="text-xs font-bold text-slate-900">EasyPaisa / JazzCash</p>
-                          <p className="text-[11px] text-slate-500">Pay directly from Mobile Account</p>
-                        </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="radio"
+                        name="payment"
+                        checked={paymentMethod === 'manual'}
+                        onChange={() => setPaymentMethod('manual')}
+                        className="text-[#E8262A] focus:ring-red-500"
+                      />
+                      <div>
+                        <p className="text-xs font-bold text-slate-900">Manual Payment</p>
+                        <p className="text-[11px] text-slate-500">Place order, then complete payment on WhatsApp</p>
                       </div>
-                      <span className="rounded bg-red-100 px-2.5 py-1 text-[10px] font-bold text-red-800">
-                        Instant
-                      </span>
                     </div>
-
-                    {paymentMethod === 'wallet' ? (
-                      <div className="mt-3 pt-2.5 border-t border-red-200/80">
-                        <input
-                          type="text"
-                          value={walletPhone}
-                          onChange={(e) => setWalletPhone(e.target.value)}
-                          placeholder="Mobile Account Number (03001234567)"
-                          className="w-full h-9 px-3 text-xs bg-white border border-slate-300 rounded-lg outline-none focus:border-[#E8262A]"
-                        />
-                      </div>
-                    ) : null}
-                  </label>
-
-                  {/* Visa / Mastercard */}
-                  <label
-                    onClick={() => setPaymentMethod('card')}
-                    className={`flex flex-col p-3.5 rounded-xl border cursor-pointer transition ${
-                      paymentMethod === 'card'
-                        ? 'border-[#E8262A] bg-red-50/80 text-red-950 shadow-xs'
-                        : 'border-slate-200 bg-white hover:bg-slate-100'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="radio"
-                          name="payment"
-                          checked={paymentMethod === 'card'}
-                          onChange={() => setPaymentMethod('card')}
-                          className="text-[#E8262A] focus:ring-red-500"
-                        />
-                        <div>
-                          <p className="text-xs font-bold text-slate-900">Debit / Credit Card</p>
-                          <p className="text-[11px] text-slate-500">Visa, Mastercard & UnionPay</p>
-                        </div>
-                      </div>
-                      <ShieldCheck size={18} className="text-[#E8262A]" />
-                    </div>
-
-                    {paymentMethod === 'card' ? (
-                      <div className="mt-3 pt-2.5 border-t border-red-200/80 space-y-2">
-                        <input
-                          type="text"
-                          value={cardNumber}
-                          onChange={(e) => setCardNumber(e.target.value)}
-                          placeholder="Card Number (xxxx xxxx xxxx xxxx)"
-                          className="w-full h-9 px-3 text-xs bg-white border border-slate-300 rounded-lg outline-none focus:border-[#E8262A]"
-                        />
-                        <div className="grid grid-cols-2 gap-2">
-                          <input
-                            type="text"
-                            value={cardExpiry}
-                            onChange={(e) => setCardExpiry(e.target.value)}
-                            placeholder="MM / YY"
-                            className="h-9 px-3 text-xs bg-white border border-slate-300 rounded-lg outline-none focus:border-[#E8262A]"
-                          />
-                          <input
-                            type="text"
-                            value={cardCvc}
-                            onChange={(e) => setCardCvc(e.target.value)}
-                            placeholder="CVV"
-                            className="h-9 px-3 text-xs bg-white border border-slate-300 rounded-lg outline-none focus:border-[#E8262A]"
-                          />
-                        </div>
-                      </div>
-                    ) : null}
+                    <span className="rounded bg-red-100 px-2.5 py-1 text-[10px] font-bold text-red-800">
+                      WhatsApp
+                    </span>
                   </label>
                 </div>
               </div>
@@ -993,7 +946,7 @@ export default function CheckoutModal({
                 {/* Items Summary list with Product Picture & Details */}
                 <div className="space-y-2.5 max-h-[230px] overflow-y-auto pr-1">
                   {items.map((item, idx) => (
-                    <div key={item.id || idx} className="flex items-center justify-between text-xs p-2.5 bg-white rounded-xl border border-slate-200/90 shadow-2xs">
+                    <div key={item.cartKey || item.id || idx} className="flex items-center justify-between text-xs p-2.5 bg-white rounded-xl border border-slate-200/90 shadow-2xs">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <img
                           src={item.image}
@@ -1002,6 +955,11 @@ export default function CheckoutModal({
                         />
                         <div className="min-w-0 flex-1">
                           <p className="font-extrabold text-slate-900 truncate leading-tight">{item.title}</p>
+                          {(item.selectedColor || item.selectedSize) ? (
+                            <p className="mt-0.5 truncate text-[10px] font-bold text-slate-500">
+                              {[item.selectedColor ? `Color: ${item.selectedColor}` : '', item.selectedSize ? `Size: ${item.selectedSize}` : ''].filter(Boolean).join(' | ')}
+                            </p>
+                          ) : null}
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-[11px] text-slate-500 font-medium">Qty: <strong className="text-slate-800">{item.qty || 1}</strong></span>
                             <span className="text-[11px] text-slate-400">•</span>
