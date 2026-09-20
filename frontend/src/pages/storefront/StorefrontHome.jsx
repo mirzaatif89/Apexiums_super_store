@@ -17,6 +17,7 @@ import {
   Briefcase,
   ChevronRight,
   Download,
+  Heart,
   Headphones,
   Info,
   LogIn,
@@ -143,6 +144,10 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
     try { return JSON.parse(localStorage.getItem('apexiums-hidden-products') || '[]'); } catch { return []; }
   });
   const [cartItems, setCartItems] = React.useState([]);
+  const [wishlistIds, setWishlistIds] = React.useState(() => {
+    try { return JSON.parse(localStorage.getItem('apexiums-wishlist-products') || '[]'); } catch { return []; }
+  });
+  const [wishlistOpen, setWishlistOpen] = React.useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [loginOpen, setLoginOpen] = React.useState(false);
   const [checkoutOpen, setCheckoutOpen] = React.useState(false);
@@ -162,6 +167,10 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
   const cartCount = React.useMemo(() => {
     return cartItems.reduce((sum, item) => sum + (item.qty || 1), 0);
   }, [cartItems]);
+
+  React.useEffect(() => {
+    localStorage.setItem('apexiums-wishlist-products', JSON.stringify(wishlistIds));
+  }, [wishlistIds]);
 
   const [infoModal, setInfoModal] = React.useState(null);
   const emptyApplicationForm = { applicant_name: '', business_name: '', email: '', phone: '', address: '', category: '', leopard_courier_nearby: '', product_image_url: '', product_image_name: '', proposed_amount: '', investment_product: '', document_url: '', document_name: '', confirm_information: false, accept_terms: false, message: '' };
@@ -198,6 +207,9 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
           gallery: [row.image_url, ...(() => { try { return (row.product_images ? JSON.parse(row.product_images) : []).map((item) => typeof item === 'string' ? item : item.url).filter(Boolean); } catch { return []; } })()].filter(Boolean).slice(0, 5),
           price: Number(row.discounted_price ?? row.base_price ?? row.actual_price ?? 0),
           originalPrice: Number(row.actual_price ?? row.base_price ?? 0),
+          rating: Number(row.rating || row.averageRating || row.average_rating || 0),
+          averageRating: Number(row.rating || row.averageRating || row.average_rating || 0),
+          reviewsCount: 0,
           stock: Number(row.stock_qty || 0),
           category: row.category || 'All',
           subcategory: row.subcategory || '',
@@ -254,6 +266,29 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
     catalogProducts.forEach((p) => map.set(p.id, p));
     return Array.from(map.values());
   }, [catalogProducts]);
+
+  const wishlistProducts = React.useMemo(() => {
+    const idSet = new Set(wishlistIds);
+    return allProductsList.filter((product) => idSet.has(product.id));
+  }, [allProductsList, wishlistIds]);
+
+  const handleToggleWishlist = (product) => {
+    if (!product?.id) return;
+    setWishlistIds((current) => current.includes(product.id)
+      ? current.filter((id) => id !== product.id)
+      : [product.id, ...current]);
+  };
+
+  const openWishlist = () => {
+    setWishlistOpen(true);
+    setCategoryPage(null);
+    setProfileOpen(false);
+    setCheckoutOpen(false);
+    window.setTimeout(() => {
+      const el = document.getElementById('wishlist-section');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  };
 
   function handleLogin(user) {
     setAuthUser(user);
@@ -362,12 +397,10 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
         logoSrc={storeLogoSrc}
         authUser={authUser}
         cartCount={cartCount}
+        wishlistCount={wishlistIds.length}
         onAccountClick={handleAccountClick}
         onCartClick={() => setCheckoutOpen(true)}
-        onWishlistClick={() => {
-          const el = document.getElementById('products-section');
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }}
+        onWishlistClick={openWishlist}
         mobileMenuOpen={mobileMenuOpen}
         onMenuToggle={() => setMobileMenuOpen((value) => !value)}
         searchQuery={searchQuery}
@@ -380,27 +413,79 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
       <main className="relative z-10 flex-1 overflow-hidden rounded-t-[28px] bg-[#F8F9FA] pt-3 pb-24 shadow-[0_10px_24px_rgba(15,23,42,0.10)] sm:rounded-t-[36px] sm:pb-28 space-y-0">
         {categoryPage ? (
           <section className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-6 py-5 space-y-4">
-            <button type="button" onClick={() => { setCategoryPage(null); setSelectedCategory('All'); window.history.pushState({}, '', '/'); window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); }} className="text-sm font-bold text-red-600">← Back to Home</button>
+            <button type="button" onClick={() => { setCategoryPage(null); setWishlistOpen(false); setSelectedCategory('All'); window.history.pushState({}, '', '/'); window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); }} className="text-sm font-bold text-red-600">← Back to Home</button>
             {categoryPage === '__all_categories__' ? <><div className="rounded-2xl border border-slate-200 bg-white p-5"><h1 className="text-2xl font-black text-slate-900">All Categories</h1><p className="mt-1 text-sm text-slate-500">Browse every category available in our store.</p></div><div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">{websiteCategories.map((category) => <button key={category.id || category.name} type="button" onClick={() => { setSelectedCategory(category.name); setCategoryPage(category.name); window.history.pushState({}, '', `/category/${encodeURIComponent(category.name)}`); }} className="group rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm transition hover:-translate-y-0.5 hover:border-red-300 hover:shadow-md"><div className="mx-auto h-20 w-20 overflow-hidden rounded-full border-2 border-slate-100 bg-slate-50 p-0.5 group-hover:border-red-200">{category.image_url || category.image ? <img src={category.image_url || category.image} alt={category.name} className="h-full w-full rounded-full object-cover" /> : <span className="flex h-full items-center justify-center text-2xl font-black text-slate-400">{category.name?.charAt(0)}</span>}</div><p className="mt-3 text-sm font-black text-slate-800 group-hover:text-red-600">{category.name}</p></button>)}</div></> : <><div className="rounded-2xl bg-white border border-slate-200 p-5">
               <h1 className="text-2xl font-black text-slate-900">{categoryPage}</h1>
               <p className="mt-1 text-sm text-slate-500">Products in {categoryPage} category</p>
               {websiteCategories.find((c) => c.name === categoryPage)?.subcategories?.length ? <div className="mt-4 flex flex-wrap gap-2">{websiteCategories.find((c) => c.name === categoryPage).subcategories.map((sub) => <button key={sub} type="button" onClick={() => setSelectedCategory(sub)} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold hover:bg-red-50 hover:text-red-600">{sub}</button>)}</div> : null}
             </div>
-            <ProductGrid sections={filteredSections} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} onSelectProduct={(p) => { setSelectedProduct(p); setModalQty(1); }} onAddToCart={(p) => handleAddProductToCart(p, 1)} /></>}
+            <ProductGrid sections={filteredSections} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} onSelectProduct={(p) => { setSelectedProduct(p); setModalQty(1); }} onAddToCart={(p) => handleAddProductToCart(p, 1)} wishlistIds={wishlistIds} onToggleWishlist={handleToggleWishlist} /></>}
           </section>
         ) : <>
-        <HeroBanner slides={heroSlides} promoBanners={promoBanners} />
-        <CategoryGrid
-          categories={websiteCategories}
-          selectedCategory={selectedCategory}
-          onSelectCategory={(cat) => { setSelectedCategory(cat); if (cat !== 'All') { setCategoryPage(cat); window.history.pushState({}, '', `/category/${encodeURIComponent(cat)}`); } }}
-          onViewAll={() => { setCategoryPage('__all_categories__'); window.history.pushState({}, '', '/categories'); window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); }}
-        />
-        <FlashSale
-          products={filteredFlashSale}
-          onProductClick={(p) => { setSelectedProduct(p); setModalQty(1); }}
-          onAddToCart={(p) => handleAddProductToCart(p, 1)}
-        />
+        {wishlistOpen ? (
+          <section id="wishlist-section" className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-6 py-5 space-y-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-50 text-[#E8262A]">
+                    <Heart size={20} fill="currentColor" />
+                  </span>
+                  <div>
+                    <h1 className="text-xl sm:text-2xl font-black text-slate-900">My Wishlist</h1>
+                    <p className="mt-0.5 text-xs sm:text-sm font-medium text-slate-500">
+                      Products you saved for later will show here.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setWishlistOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  className="rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 transition hover:bg-red-50 hover:text-[#E8262A]"
+                >
+                  Back to Home
+                </button>
+              </div>
+            </div>
+            {wishlistProducts.length ? (
+              <ProductGrid
+                sections={[{ title: `Wishlist Products (${wishlistProducts.length})`, products: wishlistProducts }]}
+                selectedCategory="All"
+                onSelectCategory={setSelectedCategory}
+                onSelectProduct={(p) => { setSelectedProduct(p); setModalQty(1); }}
+                onAddToCart={(p) => handleAddProductToCart(p, 1)}
+                wishlistIds={wishlistIds}
+                onToggleWishlist={handleToggleWishlist}
+              />
+            ) : (
+              <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-xs">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-[#E8262A]">
+                  <Heart size={26} />
+                </div>
+                <h2 className="mt-4 text-lg font-black text-slate-900">Wishlist is empty</h2>
+                <p className="mx-auto mt-1 max-w-md text-sm font-medium text-slate-500">
+                  Heart icon par click karo, product yahan separate show ho jayega.
+                </p>
+              </div>
+            )}
+          </section>
+        ) : (
+          <>
+            <HeroBanner slides={heroSlides} promoBanners={promoBanners} />
+            <CategoryGrid
+              categories={websiteCategories}
+              selectedCategory={selectedCategory}
+              onSelectCategory={(cat) => { setWishlistOpen(false); setSelectedCategory(cat); if (cat !== 'All') { setCategoryPage(cat); window.history.pushState({}, '', `/category/${encodeURIComponent(cat)}`); } }}
+              onViewAll={() => { setWishlistOpen(false); setCategoryPage('__all_categories__'); window.history.pushState({}, '', '/categories'); window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); }}
+            />
+            <FlashSale
+              products={filteredFlashSale}
+              onProductClick={(p) => { setSelectedProduct(p); setModalQty(1); }}
+              onAddToCart={(p) => handleAddProductToCart(p, 1)}
+              wishlistIds={wishlistIds}
+              onToggleWishlist={handleToggleWishlist}
+            />
+          </>
+        )}
         </>}
       </main>
 
@@ -422,6 +507,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
       {!selectedProduct ? (
         <BottomNav
           cartCount={cartCount}
+          wishlistCount={wishlistIds.length}
           isCartOpen={checkoutOpen}
           isProfileOpen={profileOpen}
           onCartClick={() => {
@@ -437,12 +523,7 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
             setCheckoutOpen(false);
             handleAccountClick();
           }}
-          onWishlistClick={() => {
-            setProfileOpen(false);
-            setCheckoutOpen(false);
-            const el = document.getElementById('products-section');
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
-          }}
+          onWishlistClick={openWishlist}
           onSupportClick={() => {
             setProfileOpen(false);
             setCheckoutOpen(false);
@@ -620,6 +701,8 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
           allProducts={allProductsList}
           storeName={storeName}
           cartCount={cartCount}
+          isWishlisted={wishlistIds.includes(selectedProduct.id)}
+          onToggleWishlist={handleToggleWishlist}
           onOpenCart={() => {
             setSelectedProduct(null);
             setCheckoutOpen(true);
@@ -694,3 +777,5 @@ export default function StorefrontHome({ onLogin, session, onLogout }) {
     </div>
   );
 }
+
+

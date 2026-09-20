@@ -396,7 +396,6 @@ const schemas = [
     base_price DECIMAL(12,2) DEFAULT 0,
     discounted_price DECIMAL(12,2) DEFAULT 0,
     cost_price DECIMAL(12,2) DEFAULT 0,
-    rating DECIMAL(3,1) DEFAULT 0,
     subcategory VARCHAR(160),
     sku VARCHAR(80),
     stock_qty INT DEFAULT 0,
@@ -768,7 +767,7 @@ const resources = {
   banners: ['image_url', 'title', 'link', 'position', 'status', 'start_date', 'end_date', 'click_count'],
   promotions: ['name', 'image_url', 'valid_from', 'valid_till', 'show_on_website', 'status', 'created_at'],
   categories: ['name', 'parent_id', 'image_url', 'description', 'subcategories', 'status'],
-  products: ['image_url', 'product_images', 'name', 'description', 'product_detail', 'category', 'subcategory', 'actual_price', 'base_price', 'discounted_price', 'cost_price', 'rating', 'sku', 'stock_qty', 'slug', 'meta_title', 'meta_desc', 'status', 'investor_id'],
+  products: ['image_url', 'product_images', 'name', 'description', 'product_detail', 'category', 'subcategory', 'actual_price', 'base_price', 'discounted_price', 'cost_price', 'sku', 'stock_qty', 'slug', 'meta_title', 'meta_desc', 'status', 'investor_id'],
   reviews: ['product_id', 'reviewer_name', 'rating', 'comment', 'source', 'created_at'],
   stock: ['product_id', 'product_name', 'total_items', 'stock_belong_to', 'investor_id', 'sku', 'category', 'quantity', 'reorder_level', 'description', 'warehouse'],
   orders: ['customer_id', 'customer_name', 'customer_email', 'customer_phone', 'items_count', 'total_amount', 'payment_method', 'payment_status', 'order_status', 'shipping_address', 'created_at'],
@@ -1197,7 +1196,6 @@ async function initializeDatabase() {
   await ensureColumn('products', 'actual_price', 'DECIMAL(12,2) DEFAULT 0');
   await ensureColumn('products', 'subcategory', 'VARCHAR(160)');
   await ensureColumn('products', 'investor_id', 'INT NULL');
-  await ensureColumn('products', 'rating', 'DECIMAL(3,1) DEFAULT 0');
   await pool.query(`ALTER TABLE ${backtick('reviews')} MODIFY COLUMN ${backtick('rating')} DECIMAL(3,1) NOT NULL`);
   await pool.query('CREATE INDEX IF NOT EXISTS idx_reviews_product_created ON reviews (product_id, created_at)');
   await ensureColumn('orders', 'customer_email', 'VARCHAR(180)');
@@ -1290,10 +1288,6 @@ async function listRows(table, req, res, queryOverride = null) {
     clauses.push(scope.clause);
     params.push(...scope.params);
   }
-  if (query.product_id && (resources[table] || []).includes('product_id')) {
-    clauses.push(`${backtick('product_id')} = ?`);
-    params.push(query.product_id);
-  }
   if (search) {
     clauses.push(`(${searchable.map((field) => `${backtick(field)} LIKE ?`).join(' OR ')})`);
     params.push(...searchable.map(() => `%${search}%`));
@@ -1308,27 +1302,6 @@ async function listRows(table, req, res, queryOverride = null) {
   if (table === 'products') {
     const { role } = getContext(req);
     if (!['Admin', 'BusinessAdmin', 'SuperAdmin'].includes(role)) rows.forEach((row) => delete row.cost_price);
-    const productIds = rows.map((row) => row.id).filter(Boolean);
-    if (productIds.length) {
-      try {
-        const placeholders = productIds.map(() => '?').join(', ');
-        const [ratingRows] = await pool.query(
-          `SELECT product_id, COUNT(*) AS reviewsCount, AVG(rating) AS averageRating FROM reviews WHERE product_id IN (${placeholders}) AND (source IS NULL OR source = 'manual') GROUP BY product_id`,
-          productIds
-        );
-        const ratingsByProduct = new Map((ratingRows || []).map((row) => [String(row.product_id), row]));
-        rows.forEach((row) => {
-          const stats = ratingsByProduct.get(String(row.id));
-          row.reviewsCount = Number(stats?.reviewsCount || 0);
-          row.averageRating = Number(stats?.averageRating || row.rating || 0);
-        });
-      } catch {
-        rows.forEach((row) => {
-          row.reviewsCount = 0;
-          row.averageRating = Number(row.rating || 0);
-        });
-      }
-    }
   }
   if (table === 'categories') rows.forEach((row) => {
     try { row.subcategories = row.subcategories ? JSON.parse(row.subcategories) : []; } catch { row.subcategories = []; }
@@ -1357,11 +1330,6 @@ function crudRoutes(resource, required = []) {
         if (!Number.isFinite(rating) || rating < 1 || rating > 5) return res.status(400).json({ message: 'Rating must be between 1.0 and 5.0.' });
       }
       const data = cleanPayload(req.body, fields);
-      if (resource === 'reviews' && !data.reviewer_name) data.reviewer_name = 'Customer';
-      if (resource === 'products' && data.rating !== undefined) {
-        const rating = Number(data.rating || 0);
-        data.rating = Number.isFinite(rating) && rating >= 0 && rating <= 5 ? rating : 0;
-      }
       // A signed-in customer's order must always belong to that customer.
       // Do not trust an address form's email for account ownership.
       if (resource === 'orders') {
@@ -1981,7 +1949,7 @@ Object.entries({
   staff: ['name'],
   finance_transactions: ['title'],
   coupons: ['code'],
-  reviews: ['product_id', 'rating'],
+  reviews: ['product_id', 'reviewer_name', 'rating'],
   investors: ['name'],
   permissions: ['staff_id', 'module'],
   software_fees: ['service_name'],
@@ -2130,48 +2098,8 @@ app.put('/api/orders/:id/status', async (req, res) => {
   try {
     const scope = businessScope('orders', req);
     const where = scope.clause ? `AND ${scope.clause}` : '';
-    const updates = [];
-    const params = [];
-    if (req.body.order_status) {
-      updates.push('order_status = ?');
-      params.push(req.body.order_status);
-    }
-    if (req.body.payment_status) {
-      const requestedPaymentStatus = String(req.body.payment_status || '').toLowerCase() === 'paid' ? 'Paid' : 'Pending';
-      updates.push('payment_status = ?');
-      params.push(requestedPaymentStatus);
-    }
-    if (!updates.length) return res.status(400).json({ message: 'No order update provided.' });
-    await pool.query(`UPDATE orders SET ${updates.join(', ')} WHERE id = ? ${where}`, [...params, req.params.id, ...scope.params]);
+    await pool.query(`UPDATE orders SET order_status = ? WHERE id = ? ${where}`, [req.body.order_status, req.params.id, ...scope.params]);
     res.json({ ok: true });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-app.put('/api/orders/:id/payment-method', async (req, res) => {
-  try {
-    const requestedMethod = String(req.body.payment_method || '').toLowerCase().includes('manual')
-      ? 'Manual Payment'
-      : 'Cash on Delivery';
-    const scope = businessScope('orders', req);
-    const where = scope.clause ? `AND ${scope.clause}` : '';
-    await pool.query(`UPDATE orders SET payment_method = ? WHERE id = ? ${where}`, [requestedMethod, req.params.id, ...scope.params]);
-    res.json({ ok: true, payment_method: requestedMethod });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-app.put('/api/orders/:id/payment-status', async (req, res) => {
-  try {
-    const requestedStatus = String(req.body.payment_status || '').toLowerCase() === 'paid'
-      ? 'Paid'
-      : 'Pending';
-    const scope = businessScope('orders', req);
-    const where = scope.clause ? `AND ${scope.clause}` : '';
-    await pool.query(`UPDATE orders SET payment_status = ? WHERE id = ? ${where}`, [requestedStatus, req.params.id, ...scope.params]);
-    res.json({ ok: true, payment_status: requestedStatus });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

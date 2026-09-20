@@ -3,21 +3,15 @@ import { ChevronRight, Flame, Heart, ShoppingBag, Star, Zap } from 'lucide-react
 
 const pad = (value) => String(value).padStart(2, '0');
 
-export default function FlashSale({ products = [], onProductClick, onAddToCart }) {
+export default function FlashSale({ products = [], onProductClick, onAddToCart, wishlistIds = [], onToggleWishlist }) {
   const [activeTab, setActiveTab] = React.useState('All');
   const [remaining, setRemaining] = React.useState({ h: 2, m: 12, s: 56 });
-  const [wishlistedIds, setWishlistedIds] = React.useState(new Set());
 
   const tabs = ['All', 'Newest', 'Popular'];
 
-  const toggleWishlist = (id, e) => {
+  const toggleWishlist = (product, e) => {
     e.stopPropagation();
-    setWishlistedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    if (onToggleWishlist) onToggleWishlist(product);
   };
 
   React.useEffect(() => {
@@ -40,7 +34,7 @@ export default function FlashSale({ products = [], onProductClick, onAddToCart }
     if (!products || products.length === 0) return [];
     let list = [...products];
     if (activeTab === 'Popular') {
-      list.sort((a, b) => (Number(b.reviewsCount || b.reviewCount || 0)) - (Number(a.reviewsCount || a.reviewCount || 0)));
+      list.sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0));
     } else if (activeTab === 'Newest') {
       list.reverse();
     }
@@ -105,7 +99,6 @@ export default function FlashSale({ products = [], onProductClick, onAddToCart }
               ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
               : null;
             const ratingValue = Number(product.rating ?? product.averageRating ?? 0);
-            const reviewCount = Number(product.reviewsCount ?? product.reviewCount ?? 0);
             const isOutOfStock = Number(product.stock || 0) <= 0 || product.status === 'Out of Stock';
 
             return (
@@ -126,14 +119,14 @@ export default function FlashSale({ products = [], onProductClick, onAddToCart }
                   {/* Wishlist Icon */}
                   <button
                     type="button"
-                    onClick={(e) => toggleWishlist(product.id, e)}
+                    onClick={(e) => toggleWishlist(product, e)}
                     className={`absolute right-1.5 top-1.5 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-xl bg-white/90 text-slate-700 shadow-xs backdrop-blur-xs transition hover:bg-white hover:scale-105 active:scale-95 cursor-pointer z-10 ${
-                      wishlistedIds.has(product.id) ? 'text-red-600' : 'hover:text-red-600'
+                      wishlistIds.includes(product.id) ? 'text-red-600' : 'hover:text-red-600'
                     }`}
                     title="Wishlist"
                     aria-label="Wishlist"
                   >
-                    <Heart size={14} className={wishlistedIds.has(product.id) ? 'fill-red-600' : ''} />
+                    <Heart size={14} className={wishlistIds.includes(product.id) ? 'fill-red-600' : ''} />
                   </button>
 
                   {/* Discount Badge */}
@@ -155,21 +148,12 @@ export default function FlashSale({ products = [], onProductClick, onAddToCart }
                 {/* Info & Pricing */}
                 <div className="p-2 sm:p-2.5 flex flex-col justify-between flex-1">
                   <div>
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-[#E8262A] block leading-tight">
+                    <span className="text-[9px] font-semibold uppercase tracking-wider text-[#E8262A] block leading-tight">
                       {product.category || 'Deal'}
                     </span>
-                    <h3 className="line-clamp-2 text-xs font-bold leading-snug text-[#1E1E1E] transition group-hover:text-[#E8262A] mt-0.5">
+                    <h3 className="mt-1 line-clamp-2 text-[13px] font-semibold leading-snug text-slate-900 transition group-hover:text-[#E8262A]">
                       {product.title}
                     </h3>
-
-                    {/* Rating stars */}
-                    {ratingValue > 0 && reviewCount > 0 && (
-                      <div className="mt-0.5 flex items-center gap-1 text-[10px] text-amber-500">
-                        <Star size={11} className="fill-amber-400 text-amber-400" />
-                        <span className="font-bold text-slate-700 text-[10px]">{ratingValue.toFixed(1)}</span>
-                        <span className="text-slate-400 text-[9px]">({reviewCount})</span>
-                      </div>
-                    )}
                   </div>
 
                   {/* Price and Add to Cart */}
@@ -184,6 +168,13 @@ export default function FlashSale({ products = [], onProductClick, onAddToCart }
                         </div>
                       ) : null}
                     </div>
+
+                    {ratingValue > 0 ? (
+                      <div className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-700">
+                        <Star size={11} className="fill-amber-400 text-amber-400" />
+                        <span>{ratingValue.toFixed(1)}</span>
+                      </div>
+                    ) : null}
 
                     <button
                       type="button"
@@ -212,3 +203,4 @@ export default function FlashSale({ products = [], onProductClick, onAddToCart }
     </section>
   );
 }
+

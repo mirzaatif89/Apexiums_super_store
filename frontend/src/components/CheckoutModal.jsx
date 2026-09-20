@@ -65,13 +65,14 @@ export default function CheckoutModal({
   const totalQuantity = items.reduce((sum, item) => sum + (item.qty || 1), 0);
   const baseShippingFee = items.length > 0 && totalQuantity < 3 ? 260 : 0;
   const shippingFee = String(appliedCoupon?.discount_type || '').toLowerCase() === 'free delivery' ? 0 : baseShippingFee;
+  const deliveryDiscount = Math.max(0, baseShippingFee - shippingFee);
   const itemSavings = items.reduce((sum, item) => {
     if (item.originalPrice && item.originalPrice > item.price) {
       return sum + (item.originalPrice - item.price) * (item.qty || 1);
     }
     return sum;
   }, 0);
-  const totalDiscount = appliedDiscount + itemSavings;
+  const totalDiscount = appliedDiscount + itemSavings + deliveryDiscount;
   const grandTotal = Math.max(0, subtotal + shippingFee - appliedDiscount);
 
   const savedAddressStorageKey = React.useMemo(
@@ -611,6 +612,13 @@ export default function CheckoutModal({
                       <span className="font-extrabold text-slate-900">Rs {shippingFee.toLocaleString('en-PK')}</span>
                     </div>
 
+                    {deliveryDiscount > 0 ? (
+                      <div className="flex justify-between text-emerald-700 font-bold">
+                        <span>Delivery Discount</span>
+                        <span>- Rs {deliveryDiscount.toLocaleString('en-PK')}</span>
+                      </div>
+                    ) : null}
+
                     <div className="flex justify-between text-red-700 font-bold">
                       <span>Voucher Less</span>
                       <span>
@@ -990,6 +998,13 @@ export default function CheckoutModal({
                     <span>Standard Delivery</span>
                     <span className="font-extrabold text-slate-900">Rs {shippingFee.toLocaleString('en-PK')}</span>
                   </div>
+
+                  {deliveryDiscount > 0 ? (
+                    <div className="flex justify-between text-emerald-700 font-bold">
+                      <span>Delivery Discount</span>
+                      <span>- Rs {deliveryDiscount.toLocaleString('en-PK')}</span>
+                    </div>
+                  ) : null}
 
                   <div className="flex justify-between text-red-700 font-bold">
                     <span>Voucher Less</span>

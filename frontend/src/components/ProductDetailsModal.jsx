@@ -31,6 +31,8 @@ export default function ProductDetailsModal({
   onBuyNow,
   onSelectProduct,
   onOpenCart,
+  isWishlisted = false,
+  onToggleWishlist,
   cartCount = 0,
   storeName = 'Apexiums Super Store'
 }) {
@@ -38,16 +40,15 @@ export default function ProductDetailsModal({
 
   const [quantity, setQuantity] = useState(1);
   const [selectedImgIndex, setSelectedImgIndex] = useState(0);
-  const [isWishlist, setIsWishlist] = useState(false);
+  const [touchStartX, setTouchStartX] = useState(null);
   const [sharedToast, setSharedToast] = useState(false);
   const [addedToast, setAddedToast] = useState(false);
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
   const [selectionError, setSelectionError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [reviews, setReviews] = useState([]);
-  const averageRating = reviews.length ? reviews.reduce((total, review) => total + Number(review.rating || 0), 0) / reviews.length : 0;
-  const hasRealReviews = reviews.length > 0;
+  const displayRating = Number(product.rating || product.averageRating || 0);
+  const hasRating = displayRating > 0;
   const isOutOfStock = Number(product.stock || 0) <= 0 || product.status === 'Out of Stock';
 
   const colorOptions = useMemo(() => {
@@ -114,15 +115,6 @@ export default function ProductDetailsModal({
     setSelectionError('');
   }, [product?.id]);
 
-  useEffect(() => {
-    let active = true;
-    fetch(`/api/reviews?product_id=${encodeURIComponent(product?.id || '')}&limit=100`)
-      .then((response) => response.ok ? response.json() : { rows: [] })
-      .then((data) => { if (active) setReviews((data.rows || []).filter((review) => String(review.product_id) === String(product?.id))); })
-      .catch(() => { if (active) setReviews([]); });
-    return () => { active = false; };
-  }, [product?.id]);
-
   // Derive Brand name dynamically if not supplied
   const brandName = useMemo(() => {
     if (product.brand && product.brand !== 'Apexiums Tech') return product.brand;
@@ -142,6 +134,14 @@ export default function ProductDetailsModal({
       product.image
     ];
   }, [product]);
+
+  const showPreviousImage = React.useCallback(() => {
+    setSelectedImgIndex((index) => (index - 1 + galleryImages.length) % galleryImages.length);
+  }, [galleryImages.length]);
+
+  const showNextImage = React.useCallback(() => {
+    setSelectedImgIndex((index) => (index + 1) % galleryImages.length);
+  }, [galleryImages.length]);
 
   // Discount percentage
   const discountPercent = useMemo(() => {
@@ -273,15 +273,15 @@ export default function ProductDetailsModal({
             {/* Wishlist */}
             <button
               type="button"
-              onClick={() => setIsWishlist(!isWishlist)}
+              onClick={() => onToggleWishlist && onToggleWishlist(product)}
               className={`inline-flex h-7.5 w-7.5 items-center justify-center rounded-lg border border-slate-200/80 transition active:scale-95 cursor-pointer ${
-                isWishlist
+                isWishlisted
                   ? 'bg-rose-50 text-rose-600 border-rose-200'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-red-600'
               }`}
               title="Add to Wishlist"
             >
-              <Heart size={14} fill={isWishlist ? 'currentColor' : 'none'} />
+              <Heart size={14} fill={isWishlisted ? 'currentColor' : 'none'} />
             </button>
           </div>
         </header>
@@ -310,12 +310,52 @@ export default function ProductDetailsModal({
             {/* 2. PRODUCT IMAGE GALLERY */}
             <div className="space-y-3">
               {/* Main Image View */}
-              <div className="relative overflow-hidden rounded-[18px] bg-slate-50 border border-slate-100 group aspect-square flex items-center justify-center">
+              <div
+                className="relative flex aspect-square items-center justify-center overflow-hidden rounded-[18px] border border-slate-100 bg-slate-50 group"
+                onWheel={(event) => {
+                  if (Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
+                  event.preventDefault();
+                  if (event.deltaX > 0) showNextImage();
+                  else showPreviousImage();
+                }}
+                onTouchStart={(event) => setTouchStartX(event.touches[0]?.clientX ?? null)}
+                onTouchEnd={(event) => {
+                  if (touchStartX === null) return;
+                  const endX = event.changedTouches[0]?.clientX ?? touchStartX;
+                  const diff = touchStartX - endX;
+                  if (Math.abs(diff) > 35) {
+                    if (diff > 0) showNextImage();
+                    else showPreviousImage();
+                  }
+                  setTouchStartX(null);
+                }}
+              >
                 <img
                   src={galleryImages[selectedImgIndex]}
                   alt={product.title}
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
+
+                {galleryImages.length > 1 ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={showPreviousImage}
+                      className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-800 shadow-md transition hover:bg-white hover:text-[#E8262A]"
+                      aria-label="Previous product image"
+                    >
+                      <ArrowLeft size={17} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={showNextImage}
+                      className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-800 shadow-md transition hover:bg-white hover:text-[#E8262A]"
+                      aria-label="Next product image"
+                    >
+                      <ArrowLeft size={17} className="rotate-180" />
+                    </button>
+                  </>
+                ) : null}
 
                 {/* Discount Badge Top Left */}
                 {product.badge && (
@@ -331,13 +371,13 @@ export default function ProductDetailsModal({
               </div>
 
               {/* Thumbnails Row */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              <div className="flex snap-x items-center gap-2 overflow-x-auto overscroll-x-contain scroll-smooth pb-1">
                 {galleryImages.map((img, idx) => (
                   <button
                     key={idx}
                     type="button"
                     onClick={() => setSelectedImgIndex(idx)}
-                    className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition cursor-pointer ${
+                    className={`relative h-16 w-16 shrink-0 snap-start overflow-hidden rounded-xl border-2 transition cursor-pointer ${
                       selectedImgIndex === idx
                         ? 'border-[#E8262A] ring-2 ring-red-500/20'
                         : 'border-slate-200 opacity-70 hover:opacity-100'
@@ -373,11 +413,10 @@ export default function ProductDetailsModal({
                       <span className={`h-2 w-2 rounded-full ${isOutOfStock ? 'bg-slate-400' : 'animate-pulse bg-red-500'}`} />
                       {isOutOfStock ? 'Out of Stock' : 'In Stock'}
                     </span>
-                    {hasRealReviews && (
+                    {hasRating && (
                     <div className="flex items-center gap-1 text-xs font-bold text-slate-700">
-                      <span className="text-amber-500 font-extrabold">{averageRating.toFixed(1)}</span>
+                      <span className="text-amber-500 font-extrabold">{displayRating.toFixed(1)}</span>
                       <Star size={13} className="fill-amber-400 text-amber-400" />
-                      <span className="text-[10px] text-slate-400 font-normal">({reviews.length})</span>
                     </div>
                   )}
                   </div>
@@ -393,13 +432,13 @@ export default function ProductDetailsModal({
                   <span className="text-xs font-semibold text-red-700">100% Authentic & Certified Quality</span>
                   <button
                     type="button"
-                    onClick={() => setIsWishlist(!isWishlist)}
+                    onClick={() => onToggleWishlist && onToggleWishlist(product)}
                     className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer ${
-                      isWishlist ? 'text-rose-600 bg-rose-50 border border-rose-200' : 'text-slate-500 bg-slate-100 hover:bg-slate-200'
+                      isWishlisted ? 'text-rose-600 bg-rose-50 border border-rose-200' : 'text-slate-500 bg-slate-100 hover:bg-slate-200'
                     }`}
                   >
-                    <Heart size={14} fill={isWishlist ? 'currentColor' : 'none'} />
-                    <span>{isWishlist ? 'Wishlisted' : 'Add to Wishlist'}</span>
+                    <Heart size={14} fill={isWishlisted ? 'currentColor' : 'none'} />
+                    <span>{isWishlisted ? 'Wishlisted' : 'Add to Wishlist'}</span>
                   </button>
                 </div>
 
@@ -585,61 +624,6 @@ export default function ProductDetailsModal({
             </div>
           </div>
 
-          {hasRealReviews && (
-            <>
-              {/* 7. RATING DISPLAY SECTION */}
-              <div className="rounded-[20px] border border-slate-100 bg-white p-4 sm:p-5 shadow-xs flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
-                    Customer Rating
-                  </h3>
-                  <p className="text-[11px] text-slate-500 font-medium">Quality verified product review score</p>
-                </div>
-                <div className="flex items-center gap-3 bg-amber-50/90 px-4 py-2 rounded-xl border border-amber-200/80">
-                  <span className="text-lg font-black text-amber-700">{averageRating.toFixed(1)}</span>
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={16} fill={i < Math.round(averageRating) ? 'currentColor' : 'none'} className="text-amber-500" />
-                    ))}
-                  </div>
-                  <span className="text-xs font-bold text-amber-800">({averageRating.toFixed(1)} / 5.0)</span>
-                </div>
-              </div>
-
-              {/* 8. CUSTOMER REVIEWS SECTION */}
-              <div className="rounded-[20px] border border-slate-100 bg-white p-4 sm:p-6 shadow-xs space-y-4">
-                <div className="border-b border-slate-100 pb-3 flex flex-wrap items-center justify-between gap-3">
-                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
-                    Customer Reviews
-                  </h3>
-                  <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100">
-                    ✓ Verified Customer Reviews
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3.5 p-3 rounded-xl bg-slate-50 border border-slate-100">
-                  <img
-                    src={product.image}
-                    alt={product.title}
-                    className="h-14 w-14 rounded-lg object-cover border border-slate-200 shrink-0 bg-white shadow-2xs"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 truncate">
-                      {product.title}
-                    </h4>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">{averageRating.toFixed(1)} ★</span>
-                      <span className="text-[11px] text-slate-500 font-medium">• {reviews.length} Verified Reviews</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-3 pt-1">
-                  {reviews.map((review) => <article key={review.id} className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3.5"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-black text-slate-900">{review.reviewer_name}</p><div className="mt-0.5 flex items-center gap-0.5">{[...Array(5)].map((_, index) => <Star key={index} size={13} fill={index < Number(review.rating) ? 'currentColor' : 'none'} className="text-amber-500" />)}</div></div><time className="shrink-0 text-[10px] font-medium text-slate-400">{review.created_at ? new Date(review.created_at).toLocaleDateString('en-GB') : ''}</time></div><p className="mt-2 text-xs leading-relaxed text-slate-600">{review.comment}</p></article>)}
-                </div>
-              </div>
-            </>
-          )}
 
           {/* 8. RELATED PRODUCTS SECTION */}
           {relatedProducts.length > 0 && (
@@ -740,3 +724,4 @@ export default function ProductDetailsModal({
     </div>
   );
 }
+

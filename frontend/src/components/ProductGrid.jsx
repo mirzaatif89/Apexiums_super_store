@@ -1,14 +1,12 @@
 import React from 'react';
 import { ChevronRight, Heart, ShoppingBag, Star } from 'lucide-react';
 
-function ProductCard({ product, onSelectProduct, onAddToCart }) {
-  const [isWishlisted, setIsWishlisted] = React.useState(false);
+function ProductCard({ product, onSelectProduct, onAddToCart, isWishlisted = false, onToggleWishlist }) {
   const discountPercent = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : null;
 
   const ratingValue = Number(product.rating ?? product.averageRating ?? 0);
-  const reviewCount = Number(product.reviewsCount ?? product.reviewCount ?? 0);
   const isOutOfStock = Number(product.stock || 0) <= 0 || product.status === 'Out of Stock';
 
   return (
@@ -30,7 +28,7 @@ function ProductCard({ product, onSelectProduct, onAddToCart }) {
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            setIsWishlisted((prev) => !prev);
+            if (onToggleWishlist) onToggleWishlist(product);
           }}
           className={`absolute right-1.5 top-1.5 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-xl bg-white/90 text-slate-700 shadow-xs backdrop-blur-xs transition hover:bg-white hover:scale-105 active:scale-95 cursor-pointer z-10 ${
             isWishlisted ? 'text-[#E8262A]' : 'hover:text-[#E8262A]'
@@ -60,22 +58,13 @@ function ProductCard({ product, onSelectProduct, onAddToCart }) {
       {/* Details & Price Container */}
       <div className="p-2 sm:p-2.5 flex flex-col justify-between flex-1">
         <div>
-          <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#E8262A] block leading-tight">
+          <span className="text-[9px] font-semibold uppercase tracking-wider text-[#E8262A] block leading-tight">
             {product.category || 'Featured'}
           </span>
 
-          <h3 className="line-clamp-2 text-xs font-bold leading-snug text-[#1E1E1E] transition group-hover:text-[#E8262A] mt-0.5">
+          <h3 className="mt-1 line-clamp-2 text-[13px] font-semibold leading-snug text-slate-900 transition group-hover:text-[#E8262A]">
             {product.title}
           </h3>
-
-          {/* Rating */}
-          {ratingValue > 0 && reviewCount > 0 && (
-            <div className="mt-0.5 flex items-center gap-1 text-[10px] text-amber-500">
-              <Star size={11} className="fill-amber-400 text-amber-400" />
-              <span className="font-bold text-slate-700 text-[10px]">{ratingValue.toFixed(1)}</span>
-              <span className="text-slate-400 text-[9px]">({reviewCount})</span>
-            </div>
-          )}
         </div>
 
         {/* Pricing and Action */}
@@ -90,6 +79,13 @@ function ProductCard({ product, onSelectProduct, onAddToCart }) {
               </div>
             ) : null}
           </div>
+
+          {ratingValue > 0 ? (
+            <div className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-700">
+              <Star size={11} className="fill-amber-400 text-amber-400" />
+              <span>{ratingValue.toFixed(1)}</span>
+            </div>
+          ) : null}
 
           <button
             type="button"
@@ -114,7 +110,7 @@ function ProductCard({ product, onSelectProduct, onAddToCart }) {
   );
 }
 
-export default function ProductGrid({ sections, selectedCategory = 'All', onSelectCategory, onSelectProduct, onAddToCart }) {
+export default function ProductGrid({ sections, selectedCategory = 'All', onSelectCategory, onSelectProduct, onAddToCart, wishlistIds = [], onToggleWishlist }) {
   const isFiltered = selectedCategory && selectedCategory !== 'All';
 
   // Gather all filtered products into a single list if a specific category is selected
@@ -222,6 +218,8 @@ export default function ProductGrid({ sections, selectedCategory = 'All', onSele
                     product={product}
                     onSelectProduct={onSelectProduct}
                     onAddToCart={onAddToCart}
+                    isWishlisted={wishlistIds.includes(product.id)}
+                    onToggleWishlist={onToggleWishlist}
                   />
                 ))}
               </div>
@@ -270,6 +268,8 @@ export default function ProductGrid({ sections, selectedCategory = 'All', onSele
                       product={product}
                       onSelectProduct={onSelectProduct}
                       onAddToCart={onAddToCart}
+                      isWishlisted={wishlistIds.includes(product.id)}
+                      onToggleWishlist={onToggleWishlist}
                     />
                   ))}
                 </div>
@@ -281,3 +281,4 @@ export default function ProductGrid({ sections, selectedCategory = 'All', onSele
     </div>
   );
 }
+

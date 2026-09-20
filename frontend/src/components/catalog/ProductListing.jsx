@@ -78,7 +78,7 @@ export const ProductListing = () => {
     status: 'Active',
     brand: '',
     image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80',
-    description: '', investorId: '', initialRating: '', initialReview: ''
+    description: '', investorId: '', rating: ''
     ,colors: '', sizes: ''
   });
 
@@ -154,7 +154,7 @@ export const ProductListing = () => {
       brand: 'Apexium',
       image: '',
       description: ''
-      ,colors: '', sizes: '', investorId: '', initialRating: '', initialReview: ''
+      ,colors: '', sizes: '', investorId: '', rating: ''
     });
     setUploadPreview('');
     setIsModalOpen(true);
@@ -180,7 +180,7 @@ export const ProductListing = () => {
       image: p.image,
       images: Array.isArray(p.images) ? p.images : (p.image ? [{ url: p.image, style: 'Default' }] : []),
       description: p.description || ''
-      ,colors: p.colors || '', sizes: p.sizes || '', investorId: p.investorId ?? p.investor_id ?? ''
+      ,colors: p.colors || '', sizes: p.sizes || '', investorId: p.investorId ?? p.investor_id ?? '', rating: p.rating || ''
     });
     setUploadPreview(p.image || '');
     setIsModalOpen(true);
@@ -567,8 +567,8 @@ export const ProductListing = () => {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Initial Rating <span className="font-normal text-slate-400">(optional)</span></label>
-                  <input type="number" min="1" max="5" step="0.1" value={formData.initialRating} onChange={(e) => setFormData({ ...formData, initialRating: e.target.value })} placeholder="e.g. 4.8" className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold"/>
+                  <label className="block font-bold text-slate-700 mb-1">Product Rating <span className="font-normal text-slate-400">(optional)</span></label>
+                  <input type="number" min="1" max="5" step="0.1" value={formData.rating} onChange={(e) => setFormData({ ...formData, rating: e.target.value })} placeholder="e.g. 4.8" className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold"/>
                 </div>
 
                 <div>
@@ -591,9 +591,7 @@ export const ProductListing = () => {
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Sizes <span className="font-normal text-slate-400">(optional, comma separated)</span></label>
                   <input value={formData.sizes} onChange={(e) => setFormData({ ...formData, sizes: e.target.value })} placeholder="S, M, L, XL" className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none" />
-                </div>
-                <div className="sm:col-span-2"><label className="block font-bold text-slate-700 mb-1">Initial Review Comment <span className="font-normal text-slate-400">(optional)</span></label><textarea value={formData.initialReview} onChange={(e) => setFormData({ ...formData, initialReview: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs" placeholder="Optional review to publish with this product" /></div>
-              </div>
+                </div></div>
 
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
@@ -696,4 +694,5 @@ export const ProductListing = () => {
 };
 
 export default ProductListing;
+
 

@@ -21,6 +21,7 @@ export default function BottomNav({
   onSupportClick,
   onHomeClick,
   cartCount = 0,
+  wishlistCount = 0,
   isCartOpen = false,
   isProfileOpen = false
 }) {
@@ -80,7 +81,7 @@ export default function BottomNav({
     { label: 'Home', icon: Home, action: handleHome },
     { label: 'Contact', icon: null, action: handleChat },
     { label: 'Cart', icon: null, action: handleCart, badge: cartCount },
-    { label: 'Wishlist', icon: Heart, action: handleWishlist },
+    { label: 'Wishlist', icon: Heart, action: handleWishlist, badge: wishlistCount },
     { label: 'Account', icon: User, action: handleAccount }
   ];
 

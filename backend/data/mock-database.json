@@ -76,8 +76,7 @@
         "stock_qty": 565665665,
         "slug": "sahi-bukhari",
         "status": "Active",
-        "investor_id": null,
-        "business_id": 1
+        "investor_id": null
       }
     ],
     "product_variants": [],
@@ -132,9 +131,8 @@
         "total_amount": 860,
         "payment_method": "Manual Payment via WhatsApp",
         "payment_status": "Pending",
-        "order_status": "Pending",
-        "shipping_address": "sdf45454, islamabad, ISB",
-        "business_id": 1
+        "order_status": "Received",
+        "shipping_address": "sdf45454, islamabad, ISB"
       }
     ],
     "order_items": [
@@ -261,7 +259,6 @@
       {
         "id": 13,
         "created_at": "2026-09-19T05:34:23.876Z",
-        "business_id": 1,
         "order_id": 13,
         "product_id": 2,
         "product_name": "Sahi bukhari",
@@ -494,7 +491,6 @@
       {
         "id": 17,
         "created_at": "2026-09-19T05:34:23.946Z",
-        "business_id": 1,
         "type": "Order",
         "title": "New order #ORD-13",
         "message": "dfsdf placed an order worth Rs 860.",
@@ -533,7 +529,7 @@
         "created_at": "2026-08-20T18:54:20.770Z",
         "business_name": "Apexiums HQ",
         "username": "03236150006",
-        "password_hash": "fe37327b2e906ee880082aa7b4ec154a:749a1635e9d4944e140dcb468b4b28995e2a11b0991a87e2b5214e963a94d4d653f2c49c4938ea9bab059644d2c189474a0a2ab19cd6856668e6c9a0c971436e",
+        "password_hash": "ed66fda3ff5824c9236bba1091cc820a:8d51b5838f1a151d3618605c2f5bb730acf4cea612868f04e03535e3251fc1a21809cd32cd9112825c09b6d7bd9b179804ef87c9cc8bd89dbe47b049d2aa5f48",
         "owner_name": "Super Admin",
         "email": "admin@apexiums.com",
         "phone": "03000000000",
@@ -558,20 +554,20 @@
         "rating": 5,
         "comment": "Its really real",
         "source": "manual"
+      },
+      {
+        "id": 2,
+        "created_at": "2026-09-20",
+        "product_id": 2,
+        "reviewer_name": "ww",
+        "rating": 5,
+        "comment": "w",
+        "source": "manual",
+        "business_id": 1
       }
     ],
     "customer_email_verifications": [],
-    "customer_sessions": [
-      {
-        "id": 4,
-        "created_at": "2026-09-10T14:45:00.267Z",
-        "customer_id": 2,
-        "token_hash": "bf4eb977d38314844c807f79c228f8595aafa23d64bba25bf222920a3813182e",
-        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
-        "ip_address": "127.0.0.1",
-        "expires_at": "2026-09-24T14:45:00.267Z"
-      }
-    ],
+    "customer_sessions": [],
     "business_sessions": [],
     "customer_login_history": [
       {
@@ -604,6 +600,14 @@
         "customer_id": 2,
         "email": "03293400019",
         "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+        "ip_address": "127.0.0.1"
+      },
+      {
+        "id": 5,
+        "created_at": "2026-09-20T13:24:21.130Z",
+        "customer_id": 2,
+        "email": "03293400019",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
         "ip_address": "127.0.0.1"
       }
     ]
@@ -638,10 +642,10 @@
     "business_accounts": 2,
     "site_visits": 2,
     "finance_transactions": 1,
-    "reviews": 2,
+    "reviews": 3,
     "customer_email_verifications": 1,
-    "customer_sessions": 5,
+    "customer_sessions": 6,
     "business_sessions": 1,
-    "customer_login_history": 5
+    "customer_login_history": 6
   }
 }

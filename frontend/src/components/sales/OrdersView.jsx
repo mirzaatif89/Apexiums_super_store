@@ -20,11 +20,33 @@ import {
 } from 'lucide-react';
 
 export const OrdersView = () => {
-  const { orders, updateOrderStatus, deleteOrder, createReturnFromOrder, setActiveTab } = useAdmin();
+  const { orders, updateOrderStatus, updateOrderPaymentMethod, updateOrderPaymentStatus, deleteOrder, createReturnFromOrder, setActiveTab } = useAdmin();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [paymentFilter, setPaymentFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
+
+  const normalizePaymentMethod = (value) => {
+    const raw = String(value || '').trim().toLowerCase();
+    if (raw.includes('manual')) return 'Manual Payment';
+    if (raw.includes('cod') || raw.includes('cash on delivery')) return 'Cash on Delivery';
+    return 'Cash on Delivery';
+  };
+
+  const changePaymentMethod = async (order, paymentMethod) => {
+    await updateOrderPaymentMethod(order.id, paymentMethod);
+    if (selectedOrder?.id === order.id) {
+      setSelectedOrder((current) => current ? { ...current, paymentMethod } : current);
+    }
+  };
+
+  const changePaymentStatus = async (order, paymentStatus) => {
+    await updateOrderPaymentStatus(order.id, paymentStatus, order.orderStatus);
+    if (selectedOrder?.id === order.id) {
+      setSelectedOrder((current) => current ? { ...current, paymentStatus } : current);
+    }
+  };
 
   const orderDateKey = (value) => {
     const raw = String(value || '').trim();
@@ -58,8 +80,9 @@ export const OrdersView = () => {
       o.sellerName.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = statusFilter ? o.orderStatus === statusFilter : true;
+    const matchesPayment = paymentFilter ? normalizePaymentMethod(o.paymentMethod) === paymentFilter : true;
     const matchesDate = dateFilter ? orderDateKey(o.orderDate || o.created_at || o.date) === dateFilter : true;
-    return matchesSearch && matchesStatus && matchesDate;
+    return matchesSearch && matchesStatus && matchesPayment && matchesDate;
   });
 
   return (
@@ -104,6 +127,15 @@ export const OrdersView = () => {
           <option value="Cancelled">Cancelled</option>
           <option value="Return">Return</option>
         </select>
+        <select
+          value={paymentFilter}
+          onChange={(e) => setPaymentFilter(e.target.value)}
+          className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none"
+        >
+          <option value="">All Payment Methods</option>
+          <option value="Cash on Delivery">COD Orders</option>
+          <option value="Manual Payment">Manual Payment Orders</option>
+        </select>
       </div>
 
       {/* Orders Table */}
@@ -140,7 +172,17 @@ export const OrdersView = () => {
                     <td className="p-3.5 font-semibold text-slate-700">{o.sellerName}</td>
                     <td className="p-3.5 font-black text-slate-900">Rs {o.totalAmount}</td>
                     <td className="p-3.5">
-                      <Badge status={o.paymentStatus}>{o.paymentStatus}</Badge>
+                      <div className="space-y-1.5">
+                        <select
+                          value={normalizePaymentMethod(o.paymentMethod)}
+                          onChange={(e) => changePaymentMethod(o, e.target.value)}
+                          className="w-36 px-2 py-1 bg-slate-100 border rounded-lg text-[11px] font-bold text-slate-800 focus:outline-none cursor-pointer"
+                        >
+                          <option value="Cash on Delivery">COD</option>
+                          <option value="Manual Payment">Manual Payment</option>
+                        </select>
+                        <Badge status={o.paymentStatus}>{o.paymentStatus}</Badge>
+                      </div>
                     </td>
                     <td className="p-3.5">
                       <select
@@ -165,6 +207,11 @@ export const OrdersView = () => {
                         buttonTitle="Order actions"
                         actions={[
                           { label: 'View details', icon: Eye, onClick: () => setSelectedOrder(o) },
+                          {
+                            label: o.paymentStatus === 'Paid' ? 'Mark payment pending' : 'Mark payment paid',
+                            icon: CreditCard,
+                            onClick: () => changePaymentStatus(o, o.paymentStatus === 'Paid' ? 'Pending' : 'Paid')
+                          },
                           { label: 'Move to Returns', icon: RotateCcw, variant: 'danger', onClick: () => { createReturnFromOrder(o); setActiveTab('returns'); } }
                           ,{ label: 'Delete order', icon: XCircle, variant: 'danger', onClick: () => deleteOrder(o.id) }
                         ]}
@@ -259,7 +306,14 @@ export const OrdersView = () => {
               <div className="p-3 bg-[#E8262A] text-white rounded-xl flex items-center justify-between shadow-md shadow-red-900/15">
                 <div>
                   <p className="text-[10px] text-red-100 uppercase font-bold">Payment Method</p>
-                  <p className="font-bold text-xs">{selectedOrder.paymentMethod}</p>
+                  <select
+                    value={normalizePaymentMethod(selectedOrder.paymentMethod)}
+                    onChange={(e) => changePaymentMethod(selectedOrder, e.target.value)}
+                    className="mt-1 rounded-lg border border-white/30 bg-white px-2 py-1 text-[11px] font-extrabold text-[#E8262A] outline-none"
+                  >
+                    <option value="Cash on Delivery">COD</option>
+                    <option value="Manual Payment">Manual Payment</option>
+                  </select>
                 </div>
                 <div className="text-right">
                   <p className="text-[10px] text-red-100 uppercase font-bold">Grand Total Paid</p>

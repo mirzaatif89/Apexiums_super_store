@@ -713,6 +713,7 @@ export const AdminProvider = ({ children, session }) => {
               row.discounted_price ?? row.base_price ?? 0,
             ),
             costPrice: Number(row.cost_price ?? 0),
+            rating: Number(row.rating || row.averageRating || 0),
             stock: Number(
               row.stock_qty ??
                 stockRows.find(
@@ -836,6 +837,7 @@ export const AdminProvider = ({ children, session }) => {
         base_price: Number(product.realPrice || product.price) || 0,
         discounted_price: Number(product.discountedPrice || product.price) || 0,
         cost_price: Number(product.costPrice) || 0,
+        rating: Number(product.rating || 0) || 0,
         stock_qty: Number(product.stock) || 0,
         image_url: product.image || null,
         status: product.status || "Active",
@@ -851,13 +853,6 @@ export const AdminProvider = ({ children, session }) => {
           "Product could not be saved to the database.",
       );
     const saved = await response.json();
-    if (product.initialRating && product.initialReview) {
-      const reviewResponse = await fetch('/api/reviews', {
-        method: 'POST', headers: apiHeaders(),
-        body: JSON.stringify({ product_id: saved.id, reviewer_name: 'Store Admin', rating: Number(product.initialRating), comment: product.initialReview, source: 'manual' })
-      });
-      if (!reviewResponse.ok) throw new Error((await reviewResponse.json().catch(() => ({}))).message || 'Product saved, but the initial review could not be created.');
-    }
     setProducts((prev) => [
       {
         ...product,
@@ -906,6 +901,7 @@ export const AdminProvider = ({ children, session }) => {
           discounted_price:
             Number(mergedFields.discountedPrice ?? mergedFields.price) || 0,
           cost_price: Number(mergedFields.costPrice) || 0,
+          rating: Number(mergedFields.rating || 0) || 0,
           stock_qty: Number(mergedFields.stock) || 0,
           image_url: mergedFields.image || null,
           status: effectiveStatus,
@@ -974,6 +970,7 @@ export const AdminProvider = ({ children, session }) => {
           base_price: Number(existing.realPrice ?? existing.price) || 0,
           discounted_price: Number(existing.discountedPrice ?? existing.price) || 0,
           cost_price: Number(existing.costPrice) || 0,
+          rating: Number(existing.rating || 0) || 0,
           stock_qty: numStock,
           image_url: existing.image || null,
           status: nextStatus,
@@ -1124,6 +1121,63 @@ export const AdminProvider = ({ children, session }) => {
       addToast(`Order ${id} status changed to ${newStatus}.`, "success");
     } catch (error) {
       addToast(error.message || "Unable to save order status.", "error");
+    }
+  };
+
+  const updateOrderPaymentMethod = async (id, paymentMethod) => {
+    const normalizedMethod = String(paymentMethod || "").toLowerCase().includes("manual")
+      ? "Manual Payment"
+      : "Cash on Delivery";
+
+    try {
+      if (/^ORD-\d+$/.test(String(id))) {
+        const response = await fetch(`/api/orders/${String(id).replace("ORD-", "")}/payment-method`, {
+          method: "PUT",
+          headers: apiHeaders(),
+          body: JSON.stringify({ payment_method: normalizedMethod }),
+        });
+        if (!response.ok) throw new Error("Unable to save payment method. Please try again.");
+      }
+
+      setOrders((prev) => prev.map((order) => order.id === id
+        ? { ...order, paymentMethod: normalizedMethod }
+        : order));
+      addToast(`Order ${id} payment method updated.`, "success");
+    } catch (error) {
+      addToast(error.message || "Unable to save payment method.", "error");
+    }
+  };
+
+  const updateOrderPaymentStatus = async (id, paymentStatus, currentOrderStatus = "") => {
+    const normalizedStatus = String(paymentStatus || "").toLowerCase() === "paid" ? "Paid" : "Pending";
+
+    try {
+      if (/^ORD-\d+$/.test(String(id))) {
+        const numericId = String(id).replace("ORD-", "");
+        let response = await fetch(`/api/orders/${numericId}/payment-status`, {
+          method: "PUT",
+          headers: apiHeaders(),
+          body: JSON.stringify({ payment_status: normalizedStatus }),
+        });
+        if (!response.ok) {
+          response = await fetch(`/api/orders/${numericId}/status`, {
+            method: "PUT",
+            headers: apiHeaders(),
+            body: JSON.stringify({
+              order_status: currentOrderStatus || undefined,
+              payment_status: normalizedStatus,
+            }),
+          });
+        }
+        if (!response.ok) throw new Error("Unable to save payment status. Please try again.");
+      }
+
+      setOrders((prev) => prev.map((order) => order.id === id
+        ? { ...order, paymentStatus: normalizedStatus }
+        : order));
+      addToast(`Order ${id} payment status changed to ${normalizedStatus}.`, "success");
+    } catch (error) {
+      addToast(error.message || "Unable to save payment status.", "error");
     }
   };
 
@@ -1946,6 +2000,8 @@ export const AdminProvider = ({ children, session }) => {
         updateCategory,
         deleteCategory,
         updateOrderStatus,
+        updateOrderPaymentMethod,
+        updateOrderPaymentStatus,
         deleteOrder,
         createReturnFromOrder,
         updateReturnStatus,
